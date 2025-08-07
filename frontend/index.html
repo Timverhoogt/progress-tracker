@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracker - Tim Verhoogt @ Evos Amsterdam</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <script>
+        // Simple authentication check for app page
+        const token = localStorage.getItem('auth_token');
+        const expirationTime = localStorage.getItem('auth_expiration');
+        
+        if (!token || !expirationTime || new Date().getTime() >= parseInt(expirationTime)) {
+            window.location.href = '/';
+        }
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_expiration');
+            window.location.href = '/';
+        }
+    </script>
+    
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-chart-line"></i> Progress Tracker</h1>
+                <p class="subtitle">Tim Verhoogt - Continuous Improvement Advisor @ Evos Amsterdam</p>
+                <button class="btn btn-secondary logout-btn" onclick="logout()" style="position: absolute; top: 1rem; right: 1rem; padding: 0.5rem 1rem;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="projects">
+                <i class="fas fa-folder"></i> Projects
+            </button>
+            <button class="nav-tab" data-tab="notes">
+                <i class="fas fa-sticky-note"></i> Notes
+            </button>
+            <button class="nav-tab" data-tab="todos">
+                <i class="fas fa-tasks"></i> Todos
+            </button>
+            <button class="nav-tab" data-tab="reports">
+                <i class="fas fa-file-alt"></i> Reports
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Projects Tab -->
+            <div id="projects" class="tab-content active">
+                <div class="tab-header">
+                    <h2>Projects</h2>
+                    <button class="btn btn-primary" id="newProjectBtn">
+                        <i class="fas fa-plus"></i> New Project
+                    </button>
+                </div>
+                <div class="projects-grid" id="projectsGrid">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Notes Tab -->
+            <div id="notes" class="tab-content">
+                <div class="tab-header">
+                    <h2>Diary Notes</h2>
+                    <select class="project-selector" id="notesProjectSelector">
+                        <option value="">Select a project...</option>
+                    </select>
+                </div>
+                <div class="notes-container">
+                    <div class="note-input-section">
+                        <textarea 
+                            id="noteInput" 
+                            placeholder="Write your thoughts, observations, or progress updates here... The AI will enhance and organize your notes automatically."
+                            rows="6"
+                        ></textarea>
+                        <button class="btn btn-primary" id="addNoteBtn">
+                            <i class="fas fa-magic"></i> Add & Enhance Note
+                        </button>
+                    </div>
+                    <div class="notes-list" id="notesList">
+                        <!-- Notes will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Todos Tab -->
+            <div id="todos" class="tab-content">
+                <div class="tab-header">
+                    <h2>Tasks & Todos</h2>
+                    <div class="tab-controls">
+                        <select class="project-selector" id="todosProjectSelector">
+                            <option value="">Select a project...</option>
+                        </select>
+                        <button class="btn btn-secondary" id="generateTodosBtn">
+                            <i class="fas fa-robot"></i> AI Suggestions
+                        </button>
+                        <button class="btn btn-primary" id="newTodoBtn">
+                            <i class="fas fa-plus"></i> Add Todo
+                        </button>
+                    </div>
+                </div>
+                <div class="todos-list" id="todosList">
+                    <!-- Todos will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reports" class="tab-content">
+                <div class="tab-header">
+                    <h2>Reports & Communications</h2>
+                    <div class="tab-controls">
+                        <select class="project-selector" id="reportsProjectSelector">
+                            <option value="">Select a project...</option>
+                        </select>
+                        <button class="btn btn-primary" id="generateReportBtn">
+                            <i class="fas fa-file-export"></i> Generate Report
+                        </button>
+                    </div>
+                </div>
+                <div class="reports-list" id="reportsList">
+                    <!-- Reports will be loaded here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Processing with AI...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Project Modal -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="projectModalTitle">New Project</h3>
+                <button class="modal-close" id="closeProjectModal">&times;</button>
+            </div>
+            <form id="projectForm">
+                <div class="form-group">
+                    <label for="projectName">Project Name *</label>
+                    <input type="text" id="projectName" required>
+                </div>
+                <div class="form-group">
+                    <label for="projectDescription">Description</label>
+                    <textarea id="projectDescription" rows="4" placeholder="Brief description of the project goals and context..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelProjectModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Todo Modal -->
+    <div class="modal" id="todoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="todoModalTitle">New Todo</h3>
+                <button class="modal-close" id="closeTodoModal">&times;</button>
+            </div>
+            <form id="todoForm">
+                <div class="form-group">
+                    <label for="todoTitle">Task Title *</label>
+                    <input type="text" id="todoTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="todoDescription">Description</label>
+                    <textarea id="todoDescription" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="todoPriority">Priority</label>
+                        <select id="todoPriority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="todoDueDate">Due Date</label>
+                        <input type="date" id="todoDueDate">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelTodoModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Todo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Generation Modal -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Generate Report</h3>
+                <button class="modal-close" id="closeReportModal">&times;</button>
+            </div>
+            <form id="reportForm">
+                <div class="form-group">
+                    <label for="reportType">Report Type *</label>
+                    <select id="reportType" required>
+                        <option value="">Select type...</option>
+                        <option value="status">Status Report (for management)</option>
+                        <option value="summary">Project Summary (documentation)</option>
+                        <option value="stakeholder">Stakeholder Report (business impact)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reportRecipient">Recipient (optional)</label>
+                    <input type="text" id="reportRecipient" placeholder="e.g., Operations Manager, Team Lead, etc.">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelReportModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+services:
+  # Backend API (now with SQLite - no external database needed)
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: progress-tracker-backend
+    environment:
+      NODE_ENV: production
+      SQLITE_DB_PATH: /app/data/progress_tracker.db
+      PORT: 3060
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-anthropic/claude-3.5-sonnet}
+      SITE_URL: ${SITE_URL:-https://tracker.evosgpt.eu}
+      FRONTEND_URL: ${FRONTEND_URL:-https://tracker.evosgpt.eu}
+    ports:
+      - "${BACKEND_PORT:-3060}:3060"
+    volumes:
+      - sqlite_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3060/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - progress-tracker-network
+
+  # Frontend Web Application
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: progress-tracker-frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - progress-tracker-network
+
+volumes:
+  sqlite_data:
+    driver: local
+
+networks:
+  progress-tracker-network:
+    driver: bridge
