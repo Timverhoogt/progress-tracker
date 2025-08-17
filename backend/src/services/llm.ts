@@ -364,16 +364,40 @@ ${(milestones || []).map(m => `- ${m.title} | ${m.target_date || 'n/a'} | ${m.st
       content: msg.content
     })) || [];
 
-    // Build project context if available
+    // Build comprehensive work context if available
     let contextInfo = '';
     if (projectContext) {
-      contextInfo = `
+      // Overall portfolio overview
+      const portfolioSummary = `
+**Professional Portfolio Overview:**
+- Managing ${projectContext.totalProjects || 0} projects (${projectContext.activeProjects || 0} active)
+- Overall task completion rate: ${projectContext.completionRate || 0}%
+- Current workload: ${projectContext.pendingTodos || 0} pending tasks, ${projectContext.completedTodos || 0} completed
+- High priority items: ${projectContext.highPriorityPending || 0} urgent tasks requiring attention`;
 
-**Current Work Context:**
-- Project: ${projectContext.projectName}
-- Recent work: ${projectContext.recentNotes?.slice(0, 2).join('; ') || 'No recent notes'}
-- Pending tasks: ${projectContext.pendingTodos || 0}
-- Completed tasks: ${projectContext.completedTodos || 0}`;
+      // Project-specific insights
+      let projectInsights = '';
+      if (projectContext.projectSummaries && projectContext.projectSummaries.length > 0) {
+        const projectLines = projectContext.projectSummaries.map((p: any) => 
+          `  • ${p.name} (${p.status}): ${p.pendingTasks} pending, ${p.completedTasks} completed, ${p.recentActivity} activity`
+        ).join('\n');
+        projectInsights = `\n**Project Breakdown:**\n${projectLines}`;
+      }
+
+      // Recent work across projects
+      let recentWork = '';
+      if (projectContext.recentWorkNotes && projectContext.recentWorkNotes.length > 0) {
+        const workLines = projectContext.recentWorkNotes.slice(0, 3).join('\n- ');
+        recentWork = `\n**Recent Work Activity:**\n- ${workLines}`;
+      }
+
+      // Current focus area
+      let currentFocus = '';
+      if (projectContext.currentFocus && projectContext.currentFocus.isActive) {
+        currentFocus = `\n**Current Focus:** Working on ${projectContext.currentFocus.projectName}`;
+      }
+
+      contextInfo = portfolioSummary + projectInsights + recentWork + currentFocus;
     }
 
     const messages = [

@@ -1949,8 +1949,8 @@ async function sendCoachingMessage(message) {
     showTypingIndicator();
     
     try {
-        // Get current project context for more personalized coaching
-        const projectContext = currentProject ? await getProjectContext() : null;
+        // Get comprehensive work context for more personalized coaching
+        const projectContext = await getWorkContext();
         
         const response = await api.request('/llm/coaching', {
             method: 'POST',
@@ -1976,27 +1976,70 @@ async function sendCoachingMessage(message) {
     }
 }
 
-async function getProjectContext() {
-    if (!currentProject) return null;
-    
+async function getWorkContext() {
     try {
-        // Get recent notes and todos for context
-        const [notesResponse, todosResponse] = await Promise.all([
-            api.request(`/notes?project_id=${currentProject}&limit=3`),
-            api.request(`/todos?project_id=${currentProject}&limit=5`)
+        // Get comprehensive context across ALL projects for better coaching
+        const [projectsResponse, allNotesResponse, allTodosResponse] = await Promise.all([
+            api.request('/projects'),
+            api.request('/notes?limit=10'), // Recent notes across all projects
+            api.request('/todos?limit=15')  // Recent todos across all projects
         ]);
         
-        const recentNotes = notesResponse.success ? notesResponse.data.slice(0, 3) : [];
-        const recentTodos = todosResponse.success ? todosResponse.data.slice(0, 5) : [];
+        const projects = projectsResponse.success ? projectsResponse.data : [];
+        const recentNotes = allNotesResponse.success ? allNotesResponse.data.slice(0, 10) : [];
+        const allTodos = allTodosResponse.success ? allTodosResponse.data : [];
+        
+        // Calculate overall workload and progress
+        const totalTodos = allTodos.length;
+        const completedTodos = allTodos.filter(todo => todo.status === 'completed').length;
+        const pendingTodos = allTodos.filter(todo => todo.status === 'pending').length;
+        const highPriorityPending = allTodos.filter(todo => todo.status === 'pending' && todo.priority === 'high').length;
+        
+        // Get project-specific summaries
+        const projectSummaries = projects.map(project => {
+            const projectTodos = allTodos.filter(todo => todo.project_id === project.id);
+            const projectNotes = recentNotes.filter(note => note.project_id === project.id).slice(0, 2);
+            return {
+                name: project.name,
+                status: project.status,
+                pendingTasks: projectTodos.filter(t => t.status === 'pending').length,
+                completedTasks: projectTodos.filter(t => t.status === 'completed').length,
+                recentActivity: projectNotes.length > 0 ? 'active' : 'quiet'
+            };
+        });
+        
+        // Recent work context across all projects
+        const recentWorkNotes = recentNotes.slice(0, 5).map(note => {
+            const project = projects.find(p => p.id === note.project_id);
+            return `[${project?.name || 'Unknown'}] ${note.enhanced_content || note.content}`;
+        }).filter(Boolean);
         
         return {
-            projectName: window.currentProjectName || 'Current Project',
-            recentNotes: recentNotes.map(note => note.content || note.enhanced_content).filter(Boolean),
-            recentTodos: recentTodos.map(todo => `${todo.title} (${todo.status})`),
-            completedTodos: recentTodos.filter(todo => todo.status === 'completed').length,
-            pendingTodos: recentTodos.filter(todo => todo.status === 'pending').length
+            // Overall portfolio
+            totalProjects: projects.length,
+            activeProjects: projects.filter(p => p.status === 'active').length,
+            
+            // Workload overview
+            totalTodos,
+            completedTodos,
+            pendingTodos,
+            highPriorityPending,
+            completionRate: totalTodos > 0 ? Math.round((completedTodos / totalTodos) * 100) : 0,
+            
+            // Recent work across all projects
+            recentWorkNotes,
+            
+            // Project-specific insights
+            projectSummaries,
+            
+            // Current focus (if a project is selected)
+            currentFocus: currentProject ? {
+                projectName: window.currentProjectName || 'Selected Project',
+                isActive: true
+            } : null
         };
     } catch (error) {
+        console.warn('Could not gather work context for coaching:', error);
         return null;
     }
 }
