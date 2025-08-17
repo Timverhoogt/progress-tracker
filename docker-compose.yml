@@ -10,15 +10,20 @@ services:
       SQLITE_DB_PATH: /app/data/progress_tracker.db
       PORT: 3060
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      LLM_MODEL: ${LLM_MODEL:-anthropic/claude-3.5-sonnet}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_STT_MODEL: ${OPENAI_STT_MODEL:-whisper-1}
+      LLM_MODEL: ${LLM_MODEL:-anthropic/claude-3.7-sonnet}
       SITE_URL: ${SITE_URL:-https://tracker.evosgpt.eu}
       FRONTEND_URL: ${FRONTEND_URL:-https://tracker.evosgpt.eu}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL}
+      DEFAULT_REPORT_EMAIL: ${DEFAULT_REPORT_EMAIL}
     ports:
       - "${BACKEND_PORT:-3060}:3060"
     volumes:
       - sqlite_data:/app/data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3060/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3060/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,7 +42,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

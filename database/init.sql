@@ -58,14 +58,23 @@ CREATE INDEX IF NOT EXISTS idx_todos_status ON todos(status);
 CREATE INDEX IF NOT EXISTS idx_reports_project_id ON reports(project_id);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 
--- Insert sample data for Tim's ML terminal time project
-INSERT INTO projects (id, name, description, status) VALUES 
-(
-    uuid_generate_v4(),
-    'ML Terminal Time Prediction - Terneuzen',
-    'Testing a machine learning model to predict ship terminal processing times at our Terneuzen facility. This project involves working with the customer service team and building monitoring dashboards.',
-    'active'
-) ON CONFLICT DO NOTHING;
+-- Insert sample data for Tim's ML terminal time project (only if no projects exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM projects LIMIT 1) THEN
+        INSERT INTO projects (id, name, description, status) VALUES
+        (
+            uuid_generate_v4(),
+            'ML Terminal Time Prediction - Terneuzen',
+            'Testing a machine learning model to predict ship terminal processing times at our Terneuzen facility. This project involves working with the customer service team and building monitoring dashboards.',
+            'active'
+        );
+        RAISE NOTICE 'Sample project inserted';
+    ELSE
+        RAISE NOTICE 'Projects already exist, skipping sample data insertion';
+    END IF;
+END
+$$;
 
 -- Grant permissions (if needed for specific setups)
 -- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;

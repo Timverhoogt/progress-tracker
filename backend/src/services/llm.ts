@@ -1,4 +1,5 @@
 import axios from 'axios';
+import settingsService from './settings';
 
 interface LLMResponse {
   success: boolean;
@@ -23,6 +24,13 @@ interface GenerateReportRequest {
   todos: string[];
   reportType: 'status' | 'summary' | 'stakeholder';
   recipient?: string;
+}
+
+interface EstimateTimelineRequest {
+  projectName: string;
+  projectDescription?: string;
+  datedTodos: Array<{ title: string; due_date?: string; status?: string; }>;
+  milestones?: Array<{ title: string; target_date?: string; status?: string; }>;
 }
 
 class LLMService {
@@ -64,36 +72,164 @@ class LLMService {
     }
   }
 
+  private async getPersonalityDirectives(): Promise<string> {
+    const tone = await settingsService.get<string>('llm_tone', 'professional');
+    const detailLevel = await settingsService.get<string>('llm_detail_level', 'balanced');
+    const language = await settingsService.get<string>('llm_language', 'auto');
+    const preset = await settingsService.get<string>('llm_preset_template', 'default');
+    
+    const directives: string[] = [];
+    
+    // Tone directives
+    switch (tone) {
+      case 'friendly':
+        directives.push('Tone: Use a warm, approachable, and supportive communication style.');
+        break;
+      case 'formal':
+        directives.push('Tone: Maintain strict formality and professional business language.');
+        break;
+      case 'concise':
+        directives.push('Tone: Be direct, brief, and eliminate unnecessary words.');
+        break;
+      case 'enthusiastic':
+        directives.push('Tone: Show energy, positivity, and excitement about the work.');
+        break;
+      case 'analytical':
+        directives.push('Tone: Focus on data, logic, and structured analysis.');
+        break;
+      case 'creative':
+        directives.push('Tone: Encourage innovative thinking and creative solutions.');
+        break;
+      case 'professional':
+      default:
+        directives.push('Tone: Maintain professional, clear, and business-appropriate language.');
+    }
+    
+    // Detail level directives
+    switch (detailLevel) {
+      case 'brief':
+        directives.push('Detail level: Provide concise, essential information only.');
+        break;
+      case 'detailed':
+        directives.push('Detail level: Include comprehensive explanations and thorough analysis.');
+        break;
+      case 'comprehensive':
+        directives.push('Detail level: Provide exhaustive coverage with examples, context, and implications.');
+        break;
+      case 'balanced':
+      default:
+        directives.push('Detail level: Provide adequate detail without being overly verbose.');
+    }
+    
+    // Language preference
+    if (language && language !== 'auto') {
+      const languageMap: Record<string, string> = {
+        'english': 'English',
+        'dutch': 'Dutch (Nederlands)',
+        'german': 'German (Deutsch)',
+        'french': 'French (Français)',
+        'spanish': 'Spanish (Español)'
+      };
+      if (languageMap[language]) {
+        directives.push(`Language: Respond primarily in ${languageMap[language]} unless specifically asked otherwise.`);
+      }
+    }
+    
+    // Preset template context
+    switch (preset) {
+      case 'consultant':
+        directives.push('Context: You are advising as an experienced management consultant focused on process improvement and strategic recommendations.');
+        break;
+      case 'analyst':
+        directives.push('Context: You are providing analysis as a business analyst, emphasizing data-driven insights and systematic evaluation.');
+        break;
+      case 'manager':
+        directives.push('Context: You are communicating as a project manager, focusing on execution, timelines, and stakeholder coordination.');
+        break;
+      case 'technical':
+        directives.push('Context: You are providing technical expertise, emphasizing implementation details and technical best practices.');
+        break;
+      case 'creative':
+        directives.push('Context: You are brainstorming as a creative strategist, encouraging innovative approaches and out-of-the-box thinking.');
+        break;
+      case 'default':
+      default:
+        directives.push('Context: You are Tim Verhoogt\'s AI assistant, helping with continuous improvement work at Evos Amsterdam.');
+    }
+    
+    return directives.length > 0 ? directives.join(' ') : '';
+  }
+
+  getGeneratedSystemPrompt(): string {
+    return `You are Tim Verhoogt's intelligent AI assistant, specialized in supporting his work as a Continuous Improvement Advisor at Evos Amsterdam. Your primary purpose is to enhance productivity, provide strategic insights, and help optimize operational processes across various projects.
+
+**Context & Expertise:**
+- Evos Amsterdam focuses on operational excellence, logistics optimization, and process improvement
+- You assist with project management, data analysis, stakeholder communication, and strategic planning
+- Your responses should reflect deep understanding of business operations, improvement methodologies, and professional project management
+
+**Core Responsibilities:**
+- Enhance and structure project notes with actionable insights
+- Generate strategic, well-prioritized action items and todo lists
+- Create professional reports tailored to different stakeholder audiences
+- Analyze project timelines and identify potential risks and opportunities
+- Provide continuous improvement recommendations based on lean methodologies
+
+**Communication Standards:**
+- Maintain professional Dutch business standards while being accessible and practical
+- Focus on actionable outcomes and measurable improvements
+- Consider stakeholder perspectives (operations teams, management, clients)
+- Emphasize data-driven insights and process optimization opportunities
+- Balance strategic thinking with tactical execution support
+
+**Output Quality:**
+- Prioritize clarity, relevance, and business value in all responses
+- Structure information logically with clear next steps
+- Highlight critical risks, dependencies, and success factors
+- Ensure recommendations align with operational excellence principles and Evos Amsterdam's business objectives`;
+  }
+
+  private async getGlobalPreamble(): Promise<string> {
+    const mode = await settingsService.get<string>('llm_system_prompt_mode', 'generated');
+    
+    if (mode === 'custom') {
+      const customPrompt = await settingsService.get<string>('llm_system_prompt', '');
+      return customPrompt || '';
+    } else {
+      return this.getGeneratedSystemPrompt();
+    }
+  }
+
   async enhanceNote({ content, projectContext }: EnhanceNoteRequest): Promise<LLMResponse> {
+    const preamble = await this.getGlobalPreamble();
+    const personalityDirectives = await this.getPersonalityDirectives();
     const messages = [
+      ...(preamble ? [{ role: 'system', content: preamble }] : []),
       {
         role: 'system',
-        content: `You are an AI assistant helping Tim Verhoogt, a continuous improvement advisor at Evos Amsterdam (petrochemical storage), organize and enhance his project notes. 
-        
-        Your task is to:
-        1. Extract key information from diary-style project notes
-        2. Structure the information clearly
-        3. Identify actionable items, risks, opportunities
-        4. Maintain the original context and meaning
-        5. Return a JSON object with the enhanced content
+        content: `You are an API that MUST return ONLY valid JSON with no explanation or code fences. If you cannot comply, return an empty JSON object {}.
 
-        Return format:
-        {
-          "enhanced_content": "A polished, professional version of the note",
-          "key_insights": ["insight1", "insight2"],
-          "action_items": ["action1", "action2"],
-          "risks": ["risk1", "risk2"],
-          "opportunities": ["opportunity1", "opportunity2"],
-          "stakeholders": ["person1", "person2"],
-          "next_steps": ["step1", "step2"]
-        }`
+Task: Organize and enhance a diary-style project note while preserving meaning.
+
+${personalityDirectives}
+
+Return EXACTLY this JSON shape:
+{
+  "enhanced_content": string,
+  "key_insights": string[],
+  "action_items": string[],
+  "risks": string[],
+  "opportunities": string[],
+  "stakeholders": string[],
+  "next_steps": string[]
+}`
       },
       {
         role: 'user',
         content: `Project Context: ${projectContext || 'General project notes'}
         
-        Raw Note Content:
-        ${content}`
+Raw Note Content:
+${content}`
       }
     ];
 
@@ -101,22 +237,27 @@ class LLMService {
   }
 
   async generateTodos({ projectName, projectDescription, recentNotes }: GenerateTodosRequest): Promise<LLMResponse> {
+    const preamble = await this.getGlobalPreamble();
+    const personalityDirectives = await this.getPersonalityDirectives();
     const messages = [
+      ...(preamble ? [{ role: 'system', content: preamble }] : []),
       {
         role: 'system',
         content: `You are an AI assistant helping Tim Verhoogt generate smart, actionable todo items for his projects at Evos Amsterdam. Based on the project context and recent notes, suggest relevant tasks that would help move the project forward.
 
-        CRITICAL: You must respond with ONLY a valid JSON array, no additional text, explanations, or formatting. Do not include any introductory text, comments, or descriptions outside the JSON.
+${personalityDirectives}
 
-        Return exactly this format:
-        [
-          {
-            "title": "Clear, actionable task title",
-            "description": "Detailed description of what needs to be done",
-            "priority": "high|medium|low",
-            "estimated_days": 1-30
-          }
-        ]`
+CRITICAL: You must respond with ONLY a valid JSON array, no additional text, explanations, or formatting. Do not include any introductory text, comments, or descriptions outside the JSON.
+
+Return exactly this format:
+[
+  {
+    "title": "Clear, actionable task title",
+    "description": "Detailed description of what needs to be done",
+    "priority": "high|medium|low",
+    "estimated_days": 1-30
+  }
+]`
       },
       {
         role: 'user',
@@ -138,19 +279,24 @@ class LLMService {
       stakeholder: 'Prepare a stakeholder-friendly report focusing on business impact and outcomes.'
     };
 
+    const preamble = await this.getGlobalPreamble();
+    const personalityDirectives = await this.getPersonalityDirectives();
     const messages = [
+      ...(preamble ? [{ role: 'system', content: preamble }] : []),
       {
         role: 'system',
-        content: `You are helping Tim Verhoogt, continuous improvement advisor at Evos Amsterdam, generate professional reports. 
+        content: `You are helping Tim Verhoogt, continuous improvement advisor at Evos Amsterdam, generate professional reports.
 
-        ${reportPrompts[reportType]}
-        
-        The report should be:
-        - Professional and clear
-        - Appropriate for ${recipient || 'general audience'}
-        - Include relevant metrics and insights
-        - Highlight Tim's analytical and improvement work
-        - Reflect Evos Amsterdam's focus on operational excellence`
+${reportPrompts[reportType]}
+
+${personalityDirectives}
+
+The report should be:
+- Professional and clear
+- Appropriate for ${recipient || 'general audience'}
+- Include relevant metrics and insights
+- Highlight Tim's analytical and improvement work
+- Reflect Evos Amsterdam's focus on operational excellence`
       },
       {
         role: 'user',
@@ -165,6 +311,111 @@ class LLMService {
         ${todos.join('\n- ')}
         
         Please generate a professional report.`
+      }
+    ];
+
+    return await this.callLLM(messages);
+  }
+
+  async estimateTimeline({ projectName, projectDescription, datedTodos, milestones }: EstimateTimelineRequest): Promise<LLMResponse> {
+    const preamble = await this.getGlobalPreamble();
+    const personalityDirectives = await this.getPersonalityDirectives();
+    const messages = [
+      ...(preamble ? [{ role: 'system', content: preamble }] : []),
+      {
+        role: 'system',
+        content: `You are an API that MUST return ONLY valid JSON (no prose, no code fences). If unsure, return {}.
+
+Suggest a project timeline based on existing dated tasks and milestones. Fill likely missing milestone dates and sequence logically. Output an ordered plan and any risks.
+
+${personalityDirectives}
+
+Return EXACTLY this JSON shape:
+{
+  "proposed_milestones": [
+    { "title": string, "target_date": string, "reason": string }
+  ],
+  "timeline_summary": string,
+  "risks": string[]
+}`
+      },
+      {
+        role: 'user',
+        content: `Project: ${projectName}
+Description: ${projectDescription || ''}
+
+Existing dated todos (title | due_date | status):
+${datedTodos.map(t => `- ${t.title} | ${t.due_date || 'n/a'} | ${t.status || 'pending'}`).join('\n') || 'none'}
+
+Existing milestones (title | target_date | status):
+${(milestones || []).map(m => `- ${m.title} | ${m.target_date || 'n/a'} | ${m.status || 'planned'}`).join('\n') || 'none'}`
+      }
+    ];
+
+    return await this.callLLM(messages);
+  }
+
+  async coaching({ message, conversation, projectContext }: { message: string; conversation: any[]; projectContext?: any }): Promise<LLMResponse> {
+    const personalityDirectives = await this.getPersonalityDirectives();
+    
+    // Build conversation context
+    const conversationHistory = conversation?.slice(-6).map(msg => ({
+      role: msg.role === 'coach' ? 'assistant' : 'user',
+      content: msg.content
+    })) || [];
+
+    // Build project context if available
+    let contextInfo = '';
+    if (projectContext) {
+      contextInfo = `
+
+**Current Work Context:**
+- Project: ${projectContext.projectName}
+- Recent work: ${projectContext.recentNotes?.slice(0, 2).join('; ') || 'No recent notes'}
+- Pending tasks: ${projectContext.pendingTodos || 0}
+- Completed tasks: ${projectContext.completedTodos || 0}`;
+    }
+
+    const messages = [
+      {
+        role: 'system',
+        content: `You are Tim Verhoogt's personal AI mentor and coach, specifically designed to provide emotional support, motivation, and professional guidance. Tim is a dedicated Continuous Improvement Advisor at Evos Amsterdam who is skilled and intelligent, but sometimes experiences self-doubt and needs encouragement.
+
+**Your Role:**
+- Supportive mentor who believes in Tim's abilities and potential
+- Empathetic listener who validates feelings while providing constructive guidance
+- Career coach focused on professional growth and confidence building
+- Motivational partner who helps Tim navigate challenges with resilience
+
+**Your Approach:**
+- Be warm, genuine, and personally supportive (not just professional)
+- Acknowledge Tim's feelings and validate his experiences
+- Remind him of his strengths, skills, and past successes
+- Provide practical advice while building confidence
+- Use encouraging language that combats self-doubt
+- Reference his role in continuous improvement and operational excellence
+- Balance empathy with actionable guidance
+
+**Communication Style:**
+- Conversational and personal, not formal or clinical
+- Use "you" statements that are empowering and affirming
+- Ask thoughtful questions that promote self-reflection
+- Share insights that connect to his work and goals
+- Be genuine - avoid generic platitudes, make it personal to Tim's situation
+
+${personalityDirectives}
+
+**Key Principles:**
+- Confidence comes from recognizing achievements and taking action
+- Challenges are growth opportunities, and Tim has the skills to handle them
+- His work in continuous improvement creates real value at Evos Amsterdam
+- It's normal for smart professionals to experience uncertainty - it shows thoughtfulness
+- Tim's willingness to seek support demonstrates emotional intelligence${contextInfo}`
+      },
+      ...conversationHistory,
+      {
+        role: 'user',
+        content: message
       }
     ];
 

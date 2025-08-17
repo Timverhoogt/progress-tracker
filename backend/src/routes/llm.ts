@@ -66,4 +66,41 @@ router.post('/generate-report', async (req, res) => {
   }
 });
 
+// GET /api/llm/generated-prompt - Get the generated system prompt text
+router.get('/generated-prompt', async (req, res) => {
+  try {
+    const generatedPrompt = llmService.getGeneratedSystemPrompt();
+    res.json({ success: true, data: generatedPrompt });
+  } catch (error) {
+    console.error('Error getting generated prompt:', error);
+    res.status(500).json({ error: 'Failed to get generated prompt' });
+  }
+});
+
+// POST /api/llm/coaching - AI coaching conversation
+router.post('/coaching', async (req, res) => {
+  try {
+    const { message, conversation, projectContext } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    
+    const result = await llmService.coaching({
+      message,
+      conversation: conversation || [],
+      projectContext
+    });
+    
+    if (result.success) {
+      res.json({ success: true, data: result.data });
+    } else {
+      res.status(500).json({ error: result.error || 'Failed to generate coaching response' });
+    }
+  } catch (error) {
+    console.error('Error in coaching conversation:', error);
+    res.status(500).json({ error: 'Failed to process coaching message' });
+  }
+});
+
 export default router;

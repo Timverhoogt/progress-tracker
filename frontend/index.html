@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Progress Tracker - Tim Verhoogt @ Evos Amsterdam</title>
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#667eea">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Progress">
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -48,8 +56,17 @@
             <button class="nav-tab" data-tab="todos">
                 <i class="fas fa-tasks"></i> Todos
             </button>
+            <button class="nav-tab" data-tab="timelines">
+                <i class="fas fa-stream"></i> Timelines
+            </button>
             <button class="nav-tab" data-tab="reports">
                 <i class="fas fa-file-alt"></i> Reports
+            </button>
+            <button class="nav-tab" data-tab="coaching">
+                <i class="fas fa-heart"></i> Coaching
+            </button>
+            <button class="nav-tab" data-tab="settings">
+                <i class="fas fa-cog"></i> Settings
             </button>
         </nav>
 
@@ -83,6 +100,12 @@
                             placeholder="Write your thoughts, observations, or progress updates here... The AI will enhance and organize your notes automatically."
                             rows="6"
                         ></textarea>
+                        <div class="note-input-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+                            <button class="voice-btn" id="recordVoiceBtn" title="Record voice note">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <span id="recordStatus" class="record-status"></span>
+                        </div>
                         <button class="btn btn-primary" id="addNoteBtn">
                             <i class="fas fa-magic"></i> Add & Enhance Note
                         </button>
@@ -129,6 +152,415 @@
                 </div>
                 <div class="reports-list" id="reportsList">
                     <!-- Reports will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Timelines Tab -->
+            <div id="timelines" class="tab-content">
+                <div class="tab-header">
+                    <h2>Project Timelines</h2>
+                    <div class="tab-controls">
+                        <select class="project-selector" id="timelinesProjectSelector">
+                            <option value="">Select a project...</option>
+                        </select>
+                        <button class="btn btn-secondary" id="estimateTimelineBtn">
+                            <i class="fas fa-robot"></i> AI Estimate
+                        </button>
+                        <button class="btn btn-primary" id="newMilestoneBtn">
+                            <i class="fas fa-flag"></i> Add Milestone
+                        </button>
+                    </div>
+                </div>
+                <div class="timeline-container" id="timelineContainer">
+                    <!-- Timeline items will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Coaching Tab -->
+            <div id="coaching" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-heart"></i> AI Mentor & Coach</h2>
+                    <p class="tab-description">Your personal AI coach for motivation, guidance, and professional growth</p>
+                </div>
+                
+                <div class="coaching-container">
+                    <!-- Welcome Section -->
+                    <div class="coaching-welcome" id="coachingWelcome">
+                        <div class="mentor-avatar">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="welcome-content">
+                            <h3>Hello Tim! 👋</h3>
+                            <p>I'm here to support you on your continuous improvement journey at Evos Amsterdam. Whether you need motivation, want to discuss challenges, or seek guidance on your professional growth, I'm here to listen and help.</p>
+                            <div class="quick-topics">
+                                <span class="topic-label">Quick topics:</span>
+                                <button class="topic-btn" onclick="startConversation('motivation')">
+                                    <i class="fas fa-rocket"></i> Need motivation
+                                </button>
+                                <button class="topic-btn" onclick="startConversation('challenge')">
+                                    <i class="fas fa-mountain"></i> Facing challenges
+                                </button>
+                                <button class="topic-btn" onclick="startConversation('growth')">
+                                    <i class="fas fa-chart-line"></i> Career growth
+                                </button>
+                                <button class="topic-btn" onclick="startConversation('confidence')">
+                                    <i class="fas fa-shield-alt"></i> Building confidence
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Interface -->
+                    <div class="coaching-chat" id="coachingChat" style="display: none;">
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- Messages will be dynamically added here -->
+                        </div>
+                        
+                        <div class="chat-input-section">
+                            <form id="coachingForm" class="chat-form">
+                                <div class="input-group">
+                                    <textarea id="coachingInput" 
+                                        placeholder="Share what's on your mind... I'm here to listen and support you."
+                                        rows="3"></textarea>
+                                    <button type="submit" class="send-btn">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                            <div class="chat-actions">
+                                <button type="button" class="btn btn-outline" onclick="clearConversation()">
+                                    <i class="fas fa-refresh"></i> New conversation
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="showWelcome()">
+                                    <i class="fas fa-home"></i> Back to welcome
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Insights Panel -->
+                    <div class="coaching-insights">
+                        <div class="insights-header">
+                            <h4><i class="fas fa-lightbulb"></i> Today's Insight</h4>
+                        </div>
+                        <div class="insight-content" id="dailyInsight">
+                            <p><em>Your growth as a continuous improvement advisor comes not just from solving problems, but from the courage to tackle new challenges with confidence.</em></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="tab-header">
+                    <h2>Settings</h2>
+                </div>
+                <div class="settings-container">
+                    <!-- Email Settings Section -->
+                    <div class="settings-section">
+                        <h3><i class="fas fa-envelope"></i> Email Configuration</h3>
+                            <div class="settings-card">
+                                <form id="emailSettingsForm" class="grid-form">
+                                <div class="form-group">
+                                    <label for="weeklyReportEmail">Weekly Report Email Address</label>
+                                    <input type="email" id="weeklyReportEmail" placeholder="Enter your email address">
+                                    <small class="form-help">This email will receive automated weekly progress reports</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="weeklyReportRecipients">Additional Recipients (comma-separated)</label>
+                                    <input type="text" id="weeklyReportRecipients" placeholder="e.g. manager@company.com, teamlead@company.com">
+                                    <small class="form-help">Optional: add multiple emails separated by commas</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="weeklyReportsEnabled">
+                                        <span class="checkmark"></span>
+                                        Enable Weekly Reports
+                                    </label>
+                                    <small class="form-help">Automatically send weekly progress summaries every Monday at 9 AM</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="reportSchedule">Report Schedule (Cron Format)</label>
+                                    <input type="text" id="reportSchedule" placeholder="0 9 * * 1">
+                                    <small class="form-help">Default: Every Monday at 9 AM (0 9 * * 1)</small>
+                                </div>
+                                
+                                    <div class="form-group">
+                                        <label for="primaryProject">Primary Project</label>
+                                        <select id="primaryProject" class="project-selector">
+                                            <option value="">Select project for AI status...</option>
+                                        </select>
+                                        <small class="form-help">Weekly email can include an AI status for this project</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Preview Options</label>
+                                        <div class="chips">
+                                            <span class="chip" data-template="self">Self</span>
+                                            <span class="chip" data-template="manager">Manager</span>
+                                            <span class="chip" data-template="company">Company</span>
+                                        </div>
+                                        <div class="checkbox-row">
+                                            <label><input type="checkbox" id="includeNotes" checked> Include Notes</label>
+                                            <label><input type="checkbox" id="includeTodos" checked> Include Tasks</label>
+                                            <label><input type="checkbox" id="useAiStatus" checked> Include AI Project Status</label>
+                                            <label><input type="checkbox" id="narrativeOnly" checked> Narrative Only (no raw lists)</label>
+                                        </div>
+                                        <div class="form-actions" style="margin-top:8px;">
+                                            <button type="button" class="btn btn-secondary" id="previewWeeklyBtn">
+                                                <i class="fas fa-eye"></i> Preview Weekly Email
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save Settings
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="testEmailBtn">
+                                        <i class="fas fa-paper-plane"></i> Send Test Email
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                        <!-- Profiles Section -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-users-cog"></i> Recipient Groups & Templates</h3>
+                            <div class="settings-card">
+                                <div class="settings-info">
+                                    <div id="profilesList"></div>
+                                    <div class="form-actions" style="margin-top:12px;">
+                                        <button type="button" class="btn btn-secondary" id="addProfileBtn">
+                                            <i class="fas fa-plus"></i> Add Group
+                                        </button>
+                                        <button type="button" class="btn btn-primary" id="saveProfilesBtn">
+                                            <i class="fas fa-save"></i> Save Groups
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Weekly Reports Section -->
+                    <div class="settings-section">
+                        <h3><i class="fas fa-calendar-week"></i> Weekly Reports</h3>
+                        <div class="settings-card">
+                            <div class="settings-info">
+                                <div class="settings-status" id="reportsStatus">
+                                    <div class="status-item">
+                                        <span class="status-label">Status:</span>
+                                        <span class="status-value" id="reportsStatusValue">Loading...</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">Next Report:</span>
+                                        <span class="status-value" id="nextReportTime">Loading...</span>
+                                    </div>
+                                    <div class="status-item">
+                                        <span class="status-label">SendGrid:</span>
+                                        <span class="status-value" id="sendgridStatus">Loading...</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="settings-actions">
+                                    <button type="button" class="btn btn-primary" id="generateWeeklyBtn">
+                                        <i class="fas fa-file-export"></i> Generate Weekly Report Now
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="refreshStatusBtn">
+                                        <i class="fas fa-sync"></i> Refresh Status
+                                    </button>
+                                    <button type="button" class="btn btn-warning" id="restartSchedulerBtn">
+                                        <i class="fas fa-clock"></i> Restart Scheduler
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SendGrid Configuration -->
+                    <div class="settings-section" id="sendgridConfigSection">
+                        <h3><i class="fas fa-mail-bulk"></i> SendGrid Configuration</h3>
+                        <div class="settings-card">
+                            <div class="settings-info">
+                                <p>SendGrid is configured via environment variables on the server.</p>
+                                <div class="config-steps">
+                                    <h4>Setup Instructions:</h4>
+                                    <ol>
+                                        <li>Get your SendGrid API key from <a href="https://sendgrid.com" target="_blank">SendGrid Dashboard</a></li>
+                                        <li>Update your <code>.env</code> file with:</li>
+                                        <pre><code>SENDGRID_API_KEY=your_api_key_here</code></pre>
+                                        <li>Restart the application</li>
+                                        <li>Test the configuration using the "Send Test Email" button above</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Assistant Configuration -->
+                    <div class="settings-section">
+                        <h3><i class="fas fa-robot"></i> AI Assistant Configuration</h3>
+                        <div class="settings-card">
+                            <p class="settings-intro">
+                                Customize how the AI assistant communicates across all features including note enhancement, 
+                                todo generation, reports, and timeline analysis. Changes apply immediately to new AI requests.
+                            </p>
+                            
+                            <form id="llmSettingsForm" class="grid-form">
+                                <!-- Preset Templates -->
+                                <div class="form-group">
+                                    <label for="llmPresetTemplate">Role Template</label>
+                                    <select id="llmPresetTemplate">
+                                        <option value="default">Default Assistant</option>
+                                        <option value="consultant">Management Consultant</option>
+                                        <option value="analyst">Business Analyst</option>
+                                        <option value="manager">Project Manager</option>
+                                        <option value="technical">Technical Expert</option>
+                                        <option value="creative">Creative Strategist</option>
+                                    </select>
+                                    <small class="form-help">
+                                        <strong>Default:</strong> Tim's AI assistant for continuous improvement<br>
+                                        <strong>Consultant:</strong> Strategic recommendations and process improvement<br>
+                                        <strong>Analyst:</strong> Data-driven insights and systematic evaluation<br>
+                                        <strong>Manager:</strong> Execution focus, timelines, and coordination<br>
+                                        <strong>Technical:</strong> Implementation details and technical best practices<br>
+                                        <strong>Creative:</strong> Innovation and out-of-the-box thinking
+                                    </small>
+                                </div>
+
+                                <!-- Communication Style -->
+                                <div class="form-group">
+                                    <label for="llmTone">Communication Style</label>
+                                    <select id="llmTone">
+                                        <option value="professional">Professional</option>
+                                        <option value="friendly">Friendly</option>
+                                        <option value="formal">Formal</option>
+                                        <option value="concise">Concise</option>
+                                        <option value="enthusiastic">Enthusiastic</option>
+                                        <option value="analytical">Analytical</option>
+                                        <option value="creative">Creative</option>
+                                    </select>
+                                    <small class="form-help">
+                                        <strong>Professional:</strong> Clear, business-appropriate language<br>
+                                        <strong>Friendly:</strong> Warm, approachable, and supportive tone<br>
+                                        <strong>Formal:</strong> Strict formality and business language<br>
+                                        <strong>Concise:</strong> Direct, brief, eliminate unnecessary words<br>
+                                        <strong>Enthusiastic:</strong> Positive energy and excitement<br>
+                                        <strong>Analytical:</strong> Data-focused, logical, structured<br>
+                                        <strong>Creative:</strong> Innovative thinking and creative solutions
+                                    </small>
+                                </div>
+
+                                <!-- Detail Level -->
+                                <div class="form-group">
+                                    <label for="llmDetailLevel">Response Detail Level</label>
+                                    <select id="llmDetailLevel">
+                                        <option value="brief">Brief</option>
+                                        <option value="balanced">Balanced</option>
+                                        <option value="detailed">Detailed</option>
+                                        <option value="comprehensive">Comprehensive</option>
+                                    </select>
+                                    <small class="form-help">
+                                        <strong>Brief:</strong> Essential information only, very concise<br>
+                                        <strong>Balanced:</strong> Adequate detail without being verbose<br>
+                                        <strong>Detailed:</strong> Comprehensive explanations and analysis<br>
+                                        <strong>Comprehensive:</strong> Exhaustive coverage with examples and context
+                                    </small>
+                                </div>
+
+                                <!-- Language Preference -->
+                                <div class="form-group">
+                                    <label for="llmLanguage">Primary Language</label>
+                                    <select id="llmLanguage">
+                                        <option value="auto">Auto-detect</option>
+                                        <option value="english">English</option>
+                                        <option value="dutch">Dutch (Nederlands)</option>
+                                        <option value="german">German (Deutsch)</option>
+                                        <option value="french">French (Français)</option>
+                                        <option value="spanish">Spanish (Español)</option>
+                                    </select>
+                                    <small class="form-help">
+                                        AI will primarily respond in this language unless specifically asked otherwise. 
+                                        Auto-detect uses context clues from your input.
+                                    </small>
+                                </div>
+
+                                <!-- System Prompt Configuration -->
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label>System Instructions Mode</label>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="llmSystemPromptMode" value="generated" id="llmPromptModeGenerated" checked>
+                                            <span class="radio-label">
+                                                <strong>Generated Prompt</strong>
+                                                <small>Use our optimized system prompt designed for your role at Evos Amsterdam</small>
+                                            </span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="llmSystemPromptMode" value="custom" id="llmPromptModeCustom">
+                                            <span class="radio-label">
+                                                <strong>Custom Prompt</strong>
+                                                <small>Write your own system instructions</small>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Generated Prompt Preview -->
+                                <div class="form-group" style="grid-column: 1 / -1;" id="generatedPromptPreview">
+                                    <label>Generated System Prompt Preview</label>
+                                    <div class="prompt-preview" id="generatedPromptText">
+                                        Loading generated prompt...
+                                    </div>
+                                    <small class="form-help">
+                                        This prompt is specifically designed for Tim Verhoogt's role as Continuous Improvement Advisor at Evos Amsterdam.
+                                        It includes context about operational excellence, project management, and professional communication standards.
+                                    </small>
+                                </div>
+
+                                <!-- Custom System Prompt -->
+                                <div class="form-group" style="grid-column: 1 / -1; display: none;" id="customPromptSection">
+                                    <label for="llmSystemPrompt">
+                                        Custom System Instructions
+                                    </label>
+                                    <textarea id="llmSystemPrompt" rows="6" 
+                                        placeholder="Add global instructions that apply to all AI interactions. Examples:&#10;&#10;• Always include implementation timelines&#10;• Focus on cost-benefit analysis&#10;• Prioritize sustainable solutions&#10;• Consider regulatory compliance&#10;• Use Evos-specific terminology"></textarea>
+                                    <small class="form-help">
+                                        <strong>⚠️ Important:</strong> These instructions are sent with every AI request. 
+                                        Keep them focused and avoid conflicting with task-specific requirements like JSON formatting.
+                                        <br><br>
+                                        <strong>Good examples:</strong> "Focus on sustainable solutions", "Include cost considerations", "Prefer Dutch responses"<br>
+                                        <strong>Avoid:</strong> "Always respond in JSON format" (conflicts with some tasks)
+                                    </small>
+                                </div>
+
+                                <!-- Preview Section -->
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label>Configuration Preview</label>
+                                    <div id="llmPreview" class="llm-preview">
+                                        <div class="preview-section">
+                                            <strong>Current Configuration:</strong>
+                                            <div id="previewText" class="preview-text">Select your preferences above to see how they combine.</div>
+                                        </div>
+                                    </div>
+                                    <small class="form-help">This shows how your settings will be interpreted by the AI assistant.</small>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-secondary" id="resetLlmDefaults">
+                                        <i class="fas fa-undo"></i> Reset to Defaults
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save Configuration
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -231,6 +663,20 @@
                     <button type="submit" class="btn btn-primary">Generate Report</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>Weekly Email Preview</h3>
+                <button class="modal-close" id="closePreviewModal">&times;</button>
+            </div>
+            <iframe id="previewFrame" style="width:100%; height:70vh; border:0;"></iframe>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closePreviewBtn">Close</button>
+            </div>
         </div>
     </div>
 
