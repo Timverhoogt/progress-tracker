@@ -1860,6 +1860,9 @@ function startConversation(topic) {
     addCoachMessage(message);
 }
 
+// Make functions globally available for HTML onclick handlers
+window.startConversation = startConversation;
+
 function showCoachingChat() {
     document.getElementById('coachingWelcome').style.display = 'none';
     document.getElementById('coachingChat').style.display = 'flex';
@@ -1877,6 +1880,10 @@ function clearConversation() {
     document.getElementById('coachingInput').value = '';
     updateDailyInsight();
 }
+
+// Add more functions to global scope
+window.showWelcome = showWelcome;
+window.clearConversation = clearConversation;
 
 function addUserMessage(message) {
     const messagesContainer = document.getElementById('chatMessages');
