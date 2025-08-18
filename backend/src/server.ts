@@ -14,6 +14,15 @@ import reportRoutes from './routes/reports';
 import settingsRoutes from './routes/settings';
 import timelineRoutes from './routes/timelines';
 
+// AI-powered personal development routes
+import preferencesRoutes from './routes/preferences';
+import skillsRoutes from './routes/skills';
+import achievementsRoutes from './routes/achievements';
+import moodRoutes from './routes/mood';
+import learningRoutes from './routes/learning';
+import coachingRoutes from './routes/coaching';
+import reflectionsRoutes from './routes/reflections';
+
 // Import services
 import schedulerService from './services/scheduler';
 import settingsService from './services/settings';
@@ -84,6 +93,15 @@ app.use('/api/llm', llmRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/timelines', timelineRoutes);
+
+// AI-powered personal development routes
+app.use('/api/preferences', preferencesRoutes);
+app.use('/api/skills', skillsRoutes);
+app.use('/api/achievements', achievementsRoutes);
+app.use('/api/mood', moodRoutes);
+app.use('/api/learning', learningRoutes);
+app.use('/api/coaching', coachingRoutes);
+app.use('/api/reflections', reflectionsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

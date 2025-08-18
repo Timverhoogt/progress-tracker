@@ -1,5 +1,6 @@
 import { initializeDatabase } from './sqlite';
 import { v4 as uuidv4 } from 'uuid';
+import { createAITables } from './migrate-ai-features';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -138,6 +139,7 @@ const createTables = async () => {
 
 const main = async () => {
   await createTables();
+  await createAITables();
   console.log('🚀 Database migration completed!');
 };
 

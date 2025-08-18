@@ -53,9 +53,19 @@ const elements = {
     
     // Timelines
     timelinesProjectSelector: document.getElementById('timelinesProjectSelector'),
+    timelineZoom: document.getElementById('timelineZoom'),
     estimateTimelineBtn: document.getElementById('estimateTimelineBtn'),
+    exportTimelineBtn: document.getElementById('exportTimelineBtn'),
     newMilestoneBtn: document.getElementById('newMilestoneBtn'),
     timelineContainer: document.getElementById('timelineContainer'),
+    
+    // Milestone Modal
+    milestoneModal: document.getElementById('milestoneModal'),
+    milestoneForm: document.getElementById('milestoneForm'),
+    milestoneTitle: document.getElementById('milestoneTitle'),
+    milestoneDescription: document.getElementById('milestoneDescription'),
+    milestoneTargetDate: document.getElementById('milestoneTargetDate'),
+    milestoneStatus: document.getElementById('milestoneStatus'),
     
     // Loading
     loadingOverlay: document.getElementById('loadingOverlay')
@@ -243,6 +253,18 @@ async function loadTabContent(tab) {
             console.log('🏷️ TAB DEBUG: Loading settings tab');
             await loadSettings();
             break;
+        case 'skills':
+            console.log('🏷️ TAB DEBUG: Loading skills tab');
+            await loadSkills();
+            break;
+        case 'achievements':
+            console.log('🏷️ TAB DEBUG: Loading achievements tab');
+            await loadAchievements();
+            break;
+        case 'reflections':
+            console.log('🏷️ TAB DEBUG: Loading reflections tab');
+            await loadReflections();
+            break;
     }
     console.log('🏷️ TAB DEBUG: Tab content loaded for:', tab);
 }
@@ -399,6 +421,13 @@ function bindTimelineEvents() {
             if (currentProject) await loadTimeline(currentProject);
         };
     }
+    
+    if (elements.timelineZoom) {
+        elements.timelineZoom.onchange = async () => {
+            if (currentProject) await loadTimeline(currentProject);
+        };
+    }
+    
     if (elements.estimateTimelineBtn) {
         elements.estimateTimelineBtn.onclick = async () => {
             if (!currentProject) { showError('Please select a project'); return; }
@@ -419,22 +448,255 @@ function bindTimelineEvents() {
             }
         };
     }
-    if (elements.newMilestoneBtn) {
-        elements.newMilestoneBtn.onclick = async () => {
-            if (!currentProject) { showError('Please select a project'); return; }
-            const title = prompt('Milestone title');
-            if (!title) return;
-            const target_date = prompt('Target date (YYYY-MM-DD)');
-            try {
-                showLoading();
-                await api.createMilestone({ project_id: currentProject, title, target_date });
-                await loadTimeline(currentProject);
-            } catch {
-                showError('Failed to create milestone');
-            } finally {
-                hideLoading();
+    
+    if (elements.exportTimelineBtn) {
+        elements.exportTimelineBtn.onclick = async () => {
+            if (!currentProject) { 
+                showError('Please select a project'); 
+                return; 
             }
+            await exportTimeline();
         };
+    }
+    
+    if (elements.newMilestoneBtn) {
+        elements.newMilestoneBtn.onclick = () => {
+            if (!currentProject) { 
+                showError('Please select a project'); 
+                return; 
+            }
+            openMilestoneModal();
+        };
+    }
+}
+
+// Export Timeline
+async function exportTimeline() {
+    try {
+        showLoading();
+        
+        // Get current project and timeline data
+        const project = projects.find(p => p.id === currentProject);
+        if (!project) {
+            showError('Project not found');
+            return;
+        }
+        
+        const data = await api.getTimeline(currentProject);
+        const zoomFilter = elements.timelineZoom?.value || 'all';
+        
+        // Prepare timeline items
+        const allItems = [
+            ...data.milestones.map(m => ({
+                type: 'milestone',
+                date: m.target_date,
+                title: m.title,
+                description: m.description,
+                status: m.status
+            })),
+            ...data.todos.map(t => ({
+                type: 'todo',
+                date: t.due_date,
+                title: t.title,
+                description: t.description,
+                status: t.status
+            }))
+        ].filter(i => i.date);
+        
+        const items = filterTimelineItems(allItems, zoomFilter);
+        
+        // Create export content
+        const exportContent = generateTimelineExport(project, items, zoomFilter);
+        
+        // Show export options
+        showExportOptions(exportContent, `${project.name}_timeline`);
+        
+    } catch (error) {
+        showError('Failed to export timeline');
+    } finally {
+        hideLoading();
+    }
+}
+
+function generateTimelineExport(project, items, filter) {
+    const filterLabel = getZoomFilterLabel(filter);
+    const date = new Date().toLocaleDateString();
+    
+    let content = `PROJECT TIMELINE EXPORT\n`;
+    content += `========================\n\n`;
+    content += `Project: ${project.name}\n`;
+    content += `Description: ${project.description || 'No description'}\n`;
+    content += `Filter: ${filterLabel}\n`;
+    content += `Export Date: ${date}\n`;
+    content += `Total Items: ${items.length}\n\n`;
+    
+    if (items.length === 0) {
+        content += `No timeline items found for ${filterLabel}.\n`;
+        return content;
+    }
+    
+    // Group by type
+    const milestones = items.filter(i => i.type === 'milestone');
+    const todos = items.filter(i => i.type === 'todo');
+    
+    if (milestones.length > 0) {
+        content += `MILESTONES\n`;
+        content += `==========\n`;
+        milestones.forEach(item => {
+            content += `• ${item.title}\n`;
+            content += `  Date: ${item.date}\n`;
+            content += `  Status: ${item.status || 'planned'}\n`;
+            if (item.description) {
+                content += `  Description: ${item.description}\n`;
+            }
+            content += `\n`;
+        });
+    }
+    
+    if (todos.length > 0) {
+        content += `TASKS\n`;
+        content += `=====\n`;
+        todos.forEach(item => {
+            content += `• ${item.title}\n`;
+            content += `  Due Date: ${item.date}\n`;
+            content += `  Status: ${item.status || 'pending'}\n`;
+            if (item.description) {
+                content += `  Description: ${item.description}\n`;
+            }
+            content += `\n`;
+        });
+    }
+    
+    return content;
+}
+
+function showExportOptions(content, filename) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Export Timeline</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Choose export format:</p>
+                <div class="export-options" style="display: flex; gap: 12px; margin: 16px 0;">
+                    <button class="btn btn-primary" id="exportTxt">
+                        <i class="fas fa-file-text"></i> Text File
+                    </button>
+                    <button class="btn btn-secondary" id="exportClipboard">
+                        <i class="fas fa-clipboard"></i> Copy to Clipboard
+                    </button>
+                    <button class="btn btn-secondary" id="exportPrint">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+                <textarea readonly style="width: 100%; height: 300px; font-family: monospace; font-size: 0.9rem;">${content}</textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeExportModal">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Export handlers
+    modal.querySelector('#exportTxt').onclick = () => {
+        downloadAsFile(content, `${filename}.txt`, 'text/plain');
+        document.body.removeChild(modal);
+    };
+    
+    modal.querySelector('#exportClipboard').onclick = async () => {
+        try {
+            await navigator.clipboard.writeText(content);
+            showSuccess('Timeline copied to clipboard');
+            document.body.removeChild(modal);
+        } catch (error) {
+            showError('Failed to copy to clipboard');
+        }
+    };
+    
+    modal.querySelector('#exportPrint').onclick = () => {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>${filename}</title>
+                    <style>
+                        body { font-family: monospace; margin: 40px; line-height: 1.5; }
+                        h1 { color: #333; }
+                        pre { white-space: pre-wrap; }
+                    </style>
+                </head>
+                <body>
+                    <pre>${content}</pre>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+        document.body.removeChild(modal);
+    };
+    
+    modal.querySelector('.modal-close').onclick = () => {
+        document.body.removeChild(modal);
+    };
+    
+    modal.querySelector('#closeExportModal').onclick = () => {
+        document.body.removeChild(modal);
+    };
+}
+
+function downloadAsFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Milestone Modal Functions
+function openMilestoneModal(milestoneData = null) {
+    if (milestoneData) {
+        // Edit mode
+        document.getElementById('milestoneModalTitle').textContent = 'Edit Milestone';
+        elements.milestoneTitle.value = milestoneData.title || '';
+        elements.milestoneDescription.value = milestoneData.description || '';
+        elements.milestoneTargetDate.value = milestoneData.target_date || '';
+        elements.milestoneStatus.value = milestoneData.status || 'planned';
+        elements.milestoneForm.dataset.editId = milestoneData.id;
+    } else {
+        // Create mode
+        document.getElementById('milestoneModalTitle').textContent = 'New Milestone';
+        elements.milestoneForm.reset();
+        delete elements.milestoneForm.dataset.editId;
+    }
+    showModal(elements.milestoneModal);
+}
+
+async function saveMilestone(data) {
+    const editId = elements.milestoneForm.dataset.editId;
+    
+    try {
+        showLoading();
+        if (editId) {
+            await api.updateMilestone(editId, data);
+        } else {
+            await api.createMilestone({ ...data, project_id: currentProject });
+        }
+        await loadTimeline(currentProject);
+        hideModal(elements.milestoneModal);
+        showSuccess(editId ? 'Milestone updated' : 'Milestone created');
+    } catch (error) {
+        showError(editId ? 'Failed to update milestone' : 'Failed to create milestone');
+    } finally {
+        hideLoading();
     }
 }
 
@@ -458,8 +720,12 @@ async function loadTimeline(projectId) {
     }
 }
 
+let currentTimelineData = null;
+
 function renderTimeline(data) {
-    const items = [
+    currentTimelineData = data;
+    const now = new Date();
+    let allItems = [
         ...data.milestones.map(m => ({
             type: 'milestone',
             date: m.target_date,
@@ -476,27 +742,58 @@ function renderTimeline(data) {
             status: t.status,
             id: t.id
         }))
-    ].filter(i => i.date).sort((a,b) => new Date(a.date) - new Date(b.date));
+    ].filter(i => i.date).map(item => {
+        // Check for overdue items
+        const itemDate = new Date(item.date);
+        const isOverdue = itemDate < now && item.status !== 'completed' && item.status !== 'cancelled';
+        return {
+            ...item,
+            isOverdue,
+            statusClass: isOverdue ? 'overdue' : (item.status || 'pending').replace('_', '-')
+        };
+    }).sort((a,b) => new Date(a.date) - new Date(b.date));
+    
+    // Apply zoom filter
+    const zoomFilter = elements.timelineZoom?.value || 'all';
+    const items = filterTimelineItems(allItems, zoomFilter);
+    const totalCount = allItems.length;
 
     if (items.length === 0) {
+        const emptyMessage = totalCount === 0 
+            ? 'No timeline items yet'
+            : `No items for ${getZoomFilterLabel(zoomFilter)}`;
+        const emptySubtext = totalCount === 0 
+            ? 'Add due dates to todos or create milestones'
+            : `${totalCount} total items available - try a different time range`;
+            
         elements.timelineContainer.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-stream"></i>
-                <h3>No timeline items yet</h3>
-                <p>Add due dates to todos or create milestones</p>
+                <h3>${emptyMessage}</h3>
+                <p>${emptySubtext}</p>
             </div>`;
         return;
     }
 
+    const filterInfo = totalCount !== items.length 
+        ? `<div class="timeline-filter-info">
+            Showing <span class="filter-count">${items.length}</span> of ${totalCount} items for ${getZoomFilterLabel(zoomFilter)}
+           </div>`
+        : '';
+
     elements.timelineContainer.innerHTML = `
+        ${filterInfo}
         <div class="timeline">
             ${items.map(it => `
-                <div class="timeline-item ${it.type}" draggable="true" data-type="${it.type}" data-id="${it.id}" data-date="${it.date}">
+                <div class="timeline-item ${it.type} status-${it.statusClass}" draggable="true" data-type="${it.type}" data-id="${it.id}" data-date="${it.date}">
                     <div class="timeline-date">${escapeHtml(it.date)}</div>
                     <div class="timeline-content">
                         <div class="timeline-title">${it.type === 'milestone' ? '<i class="fas fa-flag"></i>' : '<i class="fas fa-check-square"></i>'} ${escapeHtml(it.title)}</div>
                         ${it.description ? `<div class="timeline-desc">${escapeHtml(it.description)}</div>` : ''}
-                        <div class="timeline-meta">${escapeHtml(it.status || '')}</div>
+                        <div class="timeline-meta">
+                            <span class="timeline-status-badge ${it.statusClass}">${it.isOverdue ? 'Overdue' : (it.status || 'pending').replace('_', ' ')}</span>
+                            ${it.isOverdue ? '<i class="fas fa-exclamation-triangle" style="color: #dc2626; margin-left: 8px;" title="Overdue"></i>' : ''}
+                        </div>
                         ${it.type === 'milestone' ? `<div class="timeline-actions">
                             <button class="btn btn-small" data-action="edit" data-id="${it.id}"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-small btn-danger" data-action="delete" data-id="${it.id}"><i class="fas fa-trash"></i></button>
@@ -526,16 +823,12 @@ function renderTimeline(data) {
     elements.timelineContainer.querySelectorAll('[data-action="edit"]').forEach(btn => {
         btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-id');
-            const title = prompt('New title');
-            const target_date = prompt('New target date (YYYY-MM-DD)');
-            try {
-                showLoading();
-                await api.updateMilestone(id, { title, target_date });
-                await loadTimeline(currentProject);
-            } catch {
-                showError('Failed to update milestone');
-            } finally {
-                hideLoading();
+            // Get milestone data from current timeline data instead of API call
+            const milestoneData = currentTimelineData?.milestones?.find(m => m.id === id);
+            if (milestoneData) {
+                openMilestoneModal(milestoneData);
+            } else {
+                showError('Milestone not found');
             }
         });
     });
@@ -1635,6 +1928,33 @@ function initModals() {
         });
     }
 
+    // Milestone Modal
+    if (elements.milestoneForm) {
+        elements.milestoneForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!currentProject) {
+                showError('Please select a project first');
+                return;
+            }
+
+            const title = elements.milestoneTitle.value.trim();
+            if (!title) {
+                showError('Please enter a milestone title');
+                return;
+            }
+
+            const data = {
+                title,
+                description: elements.milestoneDescription.value.trim() || null,
+                target_date: elements.milestoneTargetDate.value || null,
+                status: elements.milestoneStatus.value
+            };
+
+            await saveMilestone(data);
+        });
+    }
+
     // Report Modal
     if (elements.generateReportBtn) {
         elements.generateReportBtn.addEventListener('click', () => {
@@ -1817,6 +2137,54 @@ function initEventHandlers() {
             hideLoading();
         }
     });
+}
+
+// Timeline Filter Functions
+function filterTimelineItems(items, filter) {
+    if (filter === 'all') return items;
+    
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfDay);
+    startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfQuarter = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const endOfQuarter = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 + 3, 0);
+    const endOfYear = new Date(now.getFullYear() + 1, 0, 0);
+    
+    return items.filter(item => {
+        const itemDate = new Date(item.date);
+        if (isNaN(itemDate.getTime())) return false; // Skip invalid dates
+        
+        switch (filter) {
+            case 'week':
+                return itemDate >= startOfWeek && itemDate <= endOfWeek;
+            case 'month':
+                return itemDate >= startOfMonth && itemDate <= endOfMonth;
+            case 'quarter':
+                return itemDate >= startOfQuarter && itemDate <= endOfQuarter;
+            case 'year':
+                return itemDate >= startOfYear && itemDate <= endOfYear;
+            default:
+                return true;
+        }
+    });
+}
+
+function getZoomFilterLabel(filter) {
+    const labels = {
+        all: 'all time',
+        week: 'this week',
+        month: 'this month',
+        quarter: 'this quarter',
+        year: 'this year'
+    };
+    return labels[filter] || 'selected period';
 }
 
 // Utility Functions
@@ -2106,6 +2474,744 @@ function initCoaching() {
     updateDailyInsight();
 }
 
+// Keyboard Shortcuts
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Only trigger when not in input fields
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+            return;
+        }
+        
+        // Check if we're on the timeline tab
+        const timelineTab = document.querySelector('[data-tab="timelines"]');
+        const isTimelineActive = timelineTab?.classList.contains('active');
+        
+        if (!isTimelineActive) return;
+        
+        // Timeline keyboard shortcuts
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key) {
+                case '1':
+                    e.preventDefault();
+                    if (elements.timelineZoom) {
+                        elements.timelineZoom.value = 'week';
+                        elements.timelineZoom.dispatchEvent(new Event('change'));
+                    }
+                    break;
+                case '2':
+                    e.preventDefault();
+                    if (elements.timelineZoom) {
+                        elements.timelineZoom.value = 'month';
+                        elements.timelineZoom.dispatchEvent(new Event('change'));
+                    }
+                    break;
+                case '3':
+                    e.preventDefault();
+                    if (elements.timelineZoom) {
+                        elements.timelineZoom.value = 'quarter';
+                        elements.timelineZoom.dispatchEvent(new Event('change'));
+                    }
+                    break;
+                case '4':
+                    e.preventDefault();
+                    if (elements.timelineZoom) {
+                        elements.timelineZoom.value = 'year';
+                        elements.timelineZoom.dispatchEvent(new Event('change'));
+                    }
+                    break;
+                case '0':
+                    e.preventDefault();
+                    if (elements.timelineZoom) {
+                        elements.timelineZoom.value = 'all';
+                        elements.timelineZoom.dispatchEvent(new Event('change'));
+                    }
+                    break;
+                case 'm':
+                    e.preventDefault();
+                    if (elements.newMilestoneBtn && currentProject) {
+                        elements.newMilestoneBtn.click();
+                    }
+                    break;
+                case 'e':
+                    e.preventDefault();
+                    if (elements.estimateTimelineBtn && currentProject) {
+                        elements.estimateTimelineBtn.click();
+                    }
+                    break;
+            }
+        }
+    });
+}
+
+// ========================================
+// Phase 2: AI-Powered Personal Development
+// ========================================
+
+// Global state for Phase 2 features
+let skills = [];
+let achievements = [];
+let reflections = [];
+let reflectionTemplates = [];
+
+// Additional DOM Elements for Phase 2
+const phase2Elements = {
+    // Skills
+    skillsGrid: document.getElementById('skillsGrid'),
+    skillsCategoryFilter: document.getElementById('skillsCategoryFilter'),
+    skillsViewMode: document.getElementById('skillsViewMode'),
+    skillsProgressView: document.getElementById('skillsProgressView'),
+    skillsGapsView: document.getElementById('skillsGapsView'),
+    skillsGridView: document.getElementById('skillsGridView'),
+    newSkillBtn: document.getElementById('newSkillBtn'),
+    skillModal: document.getElementById('skillModal'),
+    skillForm: document.getElementById('skillForm'),
+    
+    // Achievements
+    achievementsGrid: document.getElementById('achievementsGrid'),
+    achievementsStatusFilter: document.getElementById('achievementsStatusFilter'),
+    achievementsTypeFilter: document.getElementById('achievementsTypeFilter'),
+    newAchievementBtn: document.getElementById('newAchievementBtn'),
+    achievementModal: document.getElementById('achievementModal'),
+    achievementForm: document.getElementById('achievementForm'),
+    
+    // Reflections
+    reflectionsList: document.getElementById('reflectionsList'),
+    templatesGrid: document.getElementById('templatesGrid'),
+    insightsDashboard: document.getElementById('insightsDashboard'),
+    newReflectionBtn: document.getElementById('newReflectionBtn'),
+    reflectionModal: document.getElementById('reflectionModal'),
+    reflectionForm: document.getElementById('reflectionForm'),
+    viewTabs: document.querySelectorAll('.view-tab'),
+    reflectionViews: document.querySelectorAll('.reflection-view')
+};
+
+// Phase 2 API Functions
+const phase2Api = {
+    // Skills API
+    async getSkills(filters = {}) {
+        const params = new URLSearchParams(filters);
+        return await api.request(`/skills?${params}`);
+    },
+    
+    async createSkill(skillData) {
+        return await api.request('/skills', {
+            method: 'POST',
+            body: JSON.stringify(skillData)
+        });
+    },
+    
+    async updateSkill(id, updates) {
+        return await api.request(`/skills/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        });
+    },
+    
+    async deleteSkill(id) {
+        return await api.request(`/skills/${id}`, {
+            method: 'DELETE'
+        });
+    },
+    
+    async getSkillsProgress() {
+        return await api.request('/skills/progress');
+    },
+    
+    async getSkillsGaps() {
+        return await api.request('/skills/gaps');
+    },
+    
+    // Achievements API
+    async getAchievements(filters = {}) {
+        const params = new URLSearchParams(filters);
+        return await api.request(`/achievements?${params}`);
+    },
+    
+    async createAchievement(achievementData) {
+        return await api.request('/achievements', {
+            method: 'POST',
+            body: JSON.stringify(achievementData)
+        });
+    },
+    
+    async updateAchievement(id, updates) {
+        return await api.request(`/achievements/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        });
+    },
+    
+    async updateAchievementProgress(id, progressData) {
+        return await api.request(`/achievements/${id}/progress`, {
+            method: 'POST',
+            body: JSON.stringify(progressData)
+        });
+    },
+    
+    async completeAchievement(id) {
+        return await api.request(`/achievements/${id}/complete`, {
+            method: 'POST'
+        });
+    },
+    
+    // Reflections API
+    async getReflectionTemplates() {
+        return await api.request('/reflections/templates');
+    },
+    
+    async getReflections(filters = {}) {
+        const params = new URLSearchParams(filters);
+        return await api.request(`/reflections/responses?${params}`);
+    },
+    
+    async createReflection(reflectionData) {
+        return await api.request('/reflections/responses', {
+            method: 'POST',
+            body: JSON.stringify(reflectionData)
+        });
+    },
+    
+    async getReflectionInsights(days = 30) {
+        return await api.request(`/reflections/insights?days=${days}`);
+    }
+};
+
+// Skills Functions
+async function loadSkills() {
+    try {
+        showLoading();
+        const filters = {
+            category: phase2Elements.skillsCategoryFilter?.value || ''
+        };
+        skills = await phase2Api.getSkills(filters);
+        renderSkills();
+    } catch (error) {
+        console.error('Error loading skills:', error);
+        showMessage('Failed to load skills', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderSkills() {
+    if (!phase2Elements.skillsGrid) return;
+    
+    if (skills.length === 0) {
+        phase2Elements.skillsGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-brain" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                <h3>No Skills Added</h3>
+                <p>Start building your skills profile by adding your first skill assessment.</p>
+                <button class="btn btn-primary" onclick="showSkillModal()">
+                    <i class="fas fa-plus"></i> Add Your First Skill
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    phase2Elements.skillsGrid.innerHTML = skills.map(skill => `
+        <div class="skill-card" data-skill-id="${skill.id}">
+            <div class="skill-header">
+                <div>
+                    <div class="skill-name">${skill.skill_name}</div>
+                    <span class="skill-category">${skill.skill_category}</span>
+                </div>
+            </div>
+            
+            <div class="skill-levels">
+                <div class="skill-level">
+                    <span class="skill-level-label">Current</span>
+                    <div class="skill-level-bar">
+                        <div class="skill-level-progress skill-level-current" style="width: ${skill.current_level * 10}%"></div>
+                    </div>
+                    <span class="skill-level-value">${skill.current_level}</span>
+                </div>
+                <div class="skill-level">
+                    <span class="skill-level-label">Target</span>
+                    <div class="skill-level-bar">
+                        <div class="skill-level-progress skill-level-target" style="width: ${skill.target_level * 10}%"></div>
+                    </div>
+                    <span class="skill-level-value">${skill.target_level}</span>
+                </div>
+            </div>
+            
+            ${skill.current_level < skill.target_level ? `
+                <div class="skill-gap">
+                    <i class="fas fa-arrow-up skill-gap-icon"></i>
+                    <span class="skill-gap-text">Gap: ${skill.target_level - skill.current_level} levels to target</span>
+                </div>
+            ` : skill.current_level >= skill.target_level ? `
+                <div class="skill-gap positive">
+                    <i class="fas fa-check skill-gap-icon"></i>
+                    <span class="skill-gap-text">Target achieved!</span>
+                </div>
+            ` : ''}
+            
+            <div class="skill-actions">
+                <button class="skill-action-btn" onclick="editSkill('${skill.id}')">
+                    <i class="fas fa-edit"></i> Update
+                </button>
+                <button class="skill-action-btn primary" onclick="assessSkill('${skill.id}')">
+                    <i class="fas fa-chart-line"></i> Assess
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showSkillModal(skillId = null) {
+    const modal = phase2Elements.skillModal;
+    if (!modal) return;
+    
+    if (skillId) {
+        const skill = skills.find(s => s.id === skillId);
+        if (skill) {
+            document.getElementById('skillName').value = skill.skill_name;
+            document.getElementById('skillCategory').value = skill.skill_category;
+            document.getElementById('currentLevel').value = skill.current_level;
+            document.getElementById('targetLevel').value = skill.target_level;
+            document.getElementById('selfAssessmentScore').value = skill.self_assessment_score || 5;
+            document.getElementById('assessmentNotes').value = skill.assessment_notes || '';
+            
+            // Update range value displays
+            updateRangeValue('currentLevel', skill.current_level);
+            updateRangeValue('targetLevel', skill.target_level);
+            updateRangeValue('selfAssessmentScore', skill.self_assessment_score || 5);
+        }
+    } else {
+        phase2Elements.skillForm.reset();
+        updateRangeValue('currentLevel', 5);
+        updateRangeValue('targetLevel', 8);
+        updateRangeValue('selfAssessmentScore', 5);
+    }
+    
+    showModal(modal);
+}
+
+// Achievements Functions
+async function loadAchievements() {
+    try {
+        showLoading();
+        const filters = {
+            status: phase2Elements.achievementsStatusFilter?.value || '',
+            type: phase2Elements.achievementsTypeFilter?.value || ''
+        };
+        achievements = await phase2Api.getAchievements(filters);
+        renderAchievements();
+    } catch (error) {
+        console.error('Error loading achievements:', error);
+        showMessage('Failed to load achievements', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderAchievements() {
+    if (!phase2Elements.achievementsGrid) return;
+    
+    if (achievements.length === 0) {
+        phase2Elements.achievementsGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-trophy" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                <h3>No Achievements Set</h3>
+                <p>Define your goals and track your progress towards meaningful achievements.</p>
+                <button class="btn btn-primary" onclick="showAchievementModal()">
+                    <i class="fas fa-plus"></i> Set Your First Goal
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    phase2Elements.achievementsGrid.innerHTML = achievements.map(achievement => {
+        const progressPercentage = achievement.target_value > 0 
+            ? Math.min(100, (achievement.current_value / achievement.target_value) * 100)
+            : 0;
+        
+        return `
+            <div class="achievement-card ${achievement.status}" data-achievement-id="${achievement.id}">
+                <div class="achievement-header">
+                    <div class="achievement-name">${achievement.achievement_name}</div>
+                    <span class="achievement-type ${achievement.achievement_type}">${achievement.achievement_type}</span>
+                </div>
+                
+                ${achievement.description ? `
+                    <div class="achievement-description">${achievement.description}</div>
+                ` : ''}
+                
+                ${achievement.target_value > 0 ? `
+                    <div class="achievement-progress">
+                        <div class="achievement-progress-header">
+                            <span class="achievement-progress-label">Progress</span>
+                            <span class="achievement-progress-percentage">${Math.round(progressPercentage)}%</span>
+                        </div>
+                        <div class="achievement-progress-bar">
+                            <div class="achievement-progress-fill" style="width: ${progressPercentage}%"></div>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <span class="achievement-priority ${achievement.priority_level}">${achievement.priority_level} priority</span>
+                
+                <div class="achievement-actions">
+                    ${achievement.status !== 'completed' ? `
+                        <button class="achievement-action-btn" onclick="editAchievement('${achievement.id}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="achievement-action-btn complete" onclick="completeAchievement('${achievement.id}')">
+                            <i class="fas fa-check"></i> Complete
+                        </button>
+                    ` : `
+                        <div class="achievement-completed">
+                            <i class="fas fa-trophy"></i> Completed!
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function showAchievementModal(achievementId = null) {
+    const modal = phase2Elements.achievementModal;
+    if (!modal) return;
+    
+    if (achievementId) {
+        const achievement = achievements.find(a => a.id === achievementId);
+        if (achievement) {
+            document.getElementById('achievementName').value = achievement.achievement_name;
+            document.getElementById('achievementType').value = achievement.achievement_type;
+            document.getElementById('achievementDescription').value = achievement.description || '';
+            document.getElementById('achievementCriteria').value = achievement.criteria || '';
+            document.getElementById('targetValue').value = achievement.target_value || '';
+            document.getElementById('currentValue').value = achievement.current_value || 0;
+            document.getElementById('priorityLevel').value = achievement.priority_level;
+            document.getElementById('celebrationMessage').value = achievement.celebration_message || '';
+        }
+    } else {
+        phase2Elements.achievementForm.reset();
+    }
+    
+    showModal(modal);
+}
+
+// Reflections Functions
+async function loadReflections() {
+    try {
+        showLoading();
+        reflectionTemplates = await phase2Api.getReflectionTemplates();
+        reflections = await phase2Api.getReflections({ limit: 20 });
+        renderReflections();
+        renderTemplates();
+    } catch (error) {
+        console.error('Error loading reflections:', error);
+        showMessage('Failed to load reflections', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function renderReflections() {
+    if (!phase2Elements.reflectionsList) return;
+    
+    if (reflections.length === 0) {
+        phase2Elements.reflectionsList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-mirror" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                <h3>No Reflections Yet</h3>
+                <p>Start your reflection journey to gain insights into your personal and professional growth.</p>
+                <button class="btn btn-primary" onclick="showReflectionModal()">
+                    <i class="fas fa-plus"></i> Start Your First Reflection
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    phase2Elements.reflectionsList.innerHTML = reflections.map(reflection => `
+        <div class="reflection-card" data-reflection-id="${reflection.id}">
+            <div class="reflection-header">
+                <div>
+                    <div class="reflection-template-name">${reflection.template_name}</div>
+                    <div class="reflection-date">${formatDate(reflection.reflection_date)}</div>
+                </div>
+                ${reflection.mood_at_reflection ? `
+                    <div class="reflection-mood">
+                        <i class="fas fa-smile"></i> Mood: ${reflection.mood_at_reflection}/10
+                    </div>
+                ` : ''}
+            </div>
+            <div class="reflection-summary">
+                ${Object.values(reflection.responses)[0]?.substring(0, 200) + '...' || 'No response provided'}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTemplates() {
+    if (!phase2Elements.templatesGrid) return;
+    
+    phase2Elements.templatesGrid.innerHTML = reflectionTemplates.map(template => `
+        <div class="template-card" onclick="useTemplate('${template.id}')">
+            <div class="template-name">${template.template_name}</div>
+            <span class="template-type">${template.template_type}</span>
+            <div class="template-questions-count">
+                ${template.prompt_questions.length} questions
+            </div>
+        </div>
+    `).join('');
+}
+
+function showReflectionModal(templateId = null) {
+    const modal = phase2Elements.reflectionModal;
+    if (!modal) return;
+    
+    // Populate template selector
+    const templateSelect = document.getElementById('reflectionTemplate');
+    if (templateSelect) {
+        templateSelect.innerHTML = `
+            <option value="">Select template...</option>
+            ${reflectionTemplates.map(template => `
+                <option value="${template.id}" ${template.id === templateId ? 'selected' : ''}>
+                    ${template.template_name}
+                </option>
+            `).join('')}
+        `;
+    }
+    
+    // Set default date to today
+    const dateInput = document.getElementById('reflectionDate');
+    if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // If template is preselected, load questions
+    if (templateId) {
+        loadReflectionQuestions(templateId);
+    }
+    
+    showModal(modal);
+}
+
+function loadReflectionQuestions(templateId) {
+    const template = reflectionTemplates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    const questionsContainer = document.getElementById('reflectionQuestions');
+    if (!questionsContainer) return;
+    
+    questionsContainer.innerHTML = template.prompt_questions.map((question, index) => `
+        <div class="reflection-question">
+            <label for="question_${index}">${question}</label>
+            <textarea id="question_${index}" name="question_${index}" placeholder="Share your thoughts..."></textarea>
+        </div>
+    `).join('');
+}
+
+// Utility Functions for Phase 2
+function updateRangeValue(rangeId, value) {
+    const valueSpan = document.getElementById(rangeId + 'Value');
+    if (valueSpan) {
+        valueSpan.textContent = value;
+    }
+}
+
+function switchReflectionView(viewName) {
+    // Update view tabs
+    phase2Elements.viewTabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.view === viewName);
+    });
+    
+    // Update view content
+    phase2Elements.reflectionViews.forEach(view => {
+        view.classList.toggle('active', view.id === viewName + 'ReflectionsView' || view.id === viewName + 'View');
+    });
+}
+
+// Event Handlers for Phase 2
+function initPhase2EventHandlers() {
+    // Skills event handlers
+    if (phase2Elements.newSkillBtn) {
+        phase2Elements.newSkillBtn.addEventListener('click', () => showSkillModal());
+    }
+    
+    if (phase2Elements.skillForm) {
+        phase2Elements.skillForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const skillData = {
+                    skill_name: document.getElementById('skillName').value,
+                    skill_category: document.getElementById('skillCategory').value,
+                    current_level: parseInt(document.getElementById('currentLevel').value),
+                    target_level: parseInt(document.getElementById('targetLevel').value),
+                    self_assessment_score: parseInt(document.getElementById('selfAssessmentScore').value),
+                    assessment_notes: document.getElementById('assessmentNotes').value
+                };
+                
+                await phase2Api.createSkill(skillData);
+                hideModal(phase2Elements.skillModal);
+                await loadSkills();
+                showMessage('Skill added successfully!', 'success');
+            } catch (error) {
+                console.error('Error creating skill:', error);
+                showMessage('Failed to add skill', 'error');
+            }
+        });
+    }
+    
+    // Skills filter handlers
+    if (phase2Elements.skillsCategoryFilter) {
+        phase2Elements.skillsCategoryFilter.addEventListener('change', loadSkills);
+    }
+    
+    if (phase2Elements.skillsViewMode) {
+        phase2Elements.skillsViewMode.addEventListener('change', (e) => {
+            const viewMode = e.target.value;
+            
+            // Hide all views
+            phase2Elements.skillsGridView.style.display = 'none';
+            phase2Elements.skillsProgressView.style.display = 'none';
+            phase2Elements.skillsGapsView.style.display = 'none';
+            
+            // Show selected view
+            switch (viewMode) {
+                case 'grid':
+                    phase2Elements.skillsGridView.style.display = 'block';
+                    break;
+                case 'progress':
+                    phase2Elements.skillsProgressView.style.display = 'block';
+                    // TODO: Load and render progress chart
+                    break;
+                case 'gaps':
+                    phase2Elements.skillsGapsView.style.display = 'block';
+                    // TODO: Load and render gaps analysis
+                    break;
+            }
+        });
+    }
+    
+    // Range input handlers for real-time updates
+    ['currentLevel', 'targetLevel', 'selfAssessmentScore', 'moodAtReflection'].forEach(id => {
+        const range = document.getElementById(id);
+        if (range) {
+            range.addEventListener('input', (e) => {
+                updateRangeValue(id, e.target.value);
+            });
+        }
+    });
+    
+    // Achievements event handlers
+    if (phase2Elements.newAchievementBtn) {
+        phase2Elements.newAchievementBtn.addEventListener('click', () => showAchievementModal());
+    }
+    
+    if (phase2Elements.achievementForm) {
+        phase2Elements.achievementForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const achievementData = {
+                    achievement_name: document.getElementById('achievementName').value,
+                    achievement_type: document.getElementById('achievementType').value,
+                    description: document.getElementById('achievementDescription').value,
+                    criteria: document.getElementById('achievementCriteria').value,
+                    target_value: document.getElementById('targetValue').value ? parseInt(document.getElementById('targetValue').value) : null,
+                    current_value: parseInt(document.getElementById('currentValue').value) || 0,
+                    priority_level: document.getElementById('priorityLevel').value,
+                    celebration_message: document.getElementById('celebrationMessage').value
+                };
+                
+                await phase2Api.createAchievement(achievementData);
+                hideModal(phase2Elements.achievementModal);
+                await loadAchievements();
+                showMessage('Achievement added successfully!', 'success');
+            } catch (error) {
+                console.error('Error creating achievement:', error);
+                showMessage('Failed to add achievement', 'error');
+            }
+        });
+    }
+    
+    // Achievement filter handlers
+    if (phase2Elements.achievementsStatusFilter) {
+        phase2Elements.achievementsStatusFilter.addEventListener('change', loadAchievements);
+    }
+    
+    if (phase2Elements.achievementsTypeFilter) {
+        phase2Elements.achievementsTypeFilter.addEventListener('change', loadAchievements);
+    }
+    
+    // Reflections event handlers
+    if (phase2Elements.newReflectionBtn) {
+        phase2Elements.newReflectionBtn.addEventListener('click', () => showReflectionModal());
+    }
+    
+    if (phase2Elements.reflectionForm) {
+        // Template change handler
+        const templateSelect = document.getElementById('reflectionTemplate');
+        if (templateSelect) {
+            templateSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    loadReflectionQuestions(e.target.value);
+                }
+            });
+        }
+        
+        phase2Elements.reflectionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const templateId = document.getElementById('reflectionTemplate').value;
+                const template = reflectionTemplates.find(t => t.id === templateId);
+                
+                // Collect responses to questions
+                const responses = {};
+                template.prompt_questions.forEach((question, index) => {
+                    const questionInput = document.getElementById(`question_${index}`);
+                    responses[question] = questionInput ? questionInput.value : '';
+                });
+                
+                const reflectionData = {
+                    template_id: templateId,
+                    reflection_date: document.getElementById('reflectionDate').value,
+                    responses: JSON.stringify(responses),
+                    mood_at_reflection: parseInt(document.getElementById('moodAtReflection').value)
+                };
+                
+                await phase2Api.createReflection(reflectionData);
+                hideModal(phase2Elements.reflectionModal);
+                await loadReflections();
+                showMessage('Reflection saved successfully!', 'success');
+            } catch (error) {
+                console.error('Error creating reflection:', error);
+                showMessage('Failed to save reflection', 'error');
+            }
+        });
+    }
+    
+    // Reflection view tabs
+    phase2Elements.viewTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchReflectionView(tab.dataset.view);
+        });
+    });
+}
+
+// Global functions for Phase 2 (called from HTML)
+window.editSkill = (id) => showSkillModal(id);
+window.assessSkill = (id) => showSkillModal(id);
+window.editAchievement = (id) => showAchievementModal(id);
+window.completeAchievement = async (id) => {
+    try {
+        await phase2Api.completeAchievement(id);
+        await loadAchievements();
+        showMessage('Achievement completed! 🎉', 'success');
+    } catch (error) {
+        console.error('Error completing achievement:', error);
+        showMessage('Failed to complete achievement', 'error');
+    }
+};
+window.useTemplate = (id) => showReflectionModal(id);
+
 // Initialize Application
 async function init() {
     console.log('📱 APP DEBUG: init() function called');
@@ -2118,8 +3224,14 @@ async function init() {
     console.log('📱 APP DEBUG: Initializing modals...');
     initModals();
     
+    console.log('📱 APP DEBUG: Initializing keyboard shortcuts...');
+    initKeyboardShortcuts();
+    
     console.log('📱 APP DEBUG: Initializing event handlers...');
     initEventHandlers();
+    
+    console.log('📱 APP DEBUG: Initializing Phase 2 event handlers...');
+    initPhase2EventHandlers();
     
     console.log('📱 APP DEBUG: Loading initial projects...');
     // Load initial data

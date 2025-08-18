@@ -22,6 +22,18 @@ A powerful AI-enhanced personal progress tracking application designed for conti
 - **Stakeholder Reports**: Business-focused communications highlighting impact
 - **Auto-Generation**: AI creates professional reports from your notes and progress
 
+### 📅 Timeline Management
+- **Milestone Tracking**: Create and manage project milestones with target dates
+- **Visual Timeline**: Interactive timeline view combining todos and milestones
+- **AI Timeline Estimation**: Smart suggestions for project phases and deadlines
+- **Progress Visualization**: Track project momentum over time
+
+### 🎯 AI Mentor & Coach
+- **Personal AI Coach**: Dedicated coaching interface for motivation and guidance
+- **Quick Topics**: Instant support for motivation, challenges, career growth, and confidence
+- **Conversational Interface**: Natural dialogue for professional development
+- **Daily Insights**: Motivational content and growth tips
+
 ### 🔧 Project Management
 - **Project Organization**: Manage multiple continuous improvement projects
 - **Status Tracking**: Monitor project phases (active, on hold, completed, archived)
@@ -73,14 +85,16 @@ A powerful AI-enhanced personal progress tracking application designed for conti
 
 The application is password protected for security when exposing to the internet:
 
-**Login Credentials:**
+**Default Login Credentials:**
 - Username: `tim.verhoogt`
 - Password: `Evos2025!`
+- *Note: Credentials can be configured via environment variables*
 
 **Database Details:**
 - SQLite local file database
 - No external database administration needed
 - Built-in backup and restore utilities
+- Automatic database migration system
 
 ### Production Deployment (Docker)
 
@@ -105,6 +119,28 @@ The application is password protected for security when exposing to the internet
    - Configure your nginx to proxy to these containers
    - Set up SSL/TLS through Cloudflare
 
+## ⚙️ Advanced Settings & Configuration
+
+The application provides comprehensive configuration options through the Settings tab:
+
+### Email & Automation
+- **Weekly Report Automation**: Automatic email reports sent to specified recipients
+- **SendGrid Integration**: Professional email delivery service integration
+- **Custom Recipients**: Configure multiple email addresses for different report types
+- **Schedule Configuration**: Customizable cron-based scheduling (default: Monday 9 AM)
+
+### AI Assistant Customization
+- **Role Templates**: Choose from predefined AI personalities (Default Assistant, Management Consultant, Business Analyst, Project Manager, Technical Expert, Creative Strategist)
+- **Communication Style**: Customize tone (Professional, Friendly, Formal, Concise, Enthusiastic, Analytical, Creative)
+- **Detail Level**: Control response depth (Brief, Balanced, Detailed, Comprehensive)
+- **Language Preference**: Multi-language support with auto-detection
+- **Custom System Prompts**: Advanced users can define custom AI instructions
+
+### Recipient Groups & Templates
+- **Profile Management**: Create and manage recipient groups for targeted communications
+- **Template Customization**: Configure different report templates for various audiences
+- **Preview System**: Test email formats before sending
+
 ## 📋 Usage Guide
 
 ### Getting Started
@@ -117,6 +153,7 @@ The application is password protected for security when exposing to the internet
 2. **Add Notes (Diary Style)**
    - Select your project in the Notes tab
    - Write freely about your observations, progress, challenges
+   - Use voice recording button for hands-free note taking
    - Click "Add & Enhance Note" to let AI structure your content
    - View enhanced notes with extracted insights and action items
 
@@ -126,7 +163,13 @@ The application is password protected for security when exposing to the internet
    - Set priorities and due dates
    - Mark tasks complete as you progress
 
-4. **Generate Reports**
+4. **Plan Timeline**
+   - Use the Timelines tab to visualize project progression
+   - Add milestones with target dates
+   - Use "AI Estimate" for intelligent timeline suggestions
+   - Track progress against planned milestones
+
+5. **Generate Reports**
    - Use the Reports tab to create professional communications
    - Choose report type based on audience:
      - **Status Report**: For your manager or operations team
@@ -134,12 +177,21 @@ The application is password protected for security when exposing to the internet
      - **Stakeholder Report**: For business impact communications
    - Specify recipient for tailored content
 
+6. **Get AI Coaching**
+   - Visit the Coaching tab for personalized guidance
+   - Choose from quick topics or start a custom conversation
+   - Receive motivation, career advice, and professional support
+
 ### AI Features
 
 - **Note Enhancement**: Your diary entries are automatically enhanced with professional language while preserving your original meaning
+- **Voice-to-Text**: Record voice notes that are automatically transcribed and enhanced
 - **Insight Extraction**: AI identifies key insights, risks, opportunities, and stakeholders
 - **Smart Todos**: AI suggests relevant next steps based on your project context and recent progress
+- **Timeline Intelligence**: AI estimates realistic project timelines and suggests milestone dates
 - **Professional Reports**: Generate polished reports suitable for management and stakeholders
+- **Personal Coaching**: AI mentor provides motivation, guidance, and professional development support
+- **Customizable AI Personality**: Configure communication style, detail level, and role templates
 
 ## 🔒 Security & Privacy
 
@@ -165,8 +217,10 @@ The backend provides a full REST API for integration with other tools:
 - `/api/projects` - Project management
 - `/api/notes` - Note creation and retrieval
 - `/api/todos` - Task management
+- `/api/timelines` - Timeline and milestone management
 - `/api/reports` - Report generation
 - `/api/llm` - Direct AI enhancement endpoints
+- `/api/settings` - Configuration management
 
 ### Monitoring & Health Checks
 - Built-in health checks for all containers

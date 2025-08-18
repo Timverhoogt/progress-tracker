@@ -62,6 +62,15 @@
             <button class="nav-tab" data-tab="reports">
                 <i class="fas fa-file-alt"></i> Reports
             </button>
+            <button class="nav-tab" data-tab="skills">
+                <i class="fas fa-brain"></i> Skills
+            </button>
+            <button class="nav-tab" data-tab="achievements">
+                <i class="fas fa-trophy"></i> Achievements
+            </button>
+            <button class="nav-tab" data-tab="reflections">
+                <i class="fas fa-mirror"></i> Reflections
+            </button>
             <button class="nav-tab" data-tab="coaching">
                 <i class="fas fa-heart"></i> Coaching
             </button>
@@ -163,8 +172,21 @@
                         <select class="project-selector" id="timelinesProjectSelector">
                             <option value="">Select a project...</option>
                         </select>
+                        <div class="timeline-zoom-controls">
+                            <label for="timelineZoom">View:</label>
+                            <select id="timelineZoom" class="timeline-zoom-selector">
+                                <option value="all">All Items</option>
+                                <option value="week">This Week</option>
+                                <option value="month" selected>This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                            </select>
+                        </div>
                         <button class="btn btn-secondary" id="estimateTimelineBtn">
                             <i class="fas fa-robot"></i> AI Estimate
+                        </button>
+                        <button class="btn btn-secondary" id="exportTimelineBtn">
+                            <i class="fas fa-download"></i> Export
                         </button>
                         <button class="btn btn-primary" id="newMilestoneBtn">
                             <i class="fas fa-flag"></i> Add Milestone
@@ -173,6 +195,187 @@
                 </div>
                 <div class="timeline-container" id="timelineContainer">
                     <!-- Timeline items will be rendered here -->
+                </div>
+                
+                <!-- Keyboard shortcuts help -->
+                <div class="timeline-shortcuts-help" style="margin-top: 16px; padding: 12px; background: #f8faff; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; color: #64748b;">
+                    <strong>Keyboard shortcuts:</strong> 
+                    <span style="margin-left: 8px;">Ctrl/⌘+1 Week</span>
+                    <span style="margin-left: 8px;">Ctrl/⌘+2 Month</span>
+                    <span style="margin-left: 8px;">Ctrl/⌘+3 Quarter</span>
+                    <span style="margin-left: 8px;">Ctrl/⌘+4 Year</span>
+                    <span style="margin-left: 8px;">Ctrl/⌘+0 All</span>
+                    <span style="margin-left: 16px;">Ctrl/⌘+M New Milestone</span>
+                    <span style="margin-left: 8px;">Ctrl/⌘+E AI Estimate</span>
+                </div>
+            </div>
+
+            <!-- Skills Tab -->
+            <div id="skills" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-brain"></i> Skills Assessment & Development</h2>
+                    <p class="tab-description">AI-guided skills evaluation, gap analysis, and personalized development plans</p>
+                    <div class="tab-controls">
+                        <button class="btn btn-secondary" id="skillsProgressBtn">
+                            <i class="fas fa-chart-bar"></i> Progress Overview
+                        </button>
+                        <button class="btn btn-secondary" id="skillsGapsBtn">
+                            <i class="fas fa-search"></i> Analyze Gaps
+                        </button>
+                        <button class="btn btn-primary" id="newSkillBtn">
+                            <i class="fas fa-plus"></i> Add Skill
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="skills-container">
+                    <!-- Skills Categories Filter -->
+                    <div class="skills-filters">
+                        <div class="filter-section">
+                            <label for="skillsCategoryFilter">Category:</label>
+                            <select id="skillsCategoryFilter" class="filter-select">
+                                <option value="">All Categories</option>
+                                <option value="technical">Technical Skills</option>
+                                <option value="leadership">Leadership</option>
+                                <option value="communication">Communication</option>
+                                <option value="analytical">Analytical</option>
+                                <option value="project_management">Project Management</option>
+                                <option value="continuous_improvement">Continuous Improvement</option>
+                            </select>
+                        </div>
+                        <div class="filter-section">
+                            <label for="skillsViewMode">View:</label>
+                            <select id="skillsViewMode" class="filter-select">
+                                <option value="grid">Skills Grid</option>
+                                <option value="progress">Progress Chart</option>
+                                <option value="gaps">Gap Analysis</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Skills Grid View -->
+                    <div id="skillsGridView" class="skills-view">
+                        <div class="skills-grid" id="skillsGrid">
+                            <!-- Skills will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Skills Progress View -->
+                    <div id="skillsProgressView" class="skills-view" style="display: none;">
+                        <div class="skills-progress-chart">
+                            <canvas id="skillsProgressChart" width="800" height="400"></canvas>
+                        </div>
+                        <div class="skills-stats" id="skillsStats">
+                            <!-- Progress statistics will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Skills Gaps View -->
+                    <div id="skillsGapsView" class="skills-view" style="display: none;">
+                        <div class="gaps-analysis" id="skillsGapsAnalysis">
+                            <!-- Gap analysis will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements Tab -->
+            <div id="achievements" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-trophy"></i> Achievements & Goals</h2>
+                    <p class="tab-description">Track your accomplishments, set new goals, and celebrate your progress</p>
+                    <div class="tab-controls">
+                        <button class="btn btn-secondary" id="achievementsStatsBtn">
+                            <i class="fas fa-chart-pie"></i> Statistics
+                        </button>
+                        <button class="btn btn-secondary" id="achievementsSuggestBtn">
+                            <i class="fas fa-robot"></i> AI Suggestions
+                        </button>
+                        <button class="btn btn-primary" id="newAchievementBtn">
+                            <i class="fas fa-plus"></i> Add Achievement
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="achievements-container">
+                    <!-- Achievement Filters -->
+                    <div class="achievements-filters">
+                        <div class="filter-section">
+                            <label for="achievementsStatusFilter">Status:</label>
+                            <select id="achievementsStatusFilter" class="filter-select">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="completed">Completed</option>
+                                <option value="paused">Paused</option>
+                            </select>
+                        </div>
+                        <div class="filter-section">
+                            <label for="achievementsTypeFilter">Type:</label>
+                            <select id="achievementsTypeFilter" class="filter-select">
+                                <option value="">All Types</option>
+                                <option value="project">Project Goals</option>
+                                <option value="skill">Skill Development</option>
+                                <option value="personal">Personal Growth</option>
+                                <option value="professional">Professional</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Achievements Grid -->
+                    <div class="achievements-grid" id="achievementsGrid">
+                        <!-- Achievements will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reflections Tab -->
+            <div id="reflections" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-mirror"></i> Reflections & Insights</h2>
+                    <p class="tab-description">AI-guided reflection templates, pattern analysis, and personal insights</p>
+                    <div class="tab-controls">
+                        <button class="btn btn-secondary" id="reflectionsInsightsBtn">
+                            <i class="fas fa-lightbulb"></i> AI Insights
+                        </button>
+                        <button class="btn btn-secondary" id="reflectionsTemplatesBtn">
+                            <i class="fas fa-clipboard-list"></i> Templates
+                        </button>
+                        <button class="btn btn-primary" id="newReflectionBtn">
+                            <i class="fas fa-plus"></i> Start Reflection
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="reflections-container">
+                    <!-- Reflection Views -->
+                    <div class="reflections-views">
+                        <div class="view-tabs">
+                            <button class="view-tab active" data-view="recent">Recent Reflections</button>
+                            <button class="view-tab" data-view="templates">Templates</button>
+                            <button class="view-tab" data-view="insights">AI Insights</button>
+                        </div>
+                        
+                        <!-- Recent Reflections View -->
+                        <div id="recentReflectionsView" class="reflection-view active">
+                            <div class="reflections-list" id="reflectionsList">
+                                <!-- Recent reflections will be loaded here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Templates View -->
+                        <div id="templatesView" class="reflection-view">
+                            <div class="templates-grid" id="templatesGrid">
+                                <!-- Reflection templates will be loaded here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Insights View -->
+                        <div id="insightsView" class="reflection-view">
+                            <div class="insights-dashboard" id="insightsDashboard">
+                                <!-- AI-generated insights will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -666,6 +869,45 @@
         </div>
     </div>
 
+    <!-- Milestone Modal -->
+    <div class="modal" id="milestoneModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="milestoneModalTitle">New Milestone</h3>
+                <button class="modal-close" id="closeMilestoneModal">&times;</button>
+            </div>
+            <form id="milestoneForm">
+                <div class="form-group">
+                    <label for="milestoneTitle">Title *</label>
+                    <input type="text" id="milestoneTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="milestoneDescription">Description & Notes</label>
+                    <textarea id="milestoneDescription" rows="4" placeholder="Detailed description, notes, requirements, or context for this milestone..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="milestoneTargetDate">Target Date</label>
+                        <input type="date" id="milestoneTargetDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="milestoneStatus">Status</label>
+                        <select id="milestoneStatus">
+                            <option value="planned">Planned</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelMilestoneModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Milestone</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Preview Modal -->
     <div class="modal" id="previewModal">
         <div class="modal-content" style="max-width: 800px;">
@@ -677,6 +919,155 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="closePreviewBtn">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Skill Modal -->
+    <div class="modal" id="skillModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="skillModalTitle">New Skill Assessment</h3>
+                <button class="modal-close" id="closeSkillModal">&times;</button>
+            </div>
+            <form id="skillForm">
+                <div class="form-group">
+                    <label for="skillName">Skill Name *</label>
+                    <input type="text" id="skillName" required placeholder="e.g., Data Analysis, Leadership, Project Management">
+                </div>
+                <div class="form-group">
+                    <label for="skillCategory">Category *</label>
+                    <select id="skillCategory" required>
+                        <option value="">Select category...</option>
+                        <option value="technical">Technical Skills</option>
+                        <option value="leadership">Leadership</option>
+                        <option value="communication">Communication</option>
+                        <option value="analytical">Analytical</option>
+                        <option value="project_management">Project Management</option>
+                        <option value="continuous_improvement">Continuous Improvement</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="currentLevel">Current Level (1-10) *</label>
+                        <input type="range" id="currentLevel" min="1" max="10" value="5" required>
+                        <span class="range-value" id="currentLevelValue">5</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="targetLevel">Target Level (1-10) *</label>
+                        <input type="range" id="targetLevel" min="1" max="10" value="8" required>
+                        <span class="range-value" id="targetLevelValue">8</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="selfAssessmentScore">Self Assessment (1-10)</label>
+                    <input type="range" id="selfAssessmentScore" min="1" max="10" value="5">
+                    <span class="range-value" id="selfAssessmentValue">5</span>
+                </div>
+                <div class="form-group">
+                    <label for="assessmentNotes">Assessment Notes</label>
+                    <textarea id="assessmentNotes" rows="3" placeholder="Add notes about your current capabilities, experience, or development plans..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelSkillModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Skill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Achievement Modal -->
+    <div class="modal" id="achievementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="achievementModalTitle">New Achievement</h3>
+                <button class="modal-close" id="closeAchievementModal">&times;</button>
+            </div>
+            <form id="achievementForm">
+                <div class="form-group">
+                    <label for="achievementName">Achievement Name *</label>
+                    <input type="text" id="achievementName" required placeholder="e.g., Complete Lean Six Sigma Certification">
+                </div>
+                <div class="form-group">
+                    <label for="achievementType">Type *</label>
+                    <select id="achievementType" required>
+                        <option value="">Select type...</option>
+                        <option value="project">Project Goals</option>
+                        <option value="skill">Skill Development</option>
+                        <option value="personal">Personal Growth</option>
+                        <option value="professional">Professional</option>
+                        <option value="learning">Learning & Education</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="achievementDescription">Description</label>
+                    <textarea id="achievementDescription" rows="3" placeholder="Describe what this achievement involves and why it's important..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="achievementCriteria">Success Criteria</label>
+                    <textarea id="achievementCriteria" rows="2" placeholder="What specific criteria must be met to complete this achievement?"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="targetValue">Target Value</label>
+                        <input type="number" id="targetValue" placeholder="e.g., 100 (for percentages or counts)">
+                    </div>
+                    <div class="form-group">
+                        <label for="currentValue">Current Progress</label>
+                        <input type="number" id="currentValue" value="0" placeholder="Current progress towards target">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="priorityLevel">Priority Level</label>
+                    <select id="priorityLevel">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="celebrationMessage">Celebration Message</label>
+                    <input type="text" id="celebrationMessage" placeholder="Custom message to display when achievement is completed">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelAchievementModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Achievement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reflection Modal -->
+    <div class="modal" id="reflectionModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="reflectionModalTitle">New Reflection</h3>
+                <button class="modal-close" id="closeReflectionModal">&times;</button>
+            </div>
+            <form id="reflectionForm">
+                <div class="form-group">
+                    <label for="reflectionTemplate">Reflection Template *</label>
+                    <select id="reflectionTemplate" required>
+                        <option value="">Select template...</option>
+                        <!-- Templates will be populated dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reflectionDate">Reflection Date *</label>
+                    <input type="date" id="reflectionDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="moodAtReflection">Mood During Reflection (1-10)</label>
+                    <input type="range" id="moodAtReflection" min="1" max="10" value="7">
+                    <span class="range-value" id="moodReflectionValue">7</span>
+                </div>
+                <div id="reflectionQuestions" class="reflection-questions">
+                    <!-- Questions will be populated based on selected template -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelReflectionModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Reflection</button>
+                </div>
+            </form>
         </div>
     </div>
 
