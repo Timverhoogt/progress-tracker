@@ -13,6 +13,12 @@ interface CoachingContext {
   skill_gaps: any[];
   recent_work: any[];
   recent_reflections: any[];
+  active_todos?: any[];
+  recent_workload?: any[];
+  recent_gratitude?: any[];
+  coping_strategies?: any[];
+  project_summary?: any[];
+  work_preferences?: any;
 }
 
 interface CoachingRequest {
@@ -214,42 +220,132 @@ Consider the user's recent mood, achievements, and work patterns in your respons
     const { user_message, session_type, context, mood_context } = request;
 
     let contextSummary = '';
-    
-    // Add mood context
+
+    // Add mood context with 30-day trend analysis
     if (context.recent_mood?.length > 0) {
       const avgMood = context.recent_mood.reduce((sum, m) => sum + m.mood_score, 0) / context.recent_mood.length;
+      const avgStress = context.recent_mood.reduce((sum, m) => sum + (m.stress_level || 5), 0) / context.recent_mood.length;
+      const avgEnergy = context.recent_mood.reduce((sum, m) => sum + (m.energy_level || 5), 0) / context.recent_mood.length;
+
       const moodTrend = avgMood >= 7 ? 'positive' : avgMood >= 5 ? 'neutral' : 'concerning';
-      contextSummary += `Recent mood trend: ${moodTrend} (avg ${avgMood.toFixed(1)}/10). `;
+      contextSummary += `\n**Mood & Wellbeing (30-day trend):**\n`;
+      contextSummary += `- Overall mood: ${moodTrend} (avg ${avgMood.toFixed(1)}/10 over ${context.recent_mood.length} days)\n`;
+      contextSummary += `- Stress level: ${avgStress.toFixed(1)}/10, Energy: ${avgEnergy.toFixed(1)}/10\n`;
+    }
+
+    // Add workload context
+    if (context.recent_workload && context.recent_workload.length > 0) {
+      const workDays = context.recent_workload.length;
+      const avgIntensity = context.recent_workload.reduce((sum: number, w: any) => sum + (w.intensity_level || 0), 0) / workDays;
+      const avgProductivity = context.recent_workload.reduce((sum: number, w: any) => sum + (w.productivity_score || 0), 0) / workDays;
+
+      contextSummary += `\n**Recent Workload (${workDays} days):**\n`;
+      contextSummary += `- Average work intensity: ${avgIntensity.toFixed(1)}/10\n`;
+      contextSummary += `- Average productivity: ${avgProductivity.toFixed(1)}/10\n`;
+    }
+
+    // Add project portfolio context
+    if (context.project_summary && context.project_summary.length > 0) {
+      const totalPending = context.project_summary.reduce((sum: number, p: any) => sum + (p.pending_todos || 0), 0);
+      const totalCompleted = context.project_summary.reduce((sum: number, p: any) => sum + (p.completed_todos || 0), 0);
+      const highPriorityCount = context.project_summary.reduce((sum: number, p: any) => sum + (p.high_priority_pending || 0), 0);
+
+      contextSummary += `\n**Project Portfolio:**\n`;
+      contextSummary += `- Active projects: ${context.project_summary.length}\n`;
+      contextSummary += `- Total pending tasks: ${totalPending}, Completed: ${totalCompleted}\n`;
+      contextSummary += `- High priority pending: ${highPriorityCount}\n`;
+
+      if (context.project_summary.length > 0 && context.project_summary.length <= 3) {
+        contextSummary += `- Projects: ${context.project_summary.map((p: any) => p.name).join(', ')}\n`;
+      }
+    }
+
+    // Add active todos (top priority items)
+    if (context.active_todos && context.active_todos.length > 0) {
+      const highPriority = context.active_todos.filter((t: any) => t.priority === 'high');
+      const overdueTodos = context.active_todos.filter((t: any) => t.due_date && new Date(t.due_date) < new Date());
+
+      contextSummary += `\n**Active Tasks:**\n`;
+      contextSummary += `- Total active: ${context.active_todos.length} (${highPriority.length} high priority)\n`;
+      if (overdueTodos.length > 0) {
+        contextSummary += `- ⚠️ ${overdueTodos.length} overdue task(s)\n`;
+      }
+
+      // List top 3 high priority tasks
+      if (highPriority.length > 0) {
+        contextSummary += `- Top priorities: ${highPriority.slice(0, 3).map((t: any) => t.title).join('; ')}\n`;
+      }
     }
 
     // Add achievement context
     if (context.active_achievements?.length > 0) {
       const activeCount = context.active_achievements.length;
-      contextSummary += `${activeCount} active achievement(s) in progress. `;
+      contextSummary += `\n**Active Goals & Achievements:**\n`;
+      contextSummary += `- ${activeCount} achievement(s) in progress\n`;
     }
 
     // Add skill gaps context
     if (context.skill_gaps?.length > 0) {
       const topGap = context.skill_gaps[0];
-      contextSummary += `Key skill development area: ${topGap.skill_name} (gap: ${topGap.gap_size}). `;
+      contextSummary += `\n**Skill Development:**\n`;
+      contextSummary += `- Priority area: ${topGap.skill_name} (current: ${topGap.current_level}, target: ${topGap.target_level})\n`;
+    }
+
+    // Add gratitude context (positive psychology anchor)
+    if (context.recent_gratitude && context.recent_gratitude.length > 0) {
+      contextSummary += `\n**Recent Gratitude:**\n`;
+      contextSummary += `- ${context.recent_gratitude.length} gratitude entries logged recently\n`;
+      if (context.recent_gratitude[0]?.response) {
+        contextSummary += `- Most recent: "${context.recent_gratitude[0].response.substring(0, 80)}..."\n`;
+      }
+    }
+
+    // Add coping strategies context
+    if (context.coping_strategies && context.coping_strategies.length > 0) {
+      const effectiveStrategies = context.coping_strategies.filter((s: any) => s.avg_effectiveness >= 4);
+      if (effectiveStrategies.length > 0) {
+        contextSummary += `\n**Effective Coping Strategies:**\n`;
+        contextSummary += `- ${effectiveStrategies.map((s: any) => s.strategy_name).slice(0, 3).join(', ')}\n`;
+      }
+    }
+
+    // Add work preferences
+    if (context.work_preferences) {
+      const prefs = context.work_preferences;
+      if (prefs.preferred_work_hours || prefs.energy_peaks) {
+        contextSummary += `\n**Work Preferences:**\n`;
+        if (prefs.preferred_work_hours) {
+          contextSummary += `- Preferred work hours: ${prefs.preferred_work_hours}\n`;
+        }
+        if (prefs.energy_peaks) {
+          contextSummary += `- Energy peaks: ${prefs.energy_peaks}\n`;
+        }
+      }
     }
 
     // Add recent work context
     if (context.recent_work?.length > 0) {
-      contextSummary += `Recent work focus: project progress and documentation. `;
+      contextSummary += `\n**Recent Work Activity:**\n`;
+      contextSummary += `- ${context.recent_work.length} recent notes/updates logged\n`;
     }
 
     if (mood_context) {
-      contextSummary += `Current mood context: ${mood_context}. `;
+      contextSummary += `\n**Current Mood Context:**\n${mood_context}\n`;
     }
 
     return `Session Type: ${session_type}
 
-Context: ${contextSummary}
+COMPREHENSIVE CONTEXT:
+${contextSummary}
 
 User's Message: "${user_message}"
 
-Please provide a personalized coaching response that addresses their message while considering the context provided.`;
+Please provide a personalized coaching response that:
+1. Acknowledges their specific situation based on the comprehensive context above
+2. Draws connections between their mood, workload, tasks, and wellbeing
+3. Provides specific, actionable guidance considering their work preferences and effective coping strategies
+4. Highlights any concerning patterns (e.g., high stress + high workload, overdue tasks)
+5. Reinforces positive behaviors (e.g., gratitude practice, using effective coping strategies)`;
   }
 
   /**

@@ -131,6 +131,9 @@ const createTables = async () => {
     }
 
     console.log('✅ SQLite database tables created successfully!');
+
+    // Create AI-powered personal development tables
+    await createAITables();
   } catch (error) {
     console.error('❌ Error creating tables:', error);
     throw error;

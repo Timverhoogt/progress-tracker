@@ -2,19 +2,19 @@
  * Unit tests for Backup Service
  */
 
-import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { getDatabase } from '../../../src/database/sqlite';
-import BackupService from '../../../src/database/backup';
-import { clearDatabase, createTestProject } from '../../helpers/test-utils';
-import fs from 'fs';
-import path from 'path';
+import { describe, test, expect, beforeEach, afterEach } from "@jest/globals";
+import { getDatabase } from "../../../src/database/sqlite";
+import BackupService from "../../../src/database/backup";
+import { clearDatabase, createTestProject } from "../../helpers/test-utils";
+import fs from "fs";
+import path from "path";
 
-describe('Backup Service', () => {
-  const testBackupDir = path.join(__dirname, '../../data/test-backups');
+describe("Backup Service", () => {
+  const testBackupDir = path.join(__dirname, "../../data/test-backups");
 
   beforeEach(async () => {
     await clearDatabase();
-    
+
     // Create test backup directory
     if (!fs.existsSync(testBackupDir)) {
       fs.mkdirSync(testBackupDir, { recursive: true });
@@ -25,43 +25,43 @@ describe('Backup Service', () => {
     // Clean up test backups
     if (fs.existsSync(testBackupDir)) {
       const files = fs.readdirSync(testBackupDir);
-      files.forEach(file => {
+      files.forEach((file) => {
         fs.unlinkSync(path.join(testBackupDir, file));
       });
       fs.rmdirSync(testBackupDir);
     }
   });
 
-  describe('createBackup', () => {
-    test('should create a backup file', async () => {
+  describe("createBackup", () => {
+    test("should create a backup file", async () => {
       // Create some test data
-      await createTestProject({ name: 'Backup Test Project' });
+      await createTestProject({ name: "Backup Test Project" });
 
       // Create backup
       const backupPath = await BackupService.createBackup({
         backupPath: testBackupDir,
-        includeTimestamp: false
+        includeTimestamp: false,
       });
 
       expect(backupPath).toBeDefined();
       expect(fs.existsSync(backupPath)).toBe(true);
     });
 
-    test('should create backup with timestamp', async () => {
+    test("should create backup with timestamp", async () => {
       const backupPath = await BackupService.createBackup({
         backupPath: testBackupDir,
-        includeTimestamp: true
+        includeTimestamp: true,
       });
 
       expect(backupPath).toMatch(/progress_tracker_backup_.*\.db$/);
       expect(fs.existsSync(backupPath)).toBe(true);
     });
 
-    test('should create backup directory if it does not exist', async () => {
-      const newBackupDir = path.join(testBackupDir, 'new-dir');
-      
+    test("should create backup directory if it does not exist", async () => {
+      const newBackupDir = path.join(testBackupDir, "new-dir");
+
       const backupPath = await BackupService.createBackup({
-        backupPath: newBackupDir
+        backupPath: newBackupDir,
       });
 
       expect(fs.existsSync(newBackupDir)).toBe(true);
@@ -72,14 +72,14 @@ describe('Backup Service', () => {
       fs.rmdirSync(newBackupDir);
     });
 
-    test('should backup actual data', async () => {
+    test("should backup actual data", async () => {
       // Create test data
-      const project = await createTestProject({ name: 'Data Test' });
+      const project = await createTestProject({ name: "Data Test" });
 
       // Create backup
       const backupPath = await BackupService.createBackup({
         backupPath: testBackupDir,
-        includeTimestamp: false
+        includeTimestamp: false,
       });
 
       // Verify backup contains data
@@ -88,67 +88,65 @@ describe('Backup Service', () => {
     });
   });
 
-  describe('restoreBackup', () => {
-    test('should restore from backup file', async () => {
+  describe("restoreBackup", () => {
+    test("should restore from backup file", async () => {
       // Create original data
-      const originalProject = await createTestProject({ name: 'Original' });
+      const originalProject = await createTestProject({ name: "Original" });
 
       // Create backup
       const backupPath = await BackupService.createBackup({
         backupPath: testBackupDir,
-        includeTimestamp: false
+        includeTimestamp: false,
       });
 
       // Modify data
       const db = getDatabase();
-      await db.query(
-        'UPDATE projects SET name = ? WHERE id = ?',
-        ['Modified', originalProject.id]
-      );
+      await db.query("UPDATE projects SET name = ? WHERE id = ?", [
+        "Modified",
+        originalProject.id,
+      ]);
 
       // Verify modification
       const modifiedResult = await db.query(
-        'SELECT name FROM projects WHERE id = ?',
+        "SELECT name FROM projects WHERE id = ?",
         [originalProject.id]
       );
-      expect(modifiedResult.rows[0].name).toBe('Modified');
+      expect(modifiedResult.rows[0].name).toBe("Modified");
 
       // Restore from backup
       await BackupService.restoreBackup(backupPath);
 
       // Verify restoration
       const restoredResult = await db.query(
-        'SELECT name FROM projects WHERE id = ?',
+        "SELECT name FROM projects WHERE id = ?",
         [originalProject.id]
       );
-      expect(restoredResult.rows[0].name).toBe('Original');
+      expect(restoredResult.rows[0].name).toBe("Original");
     });
 
-    test('should throw error for non-existent backup file', async () => {
-      const fakePath = path.join(testBackupDir, 'non-existent.db');
+    test("should throw error for non-existent backup file", async () => {
+      const fakePath = path.join(testBackupDir, "non-existent.db");
 
-      await expect(
-        BackupService.restoreBackup(fakePath)
-      ).rejects.toThrow();
+      await expect(BackupService.restoreBackup(fakePath)).rejects.toThrow();
     });
   });
 
-  describe('exportToJSON', () => {
-    test('should export database to JSON', async () => {
+  describe("exportToJSON", () => {
+    test("should export database to JSON", async () => {
       // Create test data
-      await createTestProject({ name: 'Export Test' });
+      await createTestProject({ name: "Export Test" });
 
       // Export to JSON
-      const jsonPath = path.join(testBackupDir, 'export.json');
+      const jsonPath = path.join(testBackupDir, "export.json");
       await BackupService.exportToJSON(jsonPath);
 
       expect(fs.existsSync(jsonPath)).toBe(true);
 
       // Verify JSON content
-      const jsonContent = fs.readFileSync(jsonPath, 'utf-8');
+      const jsonContent = fs.readFileSync(jsonPath, "utf-8");
       const data = JSON.parse(jsonContent);
 
-      expect(data).toHaveProperty('projects');
+      expect(data).toHaveProperty("projects");
       expect(Array.isArray(data.projects)).toBe(true);
       expect(data.projects.length).toBeGreaterThan(0);
 
@@ -156,45 +154,45 @@ describe('Backup Service', () => {
       fs.unlinkSync(jsonPath);
     });
 
-    test('should export all tables', async () => {
+    test("should export all tables", async () => {
       // Create various test data
       const project = await createTestProject();
 
       // Export
-      const jsonPath = path.join(testBackupDir, 'full-export.json');
+      const jsonPath = path.join(testBackupDir, "full-export.json");
       await BackupService.exportToJSON(jsonPath);
 
-      const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
 
       // Check for expected tables
-      expect(data).toHaveProperty('projects');
-      expect(data).toHaveProperty('notes');
-      expect(data).toHaveProperty('todos');
-      expect(data).toHaveProperty('settings');
+      expect(data).toHaveProperty("projects");
+      expect(data).toHaveProperty("notes");
+      expect(data).toHaveProperty("todos");
+      expect(data).toHaveProperty("settings");
 
       // Cleanup
       fs.unlinkSync(jsonPath);
     });
   });
 
-  describe('getStats', () => {
-    test('should return database statistics', async () => {
+  describe("getStats", () => {
+    test("should return database statistics", async () => {
       // Create test data
-      await createTestProject({ name: 'Stats Test 1' });
-      await createTestProject({ name: 'Stats Test 2' });
+      await createTestProject({ name: "Stats Test 1" });
+      await createTestProject({ name: "Stats Test 2" });
 
-      const stats = await BackupService.getStats();
+      const stats = (await BackupService.getStats()) as any;
 
-      expect(stats).toHaveProperty('projects');
+      expect(stats).toHaveProperty("projects");
       expect(stats.projects).toBeGreaterThanOrEqual(2);
-      expect(stats).toHaveProperty('notes');
-      expect(stats).toHaveProperty('todos');
+      expect(stats).toHaveProperty("notes");
+      expect(stats).toHaveProperty("todos");
     });
 
-    test('should return zero counts for empty database', async () => {
+    test("should return zero counts for empty database", async () => {
       await clearDatabase();
 
-      const stats = await BackupService.getStats();
+      const stats = (await BackupService.getStats()) as any;
 
       expect(stats.projects).toBe(0);
       expect(stats.notes).toBe(0);
@@ -202,21 +200,21 @@ describe('Backup Service', () => {
     });
   });
 
-  describe('Error Handling', () => {
-    test('should handle backup to read-only location', async () => {
+  describe("Error Handling", () => {
+    test("should handle backup to read-only location", async () => {
       // This test is platform-specific and may need adjustment
       // Skip on Windows where permissions work differently
-      if (process.platform === 'win32') {
+      if (process.platform === "win32") {
         return;
       }
 
-      const readOnlyDir = path.join(testBackupDir, 'readonly');
+      const readOnlyDir = path.join(testBackupDir, "readonly");
       fs.mkdirSync(readOnlyDir, { recursive: true });
       fs.chmodSync(readOnlyDir, 0o444); // Read-only
 
       await expect(
         BackupService.createBackup({
-          backupPath: readOnlyDir
+          backupPath: readOnlyDir,
         })
       ).rejects.toThrow();
 
@@ -226,4 +224,3 @@ describe('Backup Service', () => {
     });
   });
 });
-

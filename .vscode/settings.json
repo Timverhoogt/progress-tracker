@@ -1,7 +1,7 @@
 {
   // Jest Test Explorer Configuration
   "jest.autoRun": "off",
-  "jest.jestCommandLine": "npm test --",
+  "jest.jestCommandLine": "node_modules/jest/bin/jest.js",
   "jest.rootPath": "backend",
   "jest.showCoverageOnLoad": false,
   "jest.coverageFormatter": "DefaultFormatter",
@@ -10,7 +10,6 @@
   },
   "jest.enable": true,
   "jest.runMode": "on-demand",
-  "jest.shell": "powershell",
 
   // Test Explorer UI
   "testExplorer.useNativeTesting": true,
@@ -52,6 +51,7 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   
   // Terminal settings
-  "terminal.integrated.cwd": "${workspaceFolder}"
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "testing.automaticallyOpenTestResults": "neverOpen"
 }
 

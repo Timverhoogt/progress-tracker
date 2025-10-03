@@ -99,56 +99,124 @@ router.get('/sessions/stats', async (req, res) => {
 router.get('/context', async (req, res) => {
   try {
     const userId = req.query.user_id || 'default';
-    
-    // Get recent mood data
+
+    // Extended mood data (30 days for better trend analysis)
     const recentMood = await db.query(`
-      SELECT * FROM mood_tracking 
-      WHERE user_id = ? 
-      ORDER BY mood_date DESC 
-      LIMIT 7
+      SELECT * FROM mood_tracking
+      WHERE user_id = ? AND mood_date >= date('now', '-30 days')
+      ORDER BY mood_date DESC
+      LIMIT 30
     `, [userId]);
-    
+
     // Get current achievements
     const activeAchievements = await db.query(`
-      SELECT * FROM achievements 
-      WHERE user_id = ? AND status = 'active' 
-      ORDER BY priority_level DESC 
+      SELECT * FROM achievements
+      WHERE user_id = ? AND status = 'active'
+      ORDER BY priority_level DESC
       LIMIT 5
     `, [userId]);
-    
+
     // Get skill gaps
     const skillGaps = await db.query(`
       SELECT *, (target_level - current_level) as gap_size
-      FROM skills_assessment 
+      FROM skills_assessment
       WHERE user_id = ? AND current_level < target_level
-      ORDER BY gap_size DESC 
+      ORDER BY gap_size DESC
       LIMIT 5
     `, [userId]);
-    
+
     // Get recent coaching preferences
     const preferences = await db.query(`
-      SELECT preference_category, preference_key, preference_value 
-      FROM user_preferences 
+      SELECT preference_category, preference_key, preference_value
+      FROM user_preferences
       WHERE user_id = ? AND preference_category IN ('coaching', 'wellbeing', 'learning')
     `, [userId]);
-    
+
     // Get recent notes/projects for context
     const recentNotes = await db.query(`
-      SELECT content, enhanced_content, created_at 
-      FROM notes 
-      ORDER BY created_at DESC 
+      SELECT content, enhanced_content, created_at
+      FROM notes
+      ORDER BY created_at DESC
       LIMIT 5
     `);
-    
+
     // Get recent reflection insights
     const recentReflections = await db.query(`
       SELECT responses, insights_extracted, ai_analysis, reflection_date
-      FROM reflection_responses 
-      WHERE user_id = ? 
-      ORDER BY reflection_date DESC 
+      FROM reflection_responses
+      WHERE user_id = ?
+      ORDER BY reflection_date DESC
       LIMIT 3
     `, [userId]);
-    
+
+    // NEW: Get active todos across all projects
+    const activeTodos = await db.query(`
+      SELECT t.id, t.title, t.description, t.status, t.priority, t.due_date,
+             p.name as project_name, p.status as project_status
+      FROM todos t
+      LEFT JOIN projects p ON t.project_id = p.id
+      WHERE t.status IN ('pending', 'in_progress')
+      ORDER BY
+        CASE t.priority
+          WHEN 'high' THEN 1
+          WHEN 'medium' THEN 2
+          WHEN 'low' THEN 3
+        END,
+        t.due_date ASC
+      LIMIT 20
+    `);
+
+    // NEW: Get recent workload data (last 14 days)
+    const recentWorkload = await db.query(`
+      SELECT work_date, start_time, end_time, intensity_level,
+             focus_level, productivity_score, tasks_completed, notes
+      FROM workload_tracking
+      WHERE user_id = ? AND work_date >= date('now', '-14 days')
+      ORDER BY work_date DESC
+    `, [userId]);
+
+    // NEW: Get recent gratitude entries (last 10)
+    const recentGratitude = await db.query(`
+      SELECT gratitude_date, response, category, created_at
+      FROM gratitude_entries
+      WHERE user_id = ?
+      ORDER BY gratitude_date DESC
+      LIMIT 10
+    `, [userId]);
+
+    // NEW: Get coping strategies and recent usage
+    const copingStrategies = await db.query(`
+      SELECT cs.id, cs.strategy_name, cs.strategy_category, cs.description,
+             COUNT(csu.id) as times_used,
+             AVG(csu.effectiveness_rating) as avg_effectiveness
+      FROM coping_strategies cs
+      LEFT JOIN coping_strategy_usage csu ON cs.id = csu.strategy_id
+        AND csu.used_at >= datetime('now', '-30 days')
+      WHERE cs.user_id = ?
+      GROUP BY cs.id
+      ORDER BY avg_effectiveness DESC, times_used DESC
+      LIMIT 10
+    `, [userId]);
+
+    // NEW: Get project portfolio overview
+    const projectSummary = await db.query(`
+      SELECT p.id, p.name, p.status, p.description,
+             COUNT(CASE WHEN t.status = 'pending' THEN 1 END) as pending_todos,
+             COUNT(CASE WHEN t.status = 'completed' THEN 1 END) as completed_todos,
+             COUNT(CASE WHEN t.priority = 'high' AND t.status != 'completed' THEN 1 END) as high_priority_pending
+      FROM projects p
+      LEFT JOIN todos t ON p.id = t.project_id
+      WHERE p.status IN ('active', 'planning')
+      GROUP BY p.id
+      ORDER BY p.status DESC, pending_todos DESC
+    `);
+
+    // NEW: Get work preferences for better context
+    const workPreferences = await db.query(`
+      SELECT * FROM work_preferences
+      WHERE user_id = ?
+    `, [userId]);
+
     res.json({
       recent_mood: recentMood.rows,
       active_achievements: activeAchievements.rows,
@@ -159,7 +227,15 @@ router.get('/context', async (req, res) => {
         return acc;
       }, {}),
       recent_work: recentNotes.rows,
-      recent_reflections: recentReflections.rows
+      recent_reflections: recentReflections.rows,
+
+      // Enhanced context data
+      active_todos: activeTodos.rows,
+      recent_workload: recentWorkload.rows,
+      recent_gratitude: recentGratitude.rows,
+      coping_strategies: copingStrategies.rows,
+      project_summary: projectSummary.rows,
+      work_preferences: workPreferences.rows[0] || null
     });
   } catch (error) {
     console.error('Error fetching coaching context:', error);
