@@ -70,6 +70,7 @@ const createAITables = async () => {
         user_id TEXT DEFAULT 'default',
         mood_date TEXT NOT NULL,
         mood_score INTEGER NOT NULL,
+        mood_level INTEGER NOT NULL,
         energy_level INTEGER,
         stress_level INTEGER,
         motivation_level INTEGER,
@@ -200,6 +201,131 @@ const createAITables = async () => {
       );
     `);
 
+    // Coping strategies library table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS coping_strategies (
+        id TEXT PRIMARY KEY,
+        user_id TEXT DEFAULT 'default',
+        strategy_name TEXT NOT NULL,
+        strategy_category TEXT NOT NULL,
+        description TEXT NOT NULL,
+        instructions TEXT NOT NULL,
+        duration_minutes INTEGER,
+        difficulty_level INTEGER CHECK (difficulty_level >= 1 AND difficulty_level <= 5),
+        effectiveness_rating REAL DEFAULT 0.0,
+        usage_count INTEGER DEFAULT 0,
+        last_used TEXT,
+        is_personalized BOOLEAN DEFAULT 0,
+        mood_tags TEXT,
+        stress_levels TEXT,
+        triggers TEXT,
+        is_active BOOLEAN DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+    // Coping strategy usage tracking table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS coping_strategy_usage (
+        id TEXT PRIMARY KEY,
+        user_id TEXT DEFAULT 'default',
+        strategy_id TEXT NOT NULL,
+        used_at TEXT NOT NULL,
+        mood_before INTEGER,
+        mood_after INTEGER,
+        stress_before INTEGER,
+        stress_after INTEGER,
+        effectiveness_rating INTEGER CHECK (effectiveness_rating >= 1 AND effectiveness_rating <= 5),
+        notes TEXT,
+        context TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (strategy_id) REFERENCES coping_strategies(id)
+      );
+    `);
+
+    // Intervention logs table - Track when intervention triggers are activated and actions taken
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS intervention_logs (
+        id TEXT PRIMARY KEY,
+        user_id TEXT DEFAULT 'default',
+        trigger_type TEXT NOT NULL,
+        action_taken TEXT,
+        notes TEXT,
+        effectiveness INTEGER CHECK (effectiveness >= 1 AND effectiveness <= 5),
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+    // Workload tracking table - Track work hours, intensity, and productivity
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS workload_tracking (
+        id TEXT PRIMARY KEY,
+        user_id TEXT DEFAULT 'default',
+        work_date TEXT NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT NOT NULL,
+        break_duration INTEGER DEFAULT 0,
+        intensity_level INTEGER NOT NULL CHECK (intensity_level >= 1 AND intensity_level <= 10),
+        focus_level INTEGER CHECK (focus_level >= 1 AND focus_level <= 10),
+        productivity_score INTEGER CHECK (productivity_score >= 1 AND productivity_score <= 10),
+        tasks_completed INTEGER DEFAULT 0,
+        notes TEXT,
+        work_type TEXT,
+        location TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(user_id, work_date)
+      );
+    `);
+
+    // Work preferences and boundary settings table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS work_preferences (
+        id TEXT PRIMARY KEY,
+        user_id TEXT DEFAULT 'default',
+        max_daily_hours REAL DEFAULT 8.0,
+        max_weekly_hours REAL DEFAULT 40.0,
+        preferred_start_time TEXT DEFAULT '09:00',
+        preferred_end_time TEXT DEFAULT '17:00',
+        break_duration_minutes INTEGER DEFAULT 60,
+        max_intensity_level INTEGER DEFAULT 8,
+        stress_threshold INTEGER DEFAULT 7,
+        weekend_work_allowed BOOLEAN DEFAULT 0,
+        max_weekend_hours REAL DEFAULT 4.0,
+        overtime_threshold_hours REAL DEFAULT 2.0,
+        break_reminder_interval INTEGER DEFAULT 90,
+        work_life_balance_goal TEXT DEFAULT 'balanced',
+        notification_preferences TEXT DEFAULT '{"email": true, "browser": true, "mobile": false}',
+        auto_break_suggestions BOOLEAN DEFAULT 1,
+        intensity_warnings BOOLEAN DEFAULT 1,
+        overwork_alerts BOOLEAN DEFAULT 1,
+        weekly_summary BOOLEAN DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(user_id)
+      );
+    `);
+
+    // Gratitude Entries Table - Store gratitude practice entries and prompts
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS gratitude_entries (
+        id TEXT PRIMARY KEY,
+        user_id TEXT DEFAULT 'default',
+        gratitude_date TEXT NOT NULL,
+        category TEXT,
+        prompt TEXT NOT NULL,
+        response TEXT NOT NULL,
+        mood_before INTEGER,
+        mood_after INTEGER,
+        achievement_id TEXT,
+        tags TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (achievement_id) REFERENCES achievements(id)
+      );
+    `);
+
     // Create indexes for better performance
     console.log('📊 Creating indexes for AI tables...');
     
@@ -247,6 +373,36 @@ const createAITables = async () => {
     // Work-life balance indexes
     await db.query('CREATE INDEX IF NOT EXISTS idx_work_life_metrics_user ON work_life_metrics(user_id);');
     await db.query('CREATE INDEX IF NOT EXISTS idx_work_life_metrics_date ON work_life_metrics(user_id, metric_date DESC);');
+    
+    // Coping strategies indexes
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coping_strategies_user ON coping_strategies(user_id);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coping_strategies_category ON coping_strategies(user_id, strategy_category);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coping_strategies_active ON coping_strategies(user_id, is_active);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coping_strategies_effectiveness ON coping_strategies(user_id, effectiveness_rating DESC);');
+    
+    // Coping strategy usage indexes
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coping_usage_user ON coping_strategy_usage(user_id);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coping_usage_strategy ON coping_strategy_usage(strategy_id);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_coping_usage_date ON coping_strategy_usage(user_id, used_at DESC);');
+    
+    // Intervention logs indexes
+    await db.query('CREATE INDEX IF NOT EXISTS idx_intervention_logs_user ON intervention_logs(user_id);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_intervention_logs_trigger ON intervention_logs(user_id, trigger_type);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_intervention_logs_date ON intervention_logs(created_at DESC);');
+    
+    // Workload tracking indexes
+    await db.query('CREATE INDEX IF NOT EXISTS idx_workload_tracking_user ON workload_tracking(user_id);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_workload_tracking_date ON workload_tracking(user_id, work_date DESC);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_workload_tracking_type ON workload_tracking(user_id, work_type);');
+    
+    // Work preferences indexes
+    await db.query('CREATE INDEX IF NOT EXISTS idx_work_preferences_user ON work_preferences(user_id);');
+    
+    // Gratitude entries indexes
+    await db.query('CREATE INDEX IF NOT EXISTS idx_gratitude_entries_user ON gratitude_entries(user_id);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_gratitude_entries_date ON gratitude_entries(user_id, gratitude_date DESC);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_gratitude_entries_category ON gratitude_entries(user_id, category);');
+    await db.query('CREATE INDEX IF NOT EXISTS idx_gratitude_entries_achievement ON gratitude_entries(achievement_id);');
 
     // Insert default preferences
     console.log('⚙️ Inserting default user preferences...');
@@ -357,6 +513,132 @@ const createAITables = async () => {
         VALUES (?, 'default', ?, ?, ?, ?, 1, ?)
       `, [crypto.randomUUID(), template.name, template.type, template.frequency, template.questions, template.isDefault]);
     }
+
+    // Insert default coping strategies
+    console.log('🧘 Inserting default coping strategies...');
+    const defaultStrategies = [
+      {
+        name: 'Deep Breathing Exercise',
+        category: 'breathing',
+        description: 'A simple 4-7-8 breathing technique to quickly reduce stress and anxiety',
+        instructions: 'Inhale for 4 counts, hold for 7 counts, exhale for 8 counts. Repeat 4 times.',
+        duration: 2,
+        difficulty: 1,
+        mood_tags: 'anxious,stressed,overwhelmed',
+        stress_levels: '6,7,8,9,10',
+        triggers: 'work pressure,deadlines,meetings'
+      },
+      {
+        name: 'Progressive Muscle Relaxation',
+        category: 'physical',
+        description: 'Systematically tense and relax muscle groups to release physical tension',
+        instructions: 'Start with your toes, tense for 5 seconds, then relax. Work your way up through each muscle group to your head.',
+        duration: 10,
+        difficulty: 2,
+        mood_tags: 'tense,stressed,anxious',
+        stress_levels: '5,6,7,8,9',
+        triggers: 'physical tension,stress,anxiety'
+      },
+      {
+        name: 'Mindful Walking',
+        category: 'mindfulness',
+        description: 'A short mindful walk to reset and refocus your mind',
+        instructions: 'Walk slowly and deliberately, focusing on each step and your breathing. Notice your surroundings without judgment.',
+        duration: 5,
+        difficulty: 1,
+        mood_tags: 'restless,stressed,unfocused',
+        stress_levels: '4,5,6,7,8',
+        triggers: 'mental fatigue,concentration issues'
+      },
+      {
+        name: 'Gratitude Journaling',
+        category: 'cognitive',
+        description: 'Write down three things you are grateful for to shift perspective',
+        instructions: 'Take 2 minutes to write down three specific things you are grateful for today. Be detailed and specific.',
+        duration: 3,
+        difficulty: 1,
+        mood_tags: 'negative,down,stressed',
+        stress_levels: '3,4,5,6,7',
+        triggers: 'negative thinking,low mood'
+      },
+      {
+        name: 'Quick Body Scan',
+        category: 'mindfulness',
+        description: 'A brief body scan to check in with physical sensations and release tension',
+        instructions: 'Close your eyes and mentally scan your body from head to toe. Notice any tension and consciously release it.',
+        duration: 3,
+        difficulty: 1,
+        mood_tags: 'tense,stressed,unfocused',
+        stress_levels: '4,5,6,7,8',
+        triggers: 'physical tension,stress'
+      },
+      {
+        name: 'Positive Affirmations',
+        category: 'cognitive',
+        description: 'Repeat positive statements to boost confidence and shift mindset',
+        instructions: 'Choose 2-3 positive statements about your abilities and repeat them with conviction for 1-2 minutes.',
+        duration: 2,
+        difficulty: 1,
+        mood_tags: 'doubtful,low confidence,stressed',
+        stress_levels: '4,5,6,7,8',
+        triggers: 'self-doubt,low confidence'
+      },
+      {
+        name: 'Quick Meditation',
+        category: 'mindfulness',
+        description: 'A brief meditation to center yourself and find calm',
+        instructions: 'Sit comfortably, close your eyes, and focus on your breath. When your mind wanders, gently return to your breath.',
+        duration: 5,
+        difficulty: 2,
+        mood_tags: 'anxious,stressed,overwhelmed',
+        stress_levels: '5,6,7,8,9',
+        triggers: 'anxiety,overwhelm,stress'
+      },
+      {
+        name: 'Task Prioritization',
+        category: 'cognitive',
+        description: 'Organize and prioritize tasks to reduce overwhelm and increase focus',
+        instructions: 'List all current tasks, then categorize them by urgency and importance. Focus on the most critical 2-3 tasks.',
+        duration: 5,
+        difficulty: 2,
+        mood_tags: 'overwhelmed,stressed,unfocused',
+        stress_levels: '6,7,8,9,10',
+        triggers: 'work overload,deadlines,multiple tasks'
+      }
+    ];
+
+    for (const strategy of defaultStrategies) {
+      await db.query(`
+        INSERT OR IGNORE INTO coping_strategies (
+          id, user_id, strategy_name, strategy_category, description, instructions,
+          duration_minutes, difficulty_level, mood_tags, stress_levels, triggers,
+          is_personalized, is_active
+        ) VALUES (?, 'default', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
+      `, [
+        crypto.randomUUID(),
+        strategy.name,
+        strategy.category,
+        strategy.description,
+        strategy.instructions,
+        strategy.duration,
+        strategy.difficulty,
+        strategy.mood_tags,
+        strategy.stress_levels,
+        strategy.triggers
+      ]);
+    }
+
+    // Insert default work preferences
+    console.log('⚙️ Inserting default work preferences...');
+    await db.query(`
+      INSERT OR IGNORE INTO work_preferences (
+        id, user_id, max_daily_hours, max_weekly_hours, preferred_start_time, preferred_end_time,
+        break_duration_minutes, max_intensity_level, stress_threshold, weekend_work_allowed,
+        max_weekend_hours, overtime_threshold_hours, break_reminder_interval, work_life_balance_goal,
+        notification_preferences, auto_break_suggestions, intensity_warnings, overwork_alerts, weekly_summary
+      ) VALUES (?, 'default', 8.0, 40.0, '09:00', '17:00', 60, 8, 7, 0, 4.0, 2.0, 90, 'balanced', 
+                '{"email": true, "browser": true, "mobile": false}', 1, 1, 1, 1)
+    `, [crypto.randomUUID()]);
 
     console.log('✅ AI-powered personal development tables created successfully!');
     console.log('🎯 Phase 1.1: Database Schema Extensions - COMPLETED');

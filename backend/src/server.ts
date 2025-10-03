@@ -22,6 +22,10 @@ import moodRoutes from './routes/mood';
 import learningRoutes from './routes/learning';
 import coachingRoutes from './routes/coaching';
 import reflectionsRoutes from './routes/reflections';
+import copingStrategiesRoutes from './routes/coping-strategies';
+import workloadRoutes from './routes/workload';
+import workPreferencesRoutes from './routes/work-preferences';
+import gratitudeRoutes from './routes/gratitude';
 
 // Import services
 import schedulerService from './services/scheduler';
@@ -102,6 +106,10 @@ app.use('/api/mood', moodRoutes);
 app.use('/api/learning', learningRoutes);
 app.use('/api/coaching', coachingRoutes);
 app.use('/api/reflections', reflectionsRoutes);
+app.use('/api/coping-strategies', copingStrategiesRoutes);
+app.use('/api/workload', workloadRoutes);
+app.use('/api/work-preferences', workPreferencesRoutes);
+app.use('/api/gratitude', gratitudeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

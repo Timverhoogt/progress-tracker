@@ -89,6 +89,49 @@ router.get('/progress', async (req, res) => {
   }
 });
 
+// GET /api/skills/stats - Get skills statistics
+router.get('/stats', async (req, res) => {
+  try {
+    const userId = req.query.user_id || 'default';
+    
+    const stats = await db.query(`
+      SELECT 
+        COUNT(*) as total_skills,
+        AVG(current_level) as average_level,
+        COUNT(CASE WHEN current_level >= target_level THEN 1 END) as completed_skills,
+        COUNT(CASE WHEN current_level < target_level THEN 1 END) as in_progress_skills,
+        COUNT(CASE WHEN skill_category = 'technical' THEN 1 END) as technical_skills,
+        COUNT(CASE WHEN skill_category = 'leadership' THEN 1 END) as leadership_skills,
+        COUNT(CASE WHEN skill_category = 'communication' THEN 1 END) as communication_skills
+      FROM skills_assessment 
+      WHERE user_id = ?
+    `, [userId]);
+    
+    res.json(stats.rows[0]);
+  } catch (error) {
+    console.error('Error fetching skills stats:', error);
+    res.status(500).json({ error: 'Failed to fetch skills statistics' });
+  }
+});
+
+// GET /api/skills/gaps - Get skill gaps (current < target)
+router.get('/gaps', async (req, res) => {
+  try {
+    const userId = req.query.user_id || 'default';
+    const result = await db.query(`
+      SELECT *, (target_level - current_level) as gap_size
+      FROM skills_assessment 
+      WHERE user_id = ? AND current_level < target_level
+      ORDER BY gap_size DESC, skill_category, skill_name
+    `, [userId]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching skill gaps:', error);
+    res.status(500).json({ error: 'Failed to fetch skill gaps' });
+  }
+});
+
 // GET /api/skills/:id - Get specific skill
 router.get('/:id', async (req, res) => {
   try {
@@ -255,24 +298,6 @@ router.post('/bulk-assess', async (req, res) => {
   } catch (error) {
     console.error('Error bulk assessing skills:', error);
     res.status(500).json({ error: 'Failed to assess skills' });
-  }
-});
-
-// GET /api/skills/gaps - Get skill gaps (current < target)
-router.get('/gaps', async (req, res) => {
-  try {
-    const userId = req.query.user_id || 'default';
-    const result = await db.query(`
-      SELECT *, (target_level - current_level) as gap_size
-      FROM skills_assessment 
-      WHERE user_id = ? AND current_level < target_level
-      ORDER BY gap_size DESC, skill_category, skill_name
-    `, [userId]);
-    
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching skill gaps:', error);
-    res.status(500).json({ error: 'Failed to fetch skill gaps' });
   }
 });
 

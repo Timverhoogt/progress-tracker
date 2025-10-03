@@ -64,7 +64,8 @@ class LLMService {
         data: response.data.choices[0].message.content
       };
     } catch (error: any) {
-      console.error('LLM API Error:', error.response?.data || error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('LLM API Error:', error.response?.data || errorMessage);
       return {
         success: false,
         error: error.response?.data?.error?.message || 'LLM service unavailable'
@@ -444,6 +445,32 @@ ${personalityDirectives}
     ];
 
     return await this.callLLM(messages);
+  }
+
+  async enhanceWithAI(prompt: string, context: string = 'general'): Promise<string> {
+    try {
+      const messages = [
+        {
+          role: 'system',
+          content: `You are an AI assistant specialized in ${context} analysis. Provide helpful, accurate, and actionable insights based on the user's request.`
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ];
+
+      const response = await this.callLLM(messages);
+      
+      if (response.success) {
+        return response.data;
+      } else {
+        throw new Error(response.error || 'AI analysis failed');
+      }
+    } catch (error) {
+      console.error('Error in enhanceWithAI:', error);
+      throw error;
+    }
   }
 }
 

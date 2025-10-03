@@ -371,4 +371,58 @@ router.delete('/sessions/:id', async (req, res) => {
   }
 });
 
+// POST /api/coaching/mood-adaptive - Get mood-adaptive coaching response
+router.post('/mood-adaptive', async (req, res) => {
+  try {
+    const userId = req.query.user_id || 'default';
+    const { message } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    
+    // Import the coaching service
+    const coachingService = await import('../services/llm-coaching');
+    
+    // Generate mood-adaptive coaching response
+    const response = await coachingService.default.generateMoodAdaptiveCoaching(String(message), String(userId));
+    
+    // Save the session
+    const sessionId = uuidv4();
+    await db.query(`
+      INSERT INTO coaching_sessions (
+        id, user_id, session_type, session_topic, 
+        user_message, ai_response, coaching_style, 
+        context_data, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      sessionId,
+      userId,
+      'mood_adaptive',
+      'Mood-Adaptive Coaching',
+      message,
+      response.ai_response,
+      'mood_adaptive',
+      JSON.stringify({
+        coaching_insights: response.coaching_insights,
+        suggested_actions: response.suggested_actions,
+        follow_up_questions: response.follow_up_questions
+      }),
+      new Date().toISOString()
+    ]);
+    
+    res.json({
+      session_id: sessionId,
+      ai_response: response.ai_response,
+      coaching_insights: response.coaching_insights,
+      suggested_actions: response.suggested_actions,
+      follow_up_questions: response.follow_up_questions,
+      coaching_style: 'mood_adaptive'
+    });
+  } catch (error) {
+    console.error('Error in mood-adaptive coaching:', error);
+    res.status(500).json({ error: 'Failed to generate mood-adaptive coaching response' });
+  }
+});
+
 export default router;

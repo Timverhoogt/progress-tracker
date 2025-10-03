@@ -1,1076 +1,3108 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Progress Tracker - Tim Verhoogt @ Evos Amsterdam</title>
-    <link rel="manifest" href="/site.webmanifest">
-    <meta name="theme-color" content="#667eea">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Progress">
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#667eea" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Progress" />
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="js/chart.js"></script>
+  </head>
+  <body>
     <script>
-        // Simple authentication check for app page
-        const token = localStorage.getItem('auth_token');
-        const expirationTime = localStorage.getItem('auth_expiration');
-        
-        if (!token || !expirationTime || new Date().getTime() >= parseInt(expirationTime)) {
-            window.location.href = '/';
-        }
-        
-        // Logout function
-        function logout() {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('auth_expiration');
-            window.location.href = '/';
-        }
+      // Authentication disabled - direct access to app
     </script>
-    
+
     <div class="app-container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <h1><i class="fas fa-chart-line"></i> Progress Tracker</h1>
-                <p class="subtitle">Tim Verhoogt - Continuous Improvement Advisor @ Evos Amsterdam</p>
-                <button class="btn btn-secondary logout-btn" onclick="logout()" style="position: absolute; top: 1rem; right: 1rem; padding: 0.5rem 1rem;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
-        </header>
-
-        <!-- Navigation -->
-        <nav class="nav-tabs">
-            <button class="nav-tab active" data-tab="projects">
-                <i class="fas fa-folder"></i> Projects
-            </button>
-            <button class="nav-tab" data-tab="notes">
-                <i class="fas fa-sticky-note"></i> Notes
-            </button>
-            <button class="nav-tab" data-tab="todos">
-                <i class="fas fa-tasks"></i> Todos
-            </button>
-            <button class="nav-tab" data-tab="timelines">
-                <i class="fas fa-stream"></i> Timelines
-            </button>
-            <button class="nav-tab" data-tab="reports">
-                <i class="fas fa-file-alt"></i> Reports
-            </button>
-            <button class="nav-tab" data-tab="skills">
-                <i class="fas fa-brain"></i> Skills
-            </button>
-            <button class="nav-tab" data-tab="achievements">
-                <i class="fas fa-trophy"></i> Achievements
-            </button>
-            <button class="nav-tab" data-tab="reflections">
-                <i class="fas fa-mirror"></i> Reflections
-            </button>
-            <button class="nav-tab" data-tab="coaching">
-                <i class="fas fa-heart"></i> Coaching
-            </button>
-            <button class="nav-tab" data-tab="settings">
-                <i class="fas fa-cog"></i> Settings
-            </button>
-        </nav>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Projects Tab -->
-            <div id="projects" class="tab-content active">
-                <div class="tab-header">
-                    <h2>Projects</h2>
-                    <button class="btn btn-primary" id="newProjectBtn">
-                        <i class="fas fa-plus"></i> New Project
-                    </button>
-                </div>
-                <div class="projects-grid" id="projectsGrid">
-                    <!-- Projects will be loaded here -->
-                </div>
-            </div>
-
-            <!-- Notes Tab -->
-            <div id="notes" class="tab-content">
-                <div class="tab-header">
-                    <h2>Diary Notes</h2>
-                    <select class="project-selector" id="notesProjectSelector">
-                        <option value="">Select a project...</option>
-                    </select>
-                </div>
-                <div class="notes-container">
-                    <div class="note-input-section">
-                        <textarea 
-                            id="noteInput" 
-                            placeholder="Write your thoughts, observations, or progress updates here... The AI will enhance and organize your notes automatically."
-                            rows="6"
-                        ></textarea>
-                        <div class="note-input-actions" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px;">
-                            <button class="voice-btn" id="recordVoiceBtn" title="Record voice note">
-                                <i class="fas fa-microphone"></i>
-                            </button>
-                            <span id="recordStatus" class="record-status"></span>
-                        </div>
-                        <button class="btn btn-primary" id="addNoteBtn">
-                            <i class="fas fa-magic"></i> Add & Enhance Note
-                        </button>
-                    </div>
-                    <div class="notes-list" id="notesList">
-                        <!-- Notes will be loaded here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Todos Tab -->
-            <div id="todos" class="tab-content">
-                <div class="tab-header">
-                    <h2>Tasks & Todos</h2>
-                    <div class="tab-controls">
-                        <select class="project-selector" id="todosProjectSelector">
-                            <option value="">Select a project...</option>
-                        </select>
-                        <button class="btn btn-secondary" id="generateTodosBtn">
-                            <i class="fas fa-robot"></i> AI Suggestions
-                        </button>
-                        <button class="btn btn-primary" id="newTodoBtn">
-                            <i class="fas fa-plus"></i> Add Todo
-                        </button>
-                    </div>
-                </div>
-                <div class="todos-list" id="todosList">
-                    <!-- Todos will be loaded here -->
-                </div>
-            </div>
-
-            <!-- Reports Tab -->
-            <div id="reports" class="tab-content">
-                <div class="tab-header">
-                    <h2>Reports & Communications</h2>
-                    <div class="tab-controls">
-                        <select class="project-selector" id="reportsProjectSelector">
-                            <option value="">Select a project...</option>
-                        </select>
-                        <button class="btn btn-primary" id="generateReportBtn">
-                            <i class="fas fa-file-export"></i> Generate Report
-                        </button>
-                    </div>
-                </div>
-                <div class="reports-list" id="reportsList">
-                    <!-- Reports will be loaded here -->
-                </div>
-            </div>
-
-            <!-- Timelines Tab -->
-            <div id="timelines" class="tab-content">
-                <div class="tab-header">
-                    <h2>Project Timelines</h2>
-                    <div class="tab-controls">
-                        <select class="project-selector" id="timelinesProjectSelector">
-                            <option value="">Select a project...</option>
-                        </select>
-                        <div class="timeline-zoom-controls">
-                            <label for="timelineZoom">View:</label>
-                            <select id="timelineZoom" class="timeline-zoom-selector">
-                                <option value="all">All Items</option>
-                                <option value="week">This Week</option>
-                                <option value="month" selected>This Month</option>
-                                <option value="quarter">This Quarter</option>
-                                <option value="year">This Year</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-secondary" id="estimateTimelineBtn">
-                            <i class="fas fa-robot"></i> AI Estimate
-                        </button>
-                        <button class="btn btn-secondary" id="exportTimelineBtn">
-                            <i class="fas fa-download"></i> Export
-                        </button>
-                        <button class="btn btn-primary" id="newMilestoneBtn">
-                            <i class="fas fa-flag"></i> Add Milestone
-                        </button>
-                    </div>
-                </div>
-                <div class="timeline-container" id="timelineContainer">
-                    <!-- Timeline items will be rendered here -->
-                </div>
-                
-                <!-- Keyboard shortcuts help -->
-                <div class="timeline-shortcuts-help" style="margin-top: 16px; padding: 12px; background: #f8faff; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; color: #64748b;">
-                    <strong>Keyboard shortcuts:</strong> 
-                    <span style="margin-left: 8px;">Ctrl/⌘+1 Week</span>
-                    <span style="margin-left: 8px;">Ctrl/⌘+2 Month</span>
-                    <span style="margin-left: 8px;">Ctrl/⌘+3 Quarter</span>
-                    <span style="margin-left: 8px;">Ctrl/⌘+4 Year</span>
-                    <span style="margin-left: 8px;">Ctrl/⌘+0 All</span>
-                    <span style="margin-left: 16px;">Ctrl/⌘+M New Milestone</span>
-                    <span style="margin-left: 8px;">Ctrl/⌘+E AI Estimate</span>
-                </div>
-            </div>
-
-            <!-- Skills Tab -->
-            <div id="skills" class="tab-content">
-                <div class="tab-header">
-                    <h2><i class="fas fa-brain"></i> Skills Assessment & Development</h2>
-                    <p class="tab-description">AI-guided skills evaluation, gap analysis, and personalized development plans</p>
-                    <div class="tab-controls">
-                        <button class="btn btn-secondary" id="skillsProgressBtn">
-                            <i class="fas fa-chart-bar"></i> Progress Overview
-                        </button>
-                        <button class="btn btn-secondary" id="skillsGapsBtn">
-                            <i class="fas fa-search"></i> Analyze Gaps
-                        </button>
-                        <button class="btn btn-primary" id="newSkillBtn">
-                            <i class="fas fa-plus"></i> Add Skill
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="skills-container">
-                    <!-- Skills Categories Filter -->
-                    <div class="skills-filters">
-                        <div class="filter-section">
-                            <label for="skillsCategoryFilter">Category:</label>
-                            <select id="skillsCategoryFilter" class="filter-select">
-                                <option value="">All Categories</option>
-                                <option value="technical">Technical Skills</option>
-                                <option value="leadership">Leadership</option>
-                                <option value="communication">Communication</option>
-                                <option value="analytical">Analytical</option>
-                                <option value="project_management">Project Management</option>
-                                <option value="continuous_improvement">Continuous Improvement</option>
-                            </select>
-                        </div>
-                        <div class="filter-section">
-                            <label for="skillsViewMode">View:</label>
-                            <select id="skillsViewMode" class="filter-select">
-                                <option value="grid">Skills Grid</option>
-                                <option value="progress">Progress Chart</option>
-                                <option value="gaps">Gap Analysis</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Skills Grid View -->
-                    <div id="skillsGridView" class="skills-view">
-                        <div class="skills-grid" id="skillsGrid">
-                            <!-- Skills will be loaded here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Skills Progress View -->
-                    <div id="skillsProgressView" class="skills-view" style="display: none;">
-                        <div class="skills-progress-chart">
-                            <canvas id="skillsProgressChart" width="800" height="400"></canvas>
-                        </div>
-                        <div class="skills-stats" id="skillsStats">
-                            <!-- Progress statistics will be loaded here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Skills Gaps View -->
-                    <div id="skillsGapsView" class="skills-view" style="display: none;">
-                        <div class="gaps-analysis" id="skillsGapsAnalysis">
-                            <!-- Gap analysis will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Achievements Tab -->
-            <div id="achievements" class="tab-content">
-                <div class="tab-header">
-                    <h2><i class="fas fa-trophy"></i> Achievements & Goals</h2>
-                    <p class="tab-description">Track your accomplishments, set new goals, and celebrate your progress</p>
-                    <div class="tab-controls">
-                        <button class="btn btn-secondary" id="achievementsStatsBtn">
-                            <i class="fas fa-chart-pie"></i> Statistics
-                        </button>
-                        <button class="btn btn-secondary" id="achievementsSuggestBtn">
-                            <i class="fas fa-robot"></i> AI Suggestions
-                        </button>
-                        <button class="btn btn-primary" id="newAchievementBtn">
-                            <i class="fas fa-plus"></i> Add Achievement
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="achievements-container">
-                    <!-- Achievement Filters -->
-                    <div class="achievements-filters">
-                        <div class="filter-section">
-                            <label for="achievementsStatusFilter">Status:</label>
-                            <select id="achievementsStatusFilter" class="filter-select">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="completed">Completed</option>
-                                <option value="paused">Paused</option>
-                            </select>
-                        </div>
-                        <div class="filter-section">
-                            <label for="achievementsTypeFilter">Type:</label>
-                            <select id="achievementsTypeFilter" class="filter-select">
-                                <option value="">All Types</option>
-                                <option value="project">Project Goals</option>
-                                <option value="skill">Skill Development</option>
-                                <option value="personal">Personal Growth</option>
-                                <option value="professional">Professional</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Achievements Grid -->
-                    <div class="achievements-grid" id="achievementsGrid">
-                        <!-- Achievements will be loaded here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reflections Tab -->
-            <div id="reflections" class="tab-content">
-                <div class="tab-header">
-                    <h2><i class="fas fa-mirror"></i> Reflections & Insights</h2>
-                    <p class="tab-description">AI-guided reflection templates, pattern analysis, and personal insights</p>
-                    <div class="tab-controls">
-                        <button class="btn btn-secondary" id="reflectionsInsightsBtn">
-                            <i class="fas fa-lightbulb"></i> AI Insights
-                        </button>
-                        <button class="btn btn-secondary" id="reflectionsTemplatesBtn">
-                            <i class="fas fa-clipboard-list"></i> Templates
-                        </button>
-                        <button class="btn btn-primary" id="newReflectionBtn">
-                            <i class="fas fa-plus"></i> Start Reflection
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="reflections-container">
-                    <!-- Reflection Views -->
-                    <div class="reflections-views">
-                        <div class="view-tabs">
-                            <button class="view-tab active" data-view="recent">Recent Reflections</button>
-                            <button class="view-tab" data-view="templates">Templates</button>
-                            <button class="view-tab" data-view="insights">AI Insights</button>
-                        </div>
-                        
-                        <!-- Recent Reflections View -->
-                        <div id="recentReflectionsView" class="reflection-view active">
-                            <div class="reflections-list" id="reflectionsList">
-                                <!-- Recent reflections will be loaded here -->
-                            </div>
-                        </div>
-                        
-                        <!-- Templates View -->
-                        <div id="templatesView" class="reflection-view">
-                            <div class="templates-grid" id="templatesGrid">
-                                <!-- Reflection templates will be loaded here -->
-                            </div>
-                        </div>
-                        
-                        <!-- Insights View -->
-                        <div id="insightsView" class="reflection-view">
-                            <div class="insights-dashboard" id="insightsDashboard">
-                                <!-- AI-generated insights will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Coaching Tab -->
-            <div id="coaching" class="tab-content">
-                <div class="tab-header">
-                    <h2><i class="fas fa-heart"></i> AI Mentor & Coach</h2>
-                    <p class="tab-description">Your personal AI coach for motivation, guidance, and professional growth</p>
-                </div>
-                
-                <div class="coaching-container">
-                    <!-- Welcome Section -->
-                    <div class="coaching-welcome" id="coachingWelcome">
-                        <div class="mentor-avatar">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <div class="welcome-content">
-                            <h3>Hello Tim! 👋</h3>
-                            <p>I'm here to support you on your continuous improvement journey at Evos Amsterdam. Whether you need motivation, want to discuss challenges, or seek guidance on your professional growth, I'm here to listen and help.</p>
-                            <div class="quick-topics">
-                                <span class="topic-label">Quick topics:</span>
-                                <button class="topic-btn" onclick="startConversation('motivation')">
-                                    <i class="fas fa-rocket"></i> Need motivation
-                                </button>
-                                <button class="topic-btn" onclick="startConversation('challenge')">
-                                    <i class="fas fa-mountain"></i> Facing challenges
-                                </button>
-                                <button class="topic-btn" onclick="startConversation('growth')">
-                                    <i class="fas fa-chart-line"></i> Career growth
-                                </button>
-                                <button class="topic-btn" onclick="startConversation('confidence')">
-                                    <i class="fas fa-shield-alt"></i> Building confidence
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Chat Interface -->
-                    <div class="coaching-chat" id="coachingChat" style="display: none;">
-                        <div class="chat-messages" id="chatMessages">
-                            <!-- Messages will be dynamically added here -->
-                        </div>
-                        
-                        <div class="chat-input-section">
-                            <form id="coachingForm" class="chat-form">
-                                <div class="input-group">
-                                    <textarea id="coachingInput" 
-                                        placeholder="Share what's on your mind... I'm here to listen and support you."
-                                        rows="3"></textarea>
-                                    <button type="submit" class="send-btn">
-                                        <i class="fas fa-paper-plane"></i>
-                                    </button>
-                                </div>
-                            </form>
-                            <div class="chat-actions">
-                                <button type="button" class="btn btn-outline" onclick="clearConversation()">
-                                    <i class="fas fa-refresh"></i> New conversation
-                                </button>
-                                <button type="button" class="btn btn-outline" onclick="showWelcome()">
-                                    <i class="fas fa-home"></i> Back to welcome
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Insights Panel -->
-                    <div class="coaching-insights">
-                        <div class="insights-header">
-                            <h4><i class="fas fa-lightbulb"></i> Today's Insight</h4>
-                        </div>
-                        <div class="insight-content" id="dailyInsight">
-                            <p><em>Your growth as a continuous improvement advisor comes not just from solving problems, but from the courage to tackle new challenges with confidence.</em></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Tab -->
-            <div id="settings" class="tab-content">
-                <div class="tab-header">
-                    <h2>Settings</h2>
-                </div>
-                <div class="settings-container">
-                    <!-- Email Settings Section -->
-                    <div class="settings-section">
-                        <h3><i class="fas fa-envelope"></i> Email Configuration</h3>
-                            <div class="settings-card">
-                                <form id="emailSettingsForm" class="grid-form">
-                                <div class="form-group">
-                                    <label for="weeklyReportEmail">Weekly Report Email Address</label>
-                                    <input type="email" id="weeklyReportEmail" placeholder="Enter your email address">
-                                    <small class="form-help">This email will receive automated weekly progress reports</small>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="weeklyReportRecipients">Additional Recipients (comma-separated)</label>
-                                    <input type="text" id="weeklyReportRecipients" placeholder="e.g. manager@company.com, teamlead@company.com">
-                                    <small class="form-help">Optional: add multiple emails separated by commas</small>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="weeklyReportsEnabled">
-                                        <span class="checkmark"></span>
-                                        Enable Weekly Reports
-                                    </label>
-                                    <small class="form-help">Automatically send weekly progress summaries every Monday at 9 AM</small>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="reportSchedule">Report Schedule (Cron Format)</label>
-                                    <input type="text" id="reportSchedule" placeholder="0 9 * * 1">
-                                    <small class="form-help">Default: Every Monday at 9 AM (0 9 * * 1)</small>
-                                </div>
-                                
-                                    <div class="form-group">
-                                        <label for="primaryProject">Primary Project</label>
-                                        <select id="primaryProject" class="project-selector">
-                                            <option value="">Select project for AI status...</option>
-                                        </select>
-                                        <small class="form-help">Weekly email can include an AI status for this project</small>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Preview Options</label>
-                                        <div class="chips">
-                                            <span class="chip" data-template="self">Self</span>
-                                            <span class="chip" data-template="manager">Manager</span>
-                                            <span class="chip" data-template="company">Company</span>
-                                        </div>
-                                        <div class="checkbox-row">
-                                            <label><input type="checkbox" id="includeNotes" checked> Include Notes</label>
-                                            <label><input type="checkbox" id="includeTodos" checked> Include Tasks</label>
-                                            <label><input type="checkbox" id="useAiStatus" checked> Include AI Project Status</label>
-                                            <label><input type="checkbox" id="narrativeOnly" checked> Narrative Only (no raw lists)</label>
-                                        </div>
-                                        <div class="form-actions" style="margin-top:8px;">
-                                            <button type="button" class="btn btn-secondary" id="previewWeeklyBtn">
-                                                <i class="fas fa-eye"></i> Preview Weekly Email
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Save Settings
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" id="testEmailBtn">
-                                        <i class="fas fa-paper-plane"></i> Send Test Email
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                        <!-- Profiles Section -->
-                        <div class="settings-section">
-                            <h3><i class="fas fa-users-cog"></i> Recipient Groups & Templates</h3>
-                            <div class="settings-card">
-                                <div class="settings-info">
-                                    <div id="profilesList"></div>
-                                    <div class="form-actions" style="margin-top:12px;">
-                                        <button type="button" class="btn btn-secondary" id="addProfileBtn">
-                                            <i class="fas fa-plus"></i> Add Group
-                                        </button>
-                                        <button type="button" class="btn btn-primary" id="saveProfilesBtn">
-                                            <i class="fas fa-save"></i> Save Groups
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    <!-- Weekly Reports Section -->
-                    <div class="settings-section">
-                        <h3><i class="fas fa-calendar-week"></i> Weekly Reports</h3>
-                        <div class="settings-card">
-                            <div class="settings-info">
-                                <div class="settings-status" id="reportsStatus">
-                                    <div class="status-item">
-                                        <span class="status-label">Status:</span>
-                                        <span class="status-value" id="reportsStatusValue">Loading...</span>
-                                    </div>
-                                    <div class="status-item">
-                                        <span class="status-label">Next Report:</span>
-                                        <span class="status-value" id="nextReportTime">Loading...</span>
-                                    </div>
-                                    <div class="status-item">
-                                        <span class="status-label">SendGrid:</span>
-                                        <span class="status-value" id="sendgridStatus">Loading...</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="settings-actions">
-                                    <button type="button" class="btn btn-primary" id="generateWeeklyBtn">
-                                        <i class="fas fa-file-export"></i> Generate Weekly Report Now
-                                    </button>
-                                    <button type="button" class="btn btn-success" id="refreshStatusBtn">
-                                        <i class="fas fa-sync"></i> Refresh Status
-                                    </button>
-                                    <button type="button" class="btn btn-warning" id="restartSchedulerBtn">
-                                        <i class="fas fa-clock"></i> Restart Scheduler
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SendGrid Configuration -->
-                    <div class="settings-section" id="sendgridConfigSection">
-                        <h3><i class="fas fa-mail-bulk"></i> SendGrid Configuration</h3>
-                        <div class="settings-card">
-                            <div class="settings-info">
-                                <p>SendGrid is configured via environment variables on the server.</p>
-                                <div class="config-steps">
-                                    <h4>Setup Instructions:</h4>
-                                    <ol>
-                                        <li>Get your SendGrid API key from <a href="https://sendgrid.com" target="_blank">SendGrid Dashboard</a></li>
-                                        <li>Update your <code>.env</code> file with:</li>
-                                        <pre><code>SENDGRID_API_KEY=your_api_key_here</code></pre>
-                                        <li>Restart the application</li>
-                                        <li>Test the configuration using the "Send Test Email" button above</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- AI Assistant Configuration -->
-                    <div class="settings-section">
-                        <h3><i class="fas fa-robot"></i> AI Assistant Configuration</h3>
-                        <div class="settings-card">
-                            <p class="settings-intro">
-                                Customize how the AI assistant communicates across all features including note enhancement, 
-                                todo generation, reports, and timeline analysis. Changes apply immediately to new AI requests.
-                            </p>
-                            
-                            <form id="llmSettingsForm" class="grid-form">
-                                <!-- Preset Templates -->
-                                <div class="form-group">
-                                    <label for="llmPresetTemplate">Role Template</label>
-                                    <select id="llmPresetTemplate">
-                                        <option value="default">Default Assistant</option>
-                                        <option value="consultant">Management Consultant</option>
-                                        <option value="analyst">Business Analyst</option>
-                                        <option value="manager">Project Manager</option>
-                                        <option value="technical">Technical Expert</option>
-                                        <option value="creative">Creative Strategist</option>
-                                    </select>
-                                    <small class="form-help">
-                                        <strong>Default:</strong> Tim's AI assistant for continuous improvement<br>
-                                        <strong>Consultant:</strong> Strategic recommendations and process improvement<br>
-                                        <strong>Analyst:</strong> Data-driven insights and systematic evaluation<br>
-                                        <strong>Manager:</strong> Execution focus, timelines, and coordination<br>
-                                        <strong>Technical:</strong> Implementation details and technical best practices<br>
-                                        <strong>Creative:</strong> Innovation and out-of-the-box thinking
-                                    </small>
-                                </div>
-
-                                <!-- Communication Style -->
-                                <div class="form-group">
-                                    <label for="llmTone">Communication Style</label>
-                                    <select id="llmTone">
-                                        <option value="professional">Professional</option>
-                                        <option value="friendly">Friendly</option>
-                                        <option value="formal">Formal</option>
-                                        <option value="concise">Concise</option>
-                                        <option value="enthusiastic">Enthusiastic</option>
-                                        <option value="analytical">Analytical</option>
-                                        <option value="creative">Creative</option>
-                                    </select>
-                                    <small class="form-help">
-                                        <strong>Professional:</strong> Clear, business-appropriate language<br>
-                                        <strong>Friendly:</strong> Warm, approachable, and supportive tone<br>
-                                        <strong>Formal:</strong> Strict formality and business language<br>
-                                        <strong>Concise:</strong> Direct, brief, eliminate unnecessary words<br>
-                                        <strong>Enthusiastic:</strong> Positive energy and excitement<br>
-                                        <strong>Analytical:</strong> Data-focused, logical, structured<br>
-                                        <strong>Creative:</strong> Innovative thinking and creative solutions
-                                    </small>
-                                </div>
-
-                                <!-- Detail Level -->
-                                <div class="form-group">
-                                    <label for="llmDetailLevel">Response Detail Level</label>
-                                    <select id="llmDetailLevel">
-                                        <option value="brief">Brief</option>
-                                        <option value="balanced">Balanced</option>
-                                        <option value="detailed">Detailed</option>
-                                        <option value="comprehensive">Comprehensive</option>
-                                    </select>
-                                    <small class="form-help">
-                                        <strong>Brief:</strong> Essential information only, very concise<br>
-                                        <strong>Balanced:</strong> Adequate detail without being verbose<br>
-                                        <strong>Detailed:</strong> Comprehensive explanations and analysis<br>
-                                        <strong>Comprehensive:</strong> Exhaustive coverage with examples and context
-                                    </small>
-                                </div>
-
-                                <!-- Language Preference -->
-                                <div class="form-group">
-                                    <label for="llmLanguage">Primary Language</label>
-                                    <select id="llmLanguage">
-                                        <option value="auto">Auto-detect</option>
-                                        <option value="english">English</option>
-                                        <option value="dutch">Dutch (Nederlands)</option>
-                                        <option value="german">German (Deutsch)</option>
-                                        <option value="french">French (Français)</option>
-                                        <option value="spanish">Spanish (Español)</option>
-                                    </select>
-                                    <small class="form-help">
-                                        AI will primarily respond in this language unless specifically asked otherwise. 
-                                        Auto-detect uses context clues from your input.
-                                    </small>
-                                </div>
-
-                                <!-- System Prompt Configuration -->
-                                <div class="form-group" style="grid-column: 1 / -1;">
-                                    <label>System Instructions Mode</label>
-                                    <div class="radio-group">
-                                        <label class="radio-option">
-                                            <input type="radio" name="llmSystemPromptMode" value="generated" id="llmPromptModeGenerated" checked>
-                                            <span class="radio-label">
-                                                <strong>Generated Prompt</strong>
-                                                <small>Use our optimized system prompt designed for your role at Evos Amsterdam</small>
-                                            </span>
-                                        </label>
-                                        <label class="radio-option">
-                                            <input type="radio" name="llmSystemPromptMode" value="custom" id="llmPromptModeCustom">
-                                            <span class="radio-label">
-                                                <strong>Custom Prompt</strong>
-                                                <small>Write your own system instructions</small>
-                                            </span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Generated Prompt Preview -->
-                                <div class="form-group" style="grid-column: 1 / -1;" id="generatedPromptPreview">
-                                    <label>Generated System Prompt Preview</label>
-                                    <div class="prompt-preview" id="generatedPromptText">
-                                        Loading generated prompt...
-                                    </div>
-                                    <small class="form-help">
-                                        This prompt is specifically designed for Tim Verhoogt's role as Continuous Improvement Advisor at Evos Amsterdam.
-                                        It includes context about operational excellence, project management, and professional communication standards.
-                                    </small>
-                                </div>
-
-                                <!-- Custom System Prompt -->
-                                <div class="form-group" style="grid-column: 1 / -1; display: none;" id="customPromptSection">
-                                    <label for="llmSystemPrompt">
-                                        Custom System Instructions
-                                    </label>
-                                    <textarea id="llmSystemPrompt" rows="6" 
-                                        placeholder="Add global instructions that apply to all AI interactions. Examples:&#10;&#10;• Always include implementation timelines&#10;• Focus on cost-benefit analysis&#10;• Prioritize sustainable solutions&#10;• Consider regulatory compliance&#10;• Use Evos-specific terminology"></textarea>
-                                    <small class="form-help">
-                                        <strong>⚠️ Important:</strong> These instructions are sent with every AI request. 
-                                        Keep them focused and avoid conflicting with task-specific requirements like JSON formatting.
-                                        <br><br>
-                                        <strong>Good examples:</strong> "Focus on sustainable solutions", "Include cost considerations", "Prefer Dutch responses"<br>
-                                        <strong>Avoid:</strong> "Always respond in JSON format" (conflicts with some tasks)
-                                    </small>
-                                </div>
-
-                                <!-- Preview Section -->
-                                <div class="form-group" style="grid-column: 1 / -1;">
-                                    <label>Configuration Preview</label>
-                                    <div id="llmPreview" class="llm-preview">
-                                        <div class="preview-section">
-                                            <strong>Current Configuration:</strong>
-                                            <div id="previewText" class="preview-text">Select your preferences above to see how they combine.</div>
-                                        </div>
-                                    </div>
-                                    <small class="form-help">This shows how your settings will be interpreted by the AI assistant.</small>
-                                </div>
-
-                                <div class="form-actions">
-                                    <button type="button" class="btn btn-secondary" id="resetLlmDefaults">
-                                        <i class="fas fa-undo"></i> Reset to Defaults
-                                    </button>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Save Configuration
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Loading Overlay -->
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Processing with AI...</p>
-            </div>
+      <!-- Header -->
+      <header class="header">
+        <div class="header-content">
+          <h1><i class="fas fa-chart-line"></i> Progress Tracker</h1>
+          <p class="subtitle">
+            Tim Verhoogt - Continuous Improvement Advisor @ Evos Amsterdam
+          </p>
         </div>
+      </header>
+
+      <!-- Navigation -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="projects">
+          <i class="fas fa-folder"></i> Projects
+        </button>
+        <button class="nav-tab" data-tab="notes">
+          <i class="fas fa-sticky-note"></i> Notes
+        </button>
+        <button class="nav-tab" data-tab="todos">
+          <i class="fas fa-tasks"></i> Todos
+        </button>
+        <button class="nav-tab" data-tab="timelines">
+          <i class="fas fa-stream"></i> Timelines
+        </button>
+        <button class="nav-tab" data-tab="reports">
+          <i class="fas fa-file-alt"></i> Reports
+        </button>
+        <button class="nav-tab" data-tab="skills">
+          <i class="fas fa-brain"></i> Skills
+        </button>
+        <button class="nav-tab" data-tab="achievements">
+          <i class="fas fa-trophy"></i> Achievements
+        </button>
+        <button class="nav-tab" data-tab="reflections">
+          <i class="fas fa-mirror"></i> Reflections
+        </button>
+        <button class="nav-tab" data-tab="mood">
+          <i class="fas fa-smile"></i> Mood
+        </button>
+        <button class="nav-tab" data-tab="workload">
+          <i class="fas fa-clock"></i> Workload
+        </button>
+        <button class="nav-tab" data-tab="gratitude">
+          <i class="fas fa-heart"></i> Gratitude
+        </button>
+        <button class="nav-tab" data-tab="coaching">
+          <i class="fas fa-robot"></i> AI Coaching
+        </button>
+        <button class="nav-tab" data-tab="learning">
+          <i class="fas fa-graduation-cap"></i> Learning
+        </button>
+        <button class="nav-tab" data-tab="settings">
+          <i class="fas fa-cog"></i> Settings
+        </button>
+      </nav>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Projects Tab -->
+        <div id="projects" class="tab-content active" data-tab="projects">
+          <div class="tab-header">
+            <h2>Projects</h2>
+            <button class="btn btn-primary" id="newProjectBtn">
+              <i class="fas fa-plus"></i> New Project
+            </button>
+          </div>
+          <div class="projects-grid" id="projectsGrid">
+            <!-- Projects will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Notes Tab -->
+        <div id="notes" class="tab-content" data-tab="notes">
+          <div class="tab-header">
+            <h2>Diary Notes</h2>
+            <select class="project-selector" id="notesProjectSelector">
+              <option value="">Select a project...</option>
+            </select>
+          </div>
+          <div class="notes-container">
+            <div class="note-input-section">
+              <textarea
+                id="noteInput"
+                placeholder="Write your thoughts, observations, or progress updates here... The AI will enhance and organize your notes automatically."
+                rows="6"
+              ></textarea>
+              <div
+                class="note-input-actions"
+                style="
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                  flex-wrap: wrap;
+                  margin-top: 8px;
+                "
+              >
+                <button
+                  class="voice-btn"
+                  id="recordVoiceBtn"
+                  title="Record voice note"
+                >
+                  <i class="fas fa-microphone"></i>
+                </button>
+                <span id="recordStatus" class="record-status"></span>
+              </div>
+              <button class="btn btn-primary" id="addNoteBtn">
+                <i class="fas fa-magic"></i> Add & Enhance Note
+              </button>
+            </div>
+            <div class="notes-list" id="notesList">
+              <!-- Notes will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Todos Tab -->
+        <div id="todos" class="tab-content" data-tab="todos">
+          <div class="tab-header">
+            <h2>Tasks & Todos</h2>
+            <div class="tab-controls layout-stack">
+              <div class="tab-controls-group">
+                <select class="project-selector" id="todosProjectSelector">
+                  <option value="">Select a project...</option>
+                </select>
+                <button class="btn btn-secondary" id="generateTodosBtn">
+                  <i class="fas fa-robot"></i> AI Suggestions
+                </button>
+                <button class="btn btn-primary" id="newTodoBtn">
+                  <i class="fas fa-plus"></i> Add Todo
+                </button>
+              </div>
+              <div class="tab-controls-group">
+                <button class="btn btn-secondary" id="bulkCompleteTodosBtn">
+                  <i class="fas fa-check-double"></i> Complete Selected
+                </button>
+                <button class="btn btn-secondary" id="bulkDeleteTodosBtn">
+                  <i class="fas fa-trash-alt"></i> Delete Selected
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="todos-list" id="todosList">
+            <div class="todos-header">
+              <label class="todos-select-all">
+                <input type="checkbox" id="selectAllTodos" />
+                <span>Select All</span>
+              </label>
+              <span class="todos-summary" id="todosSummary"></span>
+            </div>
+            <div class="todos-items" id="todosItems">
+              <!-- Todos will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content" data-tab="reports">
+          <div class="tab-header">
+            <h2>Reports & Communications</h2>
+            <div class="tab-controls">
+              <select class="project-selector" id="reportsProjectSelector">
+                <option value="">Select a project...</option>
+              </select>
+              <button class="btn btn-primary" id="generateReportBtn">
+                <i class="fas fa-file-export"></i> Generate Report
+              </button>
+            </div>
+          </div>
+          <div class="reports-list" id="reportsList">
+            <!-- Reports will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Timelines Tab -->
+        <div id="timelines" class="tab-content" data-tab="timelines">
+          <div class="tab-header">
+            <h2>Project Timelines</h2>
+            <div class="tab-controls">
+              <select class="project-selector" id="timelinesProjectSelector">
+                <option value="">Select a project...</option>
+              </select>
+              <div class="timeline-zoom-controls">
+                <label for="timelineZoom">View:</label>
+                <select id="timelineZoom" class="timeline-zoom-selector">
+                  <option value="all">All Items</option>
+                  <option value="week">This Week</option>
+                  <option value="month" selected>This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" id="estimateTimelineBtn">
+                <i class="fas fa-robot"></i> AI Estimate
+              </button>
+              <button class="btn btn-secondary" id="exportTimelineBtn">
+                <i class="fas fa-download"></i> Export
+              </button>
+              <button class="btn btn-primary" id="newMilestoneBtn">
+                <i class="fas fa-flag"></i> Add Milestone
+              </button>
+            </div>
+          </div>
+          <div class="timeline-container" id="timelineContainer">
+            <!-- Timeline items will be rendered here -->
+          </div>
+
+          <!-- Keyboard shortcuts help -->
+          <div
+            class="timeline-shortcuts-help"
+            style="
+              margin-top: 16px;
+              padding: 12px;
+              background: #f8faff;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              font-size: 0.85rem;
+              color: #64748b;
+            "
+          >
+            <strong>Keyboard shortcuts:</strong>
+            <span style="margin-left: 8px">Ctrl/⌘+1 Week</span>
+            <span style="margin-left: 8px">Ctrl/⌘+2 Month</span>
+            <span style="margin-left: 8px">Ctrl/⌘+3 Quarter</span>
+            <span style="margin-left: 8px">Ctrl/⌘+4 Year</span>
+            <span style="margin-left: 8px">Ctrl/⌘+0 All</span>
+            <span style="margin-left: 16px">Ctrl/⌘+M New Milestone</span>
+            <span style="margin-left: 8px">Ctrl/⌘+E AI Estimate</span>
+          </div>
+        </div>
+
+        <!-- Skills Tab -->
+        <div id="skills" class="tab-content" data-tab="skills">
+          <div class="tab-header">
+            <h2>
+              <i class="fas fa-brain"></i> Skills Assessment & Development
+            </h2>
+            <p class="tab-description">
+              AI-guided skills evaluation, gap analysis, and personalized
+              development plans
+            </p>
+            <div class="tab-controls">
+              <button class="btn btn-secondary" id="skillsProgressBtn">
+                <i class="fas fa-chart-bar"></i> Progress Overview
+              </button>
+              <button class="btn btn-secondary" id="skillsGapsBtn">
+                <i class="fas fa-search"></i> Analyze Gaps
+              </button>
+              <button class="btn btn-primary" id="newSkillBtn">
+                <i class="fas fa-plus"></i> Add Skill
+              </button>
+            </div>
+          </div>
+
+          <div class="skills-container">
+            <!-- Skills Categories Filter -->
+            <div class="skills-filters">
+              <div class="filter-section">
+                <label for="skillsCategoryFilter">Category:</label>
+                <select id="skillsCategoryFilter" class="filter-select">
+                  <option value="">All Categories</option>
+                  <option value="technical">Technical Skills</option>
+                  <option value="leadership">Leadership</option>
+                  <option value="communication">Communication</option>
+                  <option value="analytical">Analytical</option>
+                  <option value="project_management">Project Management</option>
+                  <option value="continuous_improvement">
+                    Continuous Improvement
+                  </option>
+                </select>
+              </div>
+              <div class="filter-section">
+                <label for="skillsViewMode">View:</label>
+                <select id="skillsViewMode" class="filter-select">
+                  <option value="grid">Skills Grid</option>
+                  <option value="progress">Progress Chart</option>
+                  <option value="gaps">Gap Analysis</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Skills Grid View -->
+            <div id="skillsGridView" class="skills-view">
+              <div class="skills-grid" id="skillsGrid">
+                <!-- Skills will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Skills Progress View -->
+            <div
+              id="skillsProgressView"
+              class="skills-view"
+              style="display: none"
+            >
+              <div class="skills-progress-chart">
+                <canvas
+                  id="skillsProgressChart"
+                  width="800"
+                  height="400"
+                ></canvas>
+              </div>
+              <div class="skills-stats" id="skillsStats">
+                <!-- Progress statistics will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Skills Gaps View -->
+            <div id="skillsGapsView" class="skills-view" style="display: none">
+              <div class="gaps-analysis" id="skillsGapsAnalysis">
+                <!-- Gap analysis will be loaded here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Achievements Tab -->
+        <div id="achievements" class="tab-content" data-tab="achievements">
+          <div class="tab-header">
+            <h2><i class="fas fa-trophy"></i> Achievements & Goals</h2>
+            <p class="tab-description">
+              Track your accomplishments, set new goals, and celebrate your
+              progress
+            </p>
+            <div class="tab-controls">
+              <button class="btn btn-secondary" id="achievementsStatsBtn">
+                <i class="fas fa-chart-pie"></i> Statistics
+              </button>
+              <button class="btn btn-secondary" id="achievementsSuggestBtn">
+                <i class="fas fa-robot"></i> AI Suggestions
+              </button>
+              <button class="btn btn-primary" id="newAchievementBtn">
+                <i class="fas fa-plus"></i> Add Achievement
+              </button>
+            </div>
+          </div>
+
+          <div class="achievements-container">
+            <!-- Achievement Filters -->
+            <div class="achievements-filters">
+              <div class="filter-section">
+                <label for="achievementsStatusFilter">Status:</label>
+                <select id="achievementsStatusFilter" class="filter-select">
+                  <option value="">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="paused">Paused</option>
+                </select>
+              </div>
+              <div class="filter-section">
+                <label for="achievementsTypeFilter">Type:</label>
+                <select id="achievementsTypeFilter" class="filter-select">
+                  <option value="">All Types</option>
+                  <option value="project">Project Goals</option>
+                  <option value="skill">Skill Development</option>
+                  <option value="personal">Personal Growth</option>
+                  <option value="professional">Professional</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Achievements Grid -->
+            <div class="achievements-grid" id="achievementsGrid">
+              <!-- Achievements will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Reflections Tab -->
+        <div id="reflections" class="tab-content" data-tab="reflections">
+          <div class="tab-header">
+            <h2><i class="fas fa-mirror"></i> Reflections & Insights</h2>
+            <p class="tab-description">
+              AI-guided reflection templates, pattern analysis, and personal
+              insights
+            </p>
+            <div class="tab-controls">
+              <button class="btn btn-secondary" id="reflectionsInsightsBtn">
+                <i class="fas fa-lightbulb"></i> AI Insights
+              </button>
+              <button class="btn btn-secondary" id="reflectionsTemplatesBtn">
+                <i class="fas fa-clipboard-list"></i> Templates
+              </button>
+              <button class="btn btn-primary" id="newReflectionBtn">
+                <i class="fas fa-plus"></i> Start Reflection
+              </button>
+            </div>
+          </div>
+
+          <div class="reflections-container">
+            <!-- Reflection Views -->
+            <div class="reflections-views">
+              <div class="view-tabs">
+                <button class="view-tab active" data-view="recent">
+                  Recent Reflections
+                </button>
+                <button class="view-tab" data-view="templates">
+                  Templates
+                </button>
+                <button class="view-tab" data-view="insights">
+                  AI Insights
+                </button>
+              </div>
+
+              <!-- Recent Reflections View -->
+              <div id="recentReflectionsView" class="reflection-view active">
+                <div class="reflections-list" id="reflectionsList">
+                  <!-- Recent reflections will be loaded here -->
+                </div>
+              </div>
+
+              <!-- Templates View -->
+              <div id="templatesView" class="reflection-view">
+                <div class="templates-grid" id="templatesGrid">
+                  <!-- Reflection templates will be loaded here -->
+                </div>
+              </div>
+
+              <!-- Insights View -->
+              <div id="insightsView" class="reflection-view">
+                <div class="insights-dashboard" id="insightsDashboard">
+                  <!-- AI-generated insights will be loaded here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mood Tab -->
+        <div id="mood" class="tab-content" data-tab="mood">
+          <div class="tab-header">
+            <h2><i class="fas fa-smile"></i> Mood & Wellbeing</h2>
+            <p class="tab-description">
+              Track your daily mood, energy, and stress levels with AI-powered
+              insights
+            </p>
+            <div class="tab-controls">
+              <button class="btn btn-secondary" id="moodStatsBtn">
+                <i class="fas fa-chart-line"></i> View Trends
+              </button>
+              <button class="btn btn-secondary" id="moodPatternsBtn">
+                <i class="fas fa-search"></i> Analyze Patterns
+              </button>
+              <button class="btn btn-secondary" id="moodAIAnalysisBtn">
+                <i class="fas fa-robot"></i> AI Insights
+              </button>
+              <button class="btn btn-primary" id="newMoodEntryBtn">
+                <i class="fas fa-plus"></i> Log Mood
+              </button>
+            </div>
+          </div>
+
+          <div class="mood-container">
+            <!-- Mood Visualization Controls -->
+            <div class="mood-visualization-controls">
+              <div class="visualization-tabs">
+                <button class="viz-tab active" data-viz="overview">
+                  <i class="fas fa-chart-pie"></i> Overview
+                </button>
+                <button class="viz-tab" data-viz="trends">
+                  <i class="fas fa-chart-line"></i> Trends
+                </button>
+                <button class="viz-tab" data-viz="correlations">
+                  <i class="fas fa-project-diagram"></i> Correlations
+                </button>
+                <button class="viz-tab" data-viz="patterns">
+                  <i class="fas fa-calendar-week"></i> Patterns
+                </button>
+              </div>
+              <div class="viz-controls">
+                <select id="moodTimeRange" class="time-range-selector">
+                  <option value="7">Last 7 days</option>
+                  <option value="30" selected>Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                  <option value="365">Last year</option>
+                </select>
+                <button class="btn btn-secondary" id="refreshMoodViz">
+                  <i class="fas fa-sync"></i> Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Mood Visualization Container -->
+            <div class="mood-visualization-container">
+              <!-- Overview Tab -->
+              <div id="moodOverviewViz" class="viz-content active">
+                <div class="mood-overview-grid">
+                  <div class="overview-card">
+                    <h4><i class="fas fa-smile"></i> Today's Mood</h4>
+                    <div class="mood-gauge" id="todayMoodGauge">
+                      <!-- Gauge chart will be rendered here -->
+                    </div>
+                  </div>
+                  <div class="overview-card">
+                    <h4><i class="fas fa-chart-bar"></i> Weekly Summary</h4>
+                    <div class="weekly-summary" id="weeklySummary">
+                      <!-- Weekly summary will be rendered here -->
+                    </div>
+                  </div>
+                  <div class="overview-card">
+                    <h4><i class="fas fa-trending-up"></i> Mood Trend</h4>
+                    <div class="trend-indicator" id="moodTrendIndicator">
+                      <!-- Trend indicator will be rendered here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Trends Tab -->
+              <div id="moodTrendsViz" class="viz-content">
+                <div class="trends-charts">
+                  <div class="chart-container">
+                    <h4><i class="fas fa-chart-line"></i> Mood Over Time</h4>
+                    <canvas
+                      id="moodTrendChart"
+                      width="800"
+                      height="400"
+                    ></canvas>
+                  </div>
+                  <div class="chart-container">
+                    <h4><i class="fas fa-chart-area"></i> Multi-Metric View</h4>
+                    <canvas
+                      id="multiMetricChart"
+                      width="800"
+                      height="400"
+                    ></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Correlations Tab -->
+              <div id="moodCorrelationsViz" class="viz-content">
+                <div class="correlations-charts">
+                  <div class="chart-container">
+                    <h4>
+                      <i class="fas fa-project-diagram"></i> Mood Correlations
+                    </h4>
+                    <canvas
+                      id="correlationChart"
+                      width="600"
+                      height="400"
+                    ></canvas>
+                  </div>
+                  <div class="chart-container">
+                    <h4><i class="fas fa-chart-scatter"></i> Stress vs Mood</h4>
+                    <canvas
+                      id="stressMoodScatter"
+                      width="600"
+                      height="400"
+                    ></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Patterns Tab -->
+              <div id="moodPatternsViz" class="viz-content">
+                <div class="patterns-charts">
+                  <div class="chart-container">
+                    <h4>
+                      <i class="fas fa-calendar-week"></i> Day of Week Patterns
+                    </h4>
+                    <canvas
+                      id="dayOfWeekChart"
+                      width="600"
+                      height="400"
+                    ></canvas>
+                  </div>
+                  <div class="chart-container">
+                    <h4><i class="fas fa-chart-bar"></i> Mood Distribution</h4>
+                    <canvas
+                      id="moodDistributionChart"
+                      width="600"
+                      height="400"
+                    ></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Today's Mood Check-in -->
+            <div class="mood-checkin-section">
+              <div class="checkin-card" id="todayMoodCard">
+                <h3>
+                  <i class="fas fa-calendar-day"></i> Today's Mood Check-in
+                </h3>
+                <div class="checkin-content" id="todayMoodContent">
+                  <!-- Today's mood entry will be loaded here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Mood History -->
+            <div class="mood-history-section">
+              <h3><i class="fas fa-history"></i> Recent Mood Entries</h3>
+              <div class="mood-entries" id="moodEntries">
+                <!-- Mood entries will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Coping Strategies -->
+            <div class="coping-strategies-section">
+              <h3><i class="fas fa-heart"></i> Coping Strategies</h3>
+              <div class="strategies-controls">
+                <button class="btn btn-secondary" id="viewAllStrategiesBtn">
+                  <i class="fas fa-list"></i> All Strategies
+                </button>
+                <button class="btn btn-secondary" id="recommendedStrategiesBtn">
+                  <i class="fas fa-star"></i> Recommended
+                </button>
+                <button class="btn btn-secondary" id="strategyAnalyticsBtn">
+                  <i class="fas fa-chart-bar"></i> Analytics
+                </button>
+                <button class="btn btn-primary" id="addStrategyBtn">
+                  <i class="fas fa-plus"></i> Add Strategy
+                </button>
+              </div>
+              <div class="strategies-content" id="strategiesContent">
+                <!-- Strategies will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Intervention Monitoring -->
+            <div class="intervention-monitoring-section">
+              <h3><i class="fas fa-shield-alt"></i> Wellbeing Monitoring</h3>
+              <div class="intervention-controls">
+                <button
+                  class="btn btn-secondary"
+                  id="checkInterventionTriggersBtn"
+                >
+                  <i class="fas fa-search"></i> Check for Concerns
+                </button>
+                <button
+                  class="btn btn-secondary"
+                  id="viewInterventionHistoryBtn"
+                >
+                  <i class="fas fa-history"></i> Intervention History
+                </button>
+                <button class="btn btn-primary" id="emergencySupportBtn">
+                  <i class="fas fa-phone"></i> Emergency Support
+                </button>
+              </div>
+              <div class="intervention-content" id="interventionContent">
+                <!-- Intervention triggers and recommendations will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Mood Insights -->
+            <div
+              class="mood-insights-section"
+              id="moodInsightsSection"
+              style="display: none"
+            >
+              <h3><i class="fas fa-lightbulb"></i> AI Insights</h3>
+              <div class="insights-content" id="moodInsightsContent">
+                <!-- AI insights will be loaded here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workload Tab -->
+        <div id="workload" class="tab-content" data-tab="workload">
+          <div class="tab-header">
+            <h2><i class="fas fa-clock"></i> Workload & Work-Life Balance</h2>
+            <p class="tab-description">
+              Track your work hours, intensity, and productivity for better
+              work-life balance
+            </p>
+            <div class="tab-controls">
+              <button class="btn btn-secondary" id="workloadStatsBtn">
+                <i class="fas fa-chart-bar"></i> Statistics
+              </button>
+              <button class="btn btn-secondary" id="workloadPatternsBtn">
+                <i class="fas fa-search"></i> Patterns
+              </button>
+              <button class="btn btn-secondary" id="workloadBalanceBtn">
+                <i class="fas fa-balance-scale"></i> Balance Analysis
+              </button>
+              <button class="btn btn-secondary" id="workPreferencesBtn">
+                <i class="fas fa-cog"></i> Work Preferences
+              </button>
+              <button class="btn btn-primary" id="newWorkloadEntryBtn">
+                <i class="fas fa-plus"></i> Log Work Session
+              </button>
+            </div>
+          </div>
+
+          <div class="workload-container">
+            <!-- Today's Work Session -->
+            <div class="workload-checkin-section">
+              <div class="checkin-card" id="todayWorkloadCard">
+                <h3>
+                  <i class="fas fa-calendar-day"></i> Today's Work Session
+                </h3>
+                <div class="checkin-content" id="todayWorkloadContent">
+                  <!-- Today's workload entry will be loaded here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Workload History -->
+            <div class="workload-history-section">
+              <h3><i class="fas fa-history"></i> Recent Work Sessions</h3>
+              <div class="workload-entries" id="workloadEntries">
+                <!-- Workload entries will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Work-Life Balance Insights -->
+            <div
+              class="workload-insights-section"
+              id="workloadInsightsSection"
+              style="display: none"
+            >
+              <h3>
+                <i class="fas fa-lightbulb"></i> Work-Life Balance Insights
+              </h3>
+              <div class="insights-content" id="workloadInsightsContent">
+                <!-- Workload insights will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Break Recommendations -->
+            <div class="break-recommendations-section">
+              <h3><i class="fas fa-coffee"></i> Break Recommendations</h3>
+              <div
+                class="break-recommendations-content"
+                id="breakRecommendationsContent"
+              >
+                <!-- Break recommendations will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Stress Alerts -->
+            <div class="stress-alerts-section">
+              <h3>
+                <i class="fas fa-exclamation-triangle"></i> Stress Alerts &
+                Warnings
+              </h3>
+              <div class="stress-alerts-content" id="stressAlertsContent">
+                <!-- Stress alerts will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Balance Dashboard -->
+            <div class="balance-dashboard-section">
+              <h3>
+                <i class="fas fa-chart-pie"></i> Work-Life Balance Dashboard
+              </h3>
+              <div
+                class="balance-dashboard-content"
+                id="balanceDashboardContent"
+              >
+                <!-- Balance dashboard will be loaded here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gratitude Tab -->
+        <div id="gratitude" class="tab-content" data-tab="gratitude">
+          <div class="tab-header">
+            <h2><i class="fas fa-heart"></i> Gratitude & Positivity</h2>
+            <p class="tab-description">
+              Practice gratitude, positive reframing, and build a more positive
+              mindset
+            </p>
+            <div class="tab-controls">
+              <button class="btn btn-primary" id="newGratitudeEntryBtn">
+                <i class="fas fa-plus"></i> New Gratitude Entry
+              </button>
+              <button class="btn btn-secondary" id="gratitudePromptsBtn">
+                <i class="fas fa-lightbulb"></i> Get AI Prompts
+              </button>
+              <button class="btn btn-secondary" id="gratitudeStatsBtn">
+                <i class="fas fa-chart-bar"></i> View Stats
+              </button>
+            </div>
+          </div>
+
+          <div class="gratitude-container">
+            <!-- Today's Gratitude -->
+            <div class="gratitude-checkin-section">
+              <div class="checkin-card" id="todayGratitudeCard">
+                <h3>
+                  <i class="fas fa-calendar-day"></i> Today's Gratitude Practice
+                </h3>
+                <div class="checkin-content" id="todayGratitudeContent">
+                  <!-- Today's gratitude entry will be loaded here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Prompts Section -->
+            <div
+              class="gratitude-prompts-section"
+              id="gratitudePromptsSection"
+              style="display: none"
+            >
+              <h3>
+                <i class="fas fa-lightbulb"></i> AI-Generated Gratitude Prompts
+              </h3>
+              <div class="prompts-content" id="gratitudePromptsContent">
+                <!-- AI prompts will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Achievement-Based Gratitude -->
+            <div
+              class="achievement-gratitude-section"
+              id="achievementGratitudeSection"
+              style="display: none"
+            >
+              <h3><i class="fas fa-trophy"></i> Achievement-Based Gratitude</h3>
+              <div
+                class="achievement-gratitude-content"
+                id="achievementGratitudeContent"
+              >
+                <!-- Achievement-based prompts will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Positive Reframing -->
+            <div
+              class="reframing-section"
+              id="reframingSection"
+              style="display: none"
+            >
+              <h3><i class="fas fa-refresh"></i> Positive Reframing</h3>
+              <div class="reframing-content" id="reframingContent">
+                <!-- Reframing suggestions will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Encouragement -->
+            <div
+              class="encouragement-section"
+              id="encouragementSection"
+              style="display: none"
+            >
+              <h3>
+                <i class="fas fa-hands-clapping"></i> Personalized Encouragement
+              </h3>
+              <div class="encouragement-content" id="encouragementContent">
+                <!-- Encouragement will be loaded here -->
+              </div>
+            </div>
+
+            <!-- Gratitude History -->
+            <div class="gratitude-history-section">
+              <h3><i class="fas fa-history"></i> Recent Gratitude Entries</h3>
+              <div class="gratitude-entries" id="gratitudeEntries">
+                <!-- Gratitude entries will be loaded here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coaching Tab -->
+        <div id="coaching" class="tab-content" data-tab="coaching">
+          <div class="tab-header">
+            <h2><i class="fas fa-heart"></i> AI Mentor & Coach</h2>
+            <p class="tab-description">
+              Your personal AI coach for motivation, guidance, and professional
+              growth
+            </p>
+          </div>
+
+          <div class="coaching-container">
+            <!-- Welcome Section -->
+            <div class="coaching-welcome" id="coachingWelcome">
+              <div class="mentor-avatar">
+                <i class="fas fa-user-tie"></i>
+              </div>
+              <div class="welcome-content">
+                <h3>Hello Tim! 👋</h3>
+                <p>
+                  I'm here to support you on your continuous improvement journey
+                  at Evos Amsterdam. Whether you need motivation, want to
+                  discuss challenges, or seek guidance on your professional
+                  growth, I'm here to listen and help.
+                </p>
+                <div class="quick-topics">
+                  <span class="topic-label">Quick topics:</span>
+                  <button
+                    class="topic-btn"
+                    onclick="startConversation('motivation')"
+                  >
+                    <i class="fas fa-rocket"></i> Need motivation
+                  </button>
+                  <button
+                    class="topic-btn"
+                    onclick="startConversation('challenge')"
+                  >
+                    <i class="fas fa-mountain"></i> Facing challenges
+                  </button>
+                  <button
+                    class="topic-btn"
+                    onclick="startConversation('growth')"
+                  >
+                    <i class="fas fa-chart-line"></i> Career growth
+                  </button>
+                  <button
+                    class="topic-btn"
+                    onclick="startConversation('confidence')"
+                  >
+                    <i class="fas fa-shield-alt"></i> Building confidence
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="coaching-chat" id="coachingChat" style="display: none">
+              <div class="chat-messages" id="chatMessages">
+                <!-- Messages will be dynamically added here -->
+              </div>
+
+              <div class="chat-input-section">
+                <form id="coachingForm" class="chat-form">
+                  <div class="input-group">
+                    <textarea
+                      id="coachingInput"
+                      placeholder="Share what's on your mind... I'm here to listen and support you."
+                      rows="3"
+                    ></textarea>
+                    <button type="submit" class="send-btn">
+                      <i class="fas fa-paper-plane"></i>
+                    </button>
+                  </div>
+                </form>
+                <div class="chat-actions">
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    onclick="clearConversation()"
+                  >
+                    <i class="fas fa-refresh"></i> New conversation
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    onclick="showWelcome()"
+                  >
+                    <i class="fas fa-home"></i> Back to welcome
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Insights Panel -->
+            <div class="coaching-insights">
+              <div class="insights-header">
+                <h4><i class="fas fa-lightbulb"></i> Today's Insight</h4>
+              </div>
+              <div class="insight-content" id="dailyInsight">
+                <p>
+                  <em
+                    >Your growth as a continuous improvement advisor comes not
+                    just from solving problems, but from the courage to tackle
+                    new challenges with confidence.</em
+                  >
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Learning Tab -->
+        <div id="learning" class="tab-content" data-tab="learning">
+          <div class="tab-header">
+            <h2><i class="fas fa-graduation-cap"></i> AI Learning Companion</h2>
+            <p class="tab-description">
+              Personalized learning paths, skill gap analysis, and AI-powered
+              knowledge curation
+            </p>
+            <div class="tab-controls">
+              <button class="btn btn-secondary" id="learningRecommendationsBtn">
+                <i class="fas fa-lightbulb"></i> Get Recommendations
+              </button>
+              <button class="btn btn-secondary" id="learningPathsBtn">
+                <i class="fas fa-route"></i> Learning Paths
+              </button>
+              <button class="btn btn-secondary" id="bestPracticesBtn">
+                <i class="fas fa-book"></i> Best Practices
+              </button>
+              <button class="btn btn-primary" id="newLearningPathBtn">
+                <i class="fas fa-plus"></i> New Learning Path
+              </button>
+            </div>
+          </div>
+
+          <!-- Learning Overview -->
+          <div class="learning-overview">
+            <div class="learning-stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="totalLearningPaths">0</div>
+                <div class="stat-label">Active Learning Paths</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="completedPaths">0</div>
+                <div class="stat-label">Completed Paths</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="totalHours">0h</div>
+                <div class="stat-label">Total Learning Hours</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="bestPracticesCount">0</div>
+                <div class="stat-label">Best Practices</div>
+              </div>
+            </div>
+
+            <!-- Skill Gap Analysis -->
+            <div class="skill-gap-section">
+              <h3><i class="fas fa-chart-line"></i> Skill Gap Analysis</h3>
+              <div class="skill-gap-content" id="skillGapContent">
+                <div class="empty-state">
+                  <i class="fas fa-chart-line"></i>
+                  <h4>No Skill Gaps Detected</h4>
+                  <p>
+                    Complete a skills assessment to see personalized learning
+                    recommendations
+                  </p>
+                  <button class="btn btn-primary" onclick="showSkills()">
+                    <i class="fas fa-clipboard-list"></i> Take Skills Assessment
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Learning Recommendations -->
+            <div class="learning-recommendations-section">
+              <h3>
+                <i class="fas fa-lightbulb"></i> AI Learning Recommendations
+              </h3>
+              <div
+                class="recommendations-content"
+                id="learningRecommendationsContent"
+              >
+                <div class="empty-state">
+                  <i class="fas fa-lightbulb"></i>
+                  <h4>AI Recommendations</h4>
+                  <p>
+                    Click "Get Recommendations" to see personalized learning
+                    suggestions based on your goals and progress
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Learning Paths Section -->
+          <div
+            class="learning-paths-section"
+            id="learningPathsSection"
+            style="display: none"
+          >
+            <h3><i class="fas fa-route"></i> Your Learning Paths</h3>
+            <div class="learning-paths-grid" id="learningPathsGrid">
+              <!-- Learning paths will be loaded here -->
+            </div>
+          </div>
+
+          <!-- Best Practices Section -->
+          <div
+            class="best-practices-section"
+            id="bestPracticesSection"
+            style="display: none"
+          >
+            <h3><i class="fas fa-book"></i> Best Practices Library</h3>
+            <div class="practices-filters">
+              <select id="practiceCategoryFilter">
+                <option value="">All Categories</option>
+                <option value="technical">Technical</option>
+                <option value="soft_skills">Soft Skills</option>
+                <option value="productivity">Productivity</option>
+                <option value="leadership">Leadership</option>
+              </select>
+              <input
+                type="text"
+                id="practiceSearch"
+                placeholder="Search practices..."
+              />
+            </div>
+            <div class="practices-grid" id="bestPracticesGrid">
+              <!-- Best practices will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content" data-tab="settings">
+          <div class="tab-header">
+            <h2>Settings</h2>
+          </div>
+          <div class="settings-container">
+            <!-- Email Settings Section -->
+            <div class="settings-section">
+              <h3><i class="fas fa-envelope"></i> Email Configuration</h3>
+              <div class="settings-card">
+                <form id="emailSettingsForm" class="grid-form">
+                  <div class="form-group">
+                    <label for="weeklyReportEmail"
+                      >Weekly Report Email Address</label
+                    >
+                    <input
+                      type="email"
+                      id="weeklyReportEmail"
+                      placeholder="Enter your email address"
+                    />
+                    <small class="form-help"
+                      >This email will receive automated weekly progress
+                      reports</small
+                    >
+                  </div>
+
+                  <div class="form-group">
+                    <label for="weeklyReportRecipients"
+                      >Additional Recipients (comma-separated)</label
+                    >
+                    <input
+                      type="text"
+                      id="weeklyReportRecipients"
+                      placeholder="e.g. manager@company.com, teamlead@company.com"
+                    />
+                    <small class="form-help"
+                      >Optional: add multiple emails separated by commas</small
+                    >
+                  </div>
+
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="weeklyReportsEnabled" />
+                      <span class="checkmark"></span>
+                      Enable Weekly Reports
+                    </label>
+                    <small class="form-help"
+                      >Automatically send weekly progress summaries every Monday
+                      at 9 AM</small
+                    >
+                  </div>
+
+                  <div class="form-group">
+                    <label for="reportSchedule"
+                      >Report Schedule (Cron Format)</label
+                    >
+                    <input
+                      type="text"
+                      id="reportSchedule"
+                      placeholder="0 9 * * 1"
+                    />
+                    <small class="form-help"
+                      >Default: Every Monday at 9 AM (0 9 * * 1)</small
+                    >
+                  </div>
+
+                  <div class="form-group">
+                    <label for="primaryProject">Primary Project</label>
+                    <select id="primaryProject" class="project-selector">
+                      <option value="">Select project for AI status...</option>
+                    </select>
+                    <small class="form-help"
+                      >Weekly email can include an AI status for this
+                      project</small
+                    >
+                  </div>
+
+                  <div class="form-group">
+                    <label>Preview Options</label>
+                    <div class="chips">
+                      <span class="chip" data-template="self">Self</span>
+                      <span class="chip" data-template="manager">Manager</span>
+                      <span class="chip" data-template="company">Company</span>
+                    </div>
+                    <div class="checkbox-row">
+                      <label
+                        ><input type="checkbox" id="includeNotes" checked />
+                        Include Notes</label
+                      >
+                      <label
+                        ><input type="checkbox" id="includeTodos" checked />
+                        Include Tasks</label
+                      >
+                      <label
+                        ><input type="checkbox" id="useAiStatus" checked />
+                        Include AI Project Status</label
+                      >
+                      <label
+                        ><input type="checkbox" id="narrativeOnly" checked />
+                        Narrative Only (no raw lists)</label
+                      >
+                    </div>
+                    <div class="form-actions" style="margin-top: 8px">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        id="previewWeeklyBtn"
+                      >
+                        <i class="fas fa-eye"></i> Preview Weekly Email
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-save"></i> Save Settings
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      id="testEmailBtn"
+                    >
+                      <i class="fas fa-paper-plane"></i> Send Test Email
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Profiles Section -->
+            <div class="settings-section">
+              <h3>
+                <i class="fas fa-users-cog"></i> Recipient Groups & Templates
+              </h3>
+              <div class="settings-card">
+                <div class="settings-info">
+                  <div id="profilesList"></div>
+                  <div class="form-actions" style="margin-top: 12px">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      id="addProfileBtn"
+                    >
+                      <i class="fas fa-plus"></i> Add Group
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      id="saveProfilesBtn"
+                    >
+                      <i class="fas fa-save"></i> Save Groups
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weekly Reports Section -->
+            <div class="settings-section">
+              <h3><i class="fas fa-calendar-week"></i> Weekly Reports</h3>
+              <div class="settings-card">
+                <div class="settings-info">
+                  <div class="settings-status" id="reportsStatus">
+                    <div class="status-item">
+                      <span class="status-label">Status:</span>
+                      <span class="status-value" id="reportsStatusValue"
+                        >Loading...</span
+                      >
+                    </div>
+                    <div class="status-item">
+                      <span class="status-label">Next Report:</span>
+                      <span class="status-value" id="nextReportTime"
+                        >Loading...</span
+                      >
+                    </div>
+                    <div class="status-item">
+                      <span class="status-label">SendGrid:</span>
+                      <span class="status-value" id="sendgridStatus"
+                        >Loading...</span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="settings-actions">
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      id="generateWeeklyBtn"
+                    >
+                      <i class="fas fa-file-export"></i> Generate Weekly Report
+                      Now
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-success"
+                      id="refreshStatusBtn"
+                    >
+                      <i class="fas fa-sync"></i> Refresh Status
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-warning"
+                      id="restartSchedulerBtn"
+                    >
+                      <i class="fas fa-clock"></i> Restart Scheduler
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SendGrid Configuration -->
+            <div class="settings-section" id="sendgridConfigSection">
+              <h3><i class="fas fa-mail-bulk"></i> SendGrid Configuration</h3>
+              <div class="settings-card">
+                <div class="settings-info">
+                  <p>
+                    SendGrid is configured via environment variables on the
+                    server.
+                  </p>
+                  <div class="config-steps">
+                    <h4>Setup Instructions:</h4>
+                    <ol>
+                      <li>
+                        Get your SendGrid API key from
+                        <a href="https://sendgrid.com" target="_blank"
+                          >SendGrid Dashboard</a
+                        >
+                      </li>
+                      <li>Update your <code>.env</code> file with:</li>
+                      <pre><code>SENDGRID_API_KEY=your_api_key_here</code></pre>
+                      <li>Restart the application</li>
+                      <li>
+                        Test the configuration using the "Send Test Email"
+                        button above
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Assistant Configuration -->
+            <div class="settings-section">
+              <h3><i class="fas fa-robot"></i> AI Assistant Configuration</h3>
+              <div class="settings-card">
+                <p class="settings-intro">
+                  Customize how the AI assistant communicates across all
+                  features including note enhancement, todo generation, reports,
+                  and timeline analysis. Changes apply immediately to new AI
+                  requests.
+                </p>
+
+                <form id="llmSettingsForm" class="grid-form">
+                  <!-- Preset Templates -->
+                  <div class="form-group">
+                    <label for="llmPresetTemplate">Role Template</label>
+                    <select id="llmPresetTemplate">
+                      <option value="default">Default Assistant</option>
+                      <option value="consultant">Management Consultant</option>
+                      <option value="analyst">Business Analyst</option>
+                      <option value="manager">Project Manager</option>
+                      <option value="technical">Technical Expert</option>
+                      <option value="creative">Creative Strategist</option>
+                    </select>
+                    <small class="form-help">
+                      <strong>Default:</strong> Tim's AI assistant for
+                      continuous improvement<br />
+                      <strong>Consultant:</strong> Strategic recommendations and
+                      process improvement<br />
+                      <strong>Analyst:</strong> Data-driven insights and
+                      systematic evaluation<br />
+                      <strong>Manager:</strong> Execution focus, timelines, and
+                      coordination<br />
+                      <strong>Technical:</strong> Implementation details and
+                      technical best practices<br />
+                      <strong>Creative:</strong> Innovation and out-of-the-box
+                      thinking
+                    </small>
+                  </div>
+
+                  <!-- Communication Style -->
+                  <div class="form-group">
+                    <label for="llmTone">Communication Style</label>
+                    <select id="llmTone">
+                      <option value="professional">Professional</option>
+                      <option value="friendly">Friendly</option>
+                      <option value="formal">Formal</option>
+                      <option value="concise">Concise</option>
+                      <option value="enthusiastic">Enthusiastic</option>
+                      <option value="analytical">Analytical</option>
+                      <option value="creative">Creative</option>
+                    </select>
+                    <small class="form-help">
+                      <strong>Professional:</strong> Clear, business-appropriate
+                      language<br />
+                      <strong>Friendly:</strong> Warm, approachable, and
+                      supportive tone<br />
+                      <strong>Formal:</strong> Strict formality and business
+                      language<br />
+                      <strong>Concise:</strong> Direct, brief, eliminate
+                      unnecessary words<br />
+                      <strong>Enthusiastic:</strong> Positive energy and
+                      excitement<br />
+                      <strong>Analytical:</strong> Data-focused, logical,
+                      structured<br />
+                      <strong>Creative:</strong> Innovative thinking and
+                      creative solutions
+                    </small>
+                  </div>
+
+                  <!-- Detail Level -->
+                  <div class="form-group">
+                    <label for="llmDetailLevel">Response Detail Level</label>
+                    <select id="llmDetailLevel">
+                      <option value="brief">Brief</option>
+                      <option value="balanced">Balanced</option>
+                      <option value="detailed">Detailed</option>
+                      <option value="comprehensive">Comprehensive</option>
+                    </select>
+                    <small class="form-help">
+                      <strong>Brief:</strong> Essential information only, very
+                      concise<br />
+                      <strong>Balanced:</strong> Adequate detail without being
+                      verbose<br />
+                      <strong>Detailed:</strong> Comprehensive explanations and
+                      analysis<br />
+                      <strong>Comprehensive:</strong> Exhaustive coverage with
+                      examples and context
+                    </small>
+                  </div>
+
+                  <!-- Language Preference -->
+                  <div class="form-group">
+                    <label for="llmLanguage">Primary Language</label>
+                    <select id="llmLanguage">
+                      <option value="auto">Auto-detect</option>
+                      <option value="english">English</option>
+                      <option value="dutch">Dutch (Nederlands)</option>
+                      <option value="german">German (Deutsch)</option>
+                      <option value="french">French (Français)</option>
+                      <option value="spanish">Spanish (Español)</option>
+                    </select>
+                    <small class="form-help">
+                      AI will primarily respond in this language unless
+                      specifically asked otherwise. Auto-detect uses context
+                      clues from your input.
+                    </small>
+                  </div>
+
+                  <!-- System Prompt Configuration -->
+                  <div class="form-group" style="grid-column: 1 / -1">
+                    <label>System Instructions Mode</label>
+                    <div class="radio-group">
+                      <label class="radio-option">
+                        <input
+                          type="radio"
+                          name="llmSystemPromptMode"
+                          value="generated"
+                          id="llmPromptModeGenerated"
+                          checked
+                        />
+                        <span class="radio-label">
+                          <strong>Generated Prompt</strong>
+                          <small
+                            >Use our optimized system prompt designed for your
+                            role at Evos Amsterdam</small
+                          >
+                        </span>
+                      </label>
+                      <label class="radio-option">
+                        <input
+                          type="radio"
+                          name="llmSystemPromptMode"
+                          value="custom"
+                          id="llmPromptModeCustom"
+                        />
+                        <span class="radio-label">
+                          <strong>Custom Prompt</strong>
+                          <small>Write your own system instructions</small>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Generated Prompt Preview -->
+                  <div
+                    class="form-group"
+                    style="grid-column: 1 / -1"
+                    id="generatedPromptPreview"
+                  >
+                    <label>Generated System Prompt Preview</label>
+                    <div class="prompt-preview" id="generatedPromptText">
+                      Loading generated prompt...
+                    </div>
+                    <small class="form-help">
+                      This prompt is specifically designed for Tim Verhoogt's
+                      role as Continuous Improvement Advisor at Evos Amsterdam.
+                      It includes context about operational excellence, project
+                      management, and professional communication standards.
+                    </small>
+                  </div>
+
+                  <!-- Custom System Prompt -->
+                  <div
+                    class="form-group"
+                    style="grid-column: 1 / -1; display: none"
+                    id="customPromptSection"
+                  >
+                    <label for="llmSystemPrompt">
+                      Custom System Instructions
+                    </label>
+                    <textarea
+                      id="llmSystemPrompt"
+                      rows="6"
+                      placeholder="Add global instructions that apply to all AI interactions. Examples:&#10;&#10;• Always include implementation timelines&#10;• Focus on cost-benefit analysis&#10;• Prioritize sustainable solutions&#10;• Consider regulatory compliance&#10;• Use Evos-specific terminology"
+                    ></textarea>
+                    <small class="form-help">
+                      <strong>⚠️ Important:</strong> These instructions are sent
+                      with every AI request. Keep them focused and avoid
+                      conflicting with task-specific requirements like JSON
+                      formatting. <br /><br />
+                      <strong>Good examples:</strong> "Focus on sustainable
+                      solutions", "Include cost considerations", "Prefer Dutch
+                      responses"<br />
+                      <strong>Avoid:</strong> "Always respond in JSON format"
+                      (conflicts with some tasks)
+                    </small>
+                  </div>
+
+                  <!-- Preview Section -->
+                  <div class="form-group" style="grid-column: 1 / -1">
+                    <label>Configuration Preview</label>
+                    <div id="llmPreview" class="llm-preview">
+                      <div class="preview-section">
+                        <strong>Current Configuration:</strong>
+                        <div id="previewText" class="preview-text">
+                          Select your preferences above to see how they combine.
+                        </div>
+                      </div>
+                    </div>
+                    <small class="form-help"
+                      >This shows how your settings will be interpreted by the
+                      AI assistant.</small
+                    >
+                  </div>
+
+                  <div class="form-actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      id="resetLlmDefaults"
+                    >
+                      <i class="fas fa-undo"></i> Reset to Defaults
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-save"></i> Save Configuration
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- General Preferences -->
+            <div class="settings-section">
+              <h3><i class="fas fa-sliders-h"></i> Personal Preferences</h3>
+              <div class="settings-card">
+                <p class="settings-intro">
+                  Customize your personal preferences for AI coaching,
+                  notifications, wellbeing, learning, and privacy settings.
+                  These preferences control how the AI assistant interacts with
+                  you across all features.
+                </p>
+
+                <div class="preferences-container">
+                  <!-- Coaching Preferences -->
+                  <div class="preference-category">
+                    <h4><i class="fas fa-user-tie"></i> Coaching Style</h4>
+                    <div class="preferences-grid">
+                      <div class="form-group">
+                        <label for="coachingPersonality">AI Personality</label>
+                        <select id="coachingPersonality">
+                          <option value="supportive">Supportive</option>
+                          <option value="challenging">Challenging</option>
+                          <option value="analytical">Analytical</option>
+                        </select>
+                        <small class="form-help"
+                          >How the AI coach approaches your development</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label for="communicationFrequency"
+                          >Communication Frequency</label
+                        >
+                        <select id="communicationFrequency">
+                          <option value="low">Low</option>
+                          <option value="moderate" selected>Moderate</option>
+                          <option value="high">High</option>
+                        </select>
+                        <small class="form-help"
+                          >How often the AI provides coaching
+                          interactions</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label for="detailLevel">Detail Level</label>
+                        <select id="detailLevel">
+                          <option value="brief">Brief</option>
+                          <option value="balanced" selected>Balanced</option>
+                          <option value="detailed">Detailed</option>
+                          <option value="comprehensive">Comprehensive</option>
+                        </select>
+                        <small class="form-help"
+                          >Level of detail in coaching responses</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Notification Preferences -->
+                  <div class="preference-category">
+                    <h4><i class="fas fa-bell"></i> Notifications</h4>
+                    <div class="preferences-grid">
+                      <div class="form-group">
+                        <label class="checkbox-label">
+                          <input
+                            type="checkbox"
+                            id="moodCheckReminder"
+                            checked
+                          />
+                          <span class="checkmark"></span>
+                          Daily Mood Check Reminders
+                        </label>
+                        <small class="form-help"
+                          >Get reminded to log your daily mood</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label class="checkbox-label">
+                          <input
+                            type="checkbox"
+                            id="reflectionReminders"
+                            checked
+                          />
+                          <span class="checkmark"></span>
+                          Reflection Reminders
+                        </label>
+                        <small class="form-help"
+                          >Reminders to complete reflection exercises</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label class="checkbox-label">
+                          <input
+                            type="checkbox"
+                            id="achievementCelebrations"
+                            checked
+                          />
+                          <span class="checkmark"></span>
+                          Achievement Celebrations
+                        </label>
+                        <small class="form-help"
+                          >Celebrate when you reach your goals</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label class="checkbox-label">
+                          <input
+                            type="checkbox"
+                            id="learningSuggestions"
+                            checked
+                          />
+                          <span class="checkmark"></span>
+                          Learning Suggestions
+                        </label>
+                        <small class="form-help"
+                          >AI suggestions for learning paths</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Wellbeing Preferences -->
+                  <div class="preference-category">
+                    <h4><i class="fas fa-heart"></i> Wellbeing</h4>
+                    <div class="preferences-grid">
+                      <div class="form-group">
+                        <label for="stressThreshold">Stress Threshold</label>
+                        <select id="stressThreshold">
+                          <option value="5">5 - Very Low</option>
+                          <option value="6">6 - Low</option>
+                          <option value="7" selected>7 - Moderate</option>
+                          <option value="8">8 - High</option>
+                          <option value="9">9 - Very High</option>
+                          <option value="10">10 - Extreme</option>
+                        </select>
+                        <small class="form-help"
+                          >Stress level that triggers AI intervention</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label for="workHoursTarget">Work Hours Target</label>
+                        <select id="workHoursTarget">
+                          <option value="6">6 hours</option>
+                          <option value="7">7 hours</option>
+                          <option value="8" selected>8 hours</option>
+                          <option value="9">9 hours</option>
+                          <option value="10">10 hours</option>
+                        </select>
+                        <small class="form-help"
+                          >Target daily work hours for wellbeing</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label for="breakFrequency">Break Frequency</label>
+                        <select id="breakFrequency">
+                          <option value="60">60 minutes</option>
+                          <option value="90" selected>90 minutes</option>
+                          <option value="120">120 minutes</option>
+                          <option value="180">180 minutes</option>
+                        </select>
+                        <small class="form-help"
+                          >Recommended break frequency</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label class="checkbox-label">
+                          <input
+                            type="checkbox"
+                            id="weekendWorkAlerts"
+                            checked
+                          />
+                          <span class="checkmark"></span>
+                          Weekend Work Alerts
+                        </label>
+                        <small class="form-help"
+                          >Alert when working on weekends</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Learning Preferences -->
+                  <div class="preference-category">
+                    <h4><i class="fas fa-graduation-cap"></i> Learning</h4>
+                    <div class="preferences-grid">
+                      <div class="form-group">
+                        <label for="learningStyle">Learning Style</label>
+                        <select id="learningStyle">
+                          <option value="visual">Visual</option>
+                          <option value="auditory">Auditory</option>
+                          <option value="kinesthetic">Kinesthetic</option>
+                          <option value="reading">Reading</option>
+                          <option value="balanced" selected>Balanced</option>
+                        </select>
+                        <small class="form-help"
+                          >Your preferred learning style</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label for="challengeLevel">Challenge Level</label>
+                        <select id="challengeLevel">
+                          <option value="easy">Easy</option>
+                          <option value="moderate" selected>Moderate</option>
+                          <option value="challenging">Challenging</option>
+                        </select>
+                        <small class="form-help"
+                          >Preferred difficulty level for learning</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label for="learningTimePreference"
+                          >Learning Time</label
+                        >
+                        <select id="learningTimePreference">
+                          <option value="morning" selected>Morning</option>
+                          <option value="afternoon">Afternoon</option>
+                          <option value="evening">Evening</option>
+                          <option value="flexible">Flexible</option>
+                        </select>
+                        <small class="form-help"
+                          >Preferred time for learning activities</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Privacy Preferences -->
+                  <div class="preference-category">
+                    <h4><i class="fas fa-shield-alt"></i> Privacy</h4>
+                    <div class="preferences-grid">
+                      <div class="form-group">
+                        <label for="dataSharingLevel">Data Sharing Level</label>
+                        <select id="dataSharingLevel">
+                          <option value="minimal" selected>Minimal</option>
+                          <option value="standard">Standard</option>
+                          <option value="comprehensive">Comprehensive</option>
+                        </select>
+                        <small class="form-help"
+                          >How much data to share with AI for better
+                          insights</small
+                        >
+                      </div>
+                      <div class="form-group">
+                        <label for="coachingHistoryRetention"
+                          >History Retention (days)</label
+                        >
+                        <select id="coachingHistoryRetention">
+                          <option value="30">30 days</option>
+                          <option value="90">90 days</option>
+                          <option value="180">180 days</option>
+                          <option value="365" selected>365 days</option>
+                          <option value="730">730 days</option>
+                        </select>
+                        <small class="form-help"
+                          >How long to keep coaching session history</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    id="resetPreferencesBtn"
+                  >
+                    <i class="fas fa-undo"></i> Reset to Defaults
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="savePreferencesBtn"
+                  >
+                    <i class="fas fa-save"></i> Save Preferences
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Processing with AI...</p>
+        </div>
+      </div>
     </div>
 
     <!-- Modals -->
     <!-- Project Modal -->
     <div class="modal" id="projectModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="projectModalTitle">New Project</h3>
-                <button class="modal-close" id="closeProjectModal">&times;</button>
-            </div>
-            <form id="projectForm">
-                <div class="form-group">
-                    <label for="projectName">Project Name *</label>
-                    <input type="text" id="projectName" required>
-                </div>
-                <div class="form-group">
-                    <label for="projectDescription">Description</label>
-                    <textarea id="projectDescription" rows="4" placeholder="Brief description of the project goals and context..."></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelProjectModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Project</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="projectModalTitle">New Project</h3>
+          <button class="modal-close" id="closeProjectModal">&times;</button>
         </div>
+        <form id="projectForm">
+          <div class="form-group">
+            <label for="projectName">Project Name *</label>
+            <input type="text" id="projectName" required />
+          </div>
+          <div class="form-group">
+            <label for="projectDescription">Description</label>
+            <textarea
+              id="projectDescription"
+              rows="4"
+              placeholder="Brief description of the project goals and context..."
+            ></textarea>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelProjectModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save Project</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Todo Modal -->
     <div class="modal" id="todoModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="todoModalTitle">New Todo</h3>
-                <button class="modal-close" id="closeTodoModal">&times;</button>
-            </div>
-            <form id="todoForm">
-                <div class="form-group">
-                    <label for="todoTitle">Task Title *</label>
-                    <input type="text" id="todoTitle" required>
-                </div>
-                <div class="form-group">
-                    <label for="todoDescription">Description</label>
-                    <textarea id="todoDescription" rows="3"></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="todoPriority">Priority</label>
-                        <select id="todoPriority">
-                            <option value="low">Low</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="todoDueDate">Due Date</label>
-                        <input type="date" id="todoDueDate">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelTodoModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Todo</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="todoModalTitle">New Todo</h3>
+          <button class="modal-close" id="closeTodoModal">&times;</button>
         </div>
+        <form id="todoForm">
+          <div class="form-group">
+            <label for="todoTitle">Task Title *</label>
+            <input type="text" id="todoTitle" required />
+          </div>
+          <div class="form-group">
+            <label for="todoDescription">Description</label>
+            <textarea id="todoDescription" rows="3"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="todoPriority">Priority</label>
+              <select id="todoPriority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="todoDueDate">Due Date</label>
+              <input type="date" id="todoDueDate" />
+            </div>
+            <div class="form-group">
+              <label for="todoStatus">Status</label>
+              <select id="todoStatus">
+                <option value="pending" selected>Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="blocked">Blocked</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelTodoModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save Todo</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Report Generation Modal -->
     <div class="modal" id="reportModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Generate Report</h3>
-                <button class="modal-close" id="closeReportModal">&times;</button>
-            </div>
-            <form id="reportForm">
-                <div class="form-group">
-                    <label for="reportType">Report Type *</label>
-                    <select id="reportType" required>
-                        <option value="">Select type...</option>
-                        <option value="status">Status Report (for management)</option>
-                        <option value="summary">Project Summary (documentation)</option>
-                        <option value="stakeholder">Stakeholder Report (business impact)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="reportRecipient">Recipient (optional)</label>
-                    <input type="text" id="reportRecipient" placeholder="e.g., Operations Manager, Team Lead, etc.">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelReportModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Generate Report</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Generate Report</h3>
+          <button class="modal-close" id="closeReportModal">&times;</button>
         </div>
+        <form id="reportForm">
+          <div class="form-group">
+            <label for="reportType">Report Type *</label>
+            <select id="reportType" required>
+              <option value="">Select type...</option>
+              <option value="status">Status Report (for management)</option>
+              <option value="summary">Project Summary (documentation)</option>
+              <option value="stakeholder">
+                Stakeholder Report (business impact)
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportRecipient">Recipient (optional)</label>
+            <input
+              type="text"
+              id="reportRecipient"
+              placeholder="e.g., Operations Manager, Team Lead, etc."
+            />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelReportModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Generate Report
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Milestone Modal -->
     <div class="modal" id="milestoneModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="milestoneModalTitle">New Milestone</h3>
-                <button class="modal-close" id="closeMilestoneModal">&times;</button>
-            </div>
-            <form id="milestoneForm">
-                <div class="form-group">
-                    <label for="milestoneTitle">Title *</label>
-                    <input type="text" id="milestoneTitle" required>
-                </div>
-                <div class="form-group">
-                    <label for="milestoneDescription">Description & Notes</label>
-                    <textarea id="milestoneDescription" rows="4" placeholder="Detailed description, notes, requirements, or context for this milestone..."></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="milestoneTargetDate">Target Date</label>
-                        <input type="date" id="milestoneTargetDate">
-                    </div>
-                    <div class="form-group">
-                        <label for="milestoneStatus">Status</label>
-                        <select id="milestoneStatus">
-                            <option value="planned">Planned</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelMilestoneModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Milestone</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="milestoneModalTitle">New Milestone</h3>
+          <button class="modal-close" id="closeMilestoneModal">&times;</button>
         </div>
+        <form id="milestoneForm">
+          <div class="form-group">
+            <label for="milestoneTitle">Title *</label>
+            <input type="text" id="milestoneTitle" required />
+          </div>
+          <div class="form-group">
+            <label for="milestoneDescription">Description & Notes</label>
+            <textarea
+              id="milestoneDescription"
+              rows="4"
+              placeholder="Detailed description, notes, requirements, or context for this milestone..."
+            ></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="milestoneTargetDate">Target Date</label>
+              <input type="date" id="milestoneTargetDate" />
+            </div>
+            <div class="form-group">
+              <label for="milestoneStatus">Status</label>
+              <select id="milestoneStatus">
+                <option value="planned">Planned</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelMilestoneModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Save Milestone
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Preview Modal -->
     <div class="modal" id="previewModal">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h3>Weekly Email Preview</h3>
-                <button class="modal-close" id="closePreviewModal">&times;</button>
-            </div>
-            <iframe id="previewFrame" style="width:100%; height:70vh; border:0;"></iframe>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="closePreviewBtn">Close</button>
-            </div>
+      <div class="modal-content" style="max-width: 800px">
+        <div class="modal-header">
+          <h3>Weekly Email Preview</h3>
+          <button class="modal-close" id="closePreviewModal">&times;</button>
         </div>
+        <iframe
+          id="previewFrame"
+          style="width: 100%; height: 70vh; border: 0"
+        ></iframe>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="closePreviewBtn">
+            Close
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Skill Modal -->
     <div class="modal" id="skillModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="skillModalTitle">New Skill Assessment</h3>
-                <button class="modal-close" id="closeSkillModal">&times;</button>
-            </div>
-            <form id="skillForm">
-                <div class="form-group">
-                    <label for="skillName">Skill Name *</label>
-                    <input type="text" id="skillName" required placeholder="e.g., Data Analysis, Leadership, Project Management">
-                </div>
-                <div class="form-group">
-                    <label for="skillCategory">Category *</label>
-                    <select id="skillCategory" required>
-                        <option value="">Select category...</option>
-                        <option value="technical">Technical Skills</option>
-                        <option value="leadership">Leadership</option>
-                        <option value="communication">Communication</option>
-                        <option value="analytical">Analytical</option>
-                        <option value="project_management">Project Management</option>
-                        <option value="continuous_improvement">Continuous Improvement</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="currentLevel">Current Level (1-10) *</label>
-                        <input type="range" id="currentLevel" min="1" max="10" value="5" required>
-                        <span class="range-value" id="currentLevelValue">5</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="targetLevel">Target Level (1-10) *</label>
-                        <input type="range" id="targetLevel" min="1" max="10" value="8" required>
-                        <span class="range-value" id="targetLevelValue">8</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="selfAssessmentScore">Self Assessment (1-10)</label>
-                    <input type="range" id="selfAssessmentScore" min="1" max="10" value="5">
-                    <span class="range-value" id="selfAssessmentValue">5</span>
-                </div>
-                <div class="form-group">
-                    <label for="assessmentNotes">Assessment Notes</label>
-                    <textarea id="assessmentNotes" rows="3" placeholder="Add notes about your current capabilities, experience, or development plans..."></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelSkillModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Skill</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="skillModalTitle">New Skill Assessment</h3>
+          <button class="modal-close" id="closeSkillModal">&times;</button>
         </div>
+        <form id="skillForm">
+          <div class="form-group">
+            <label for="skillName">Skill Name *</label>
+            <input
+              type="text"
+              id="skillName"
+              required
+              placeholder="e.g., Data Analysis, Leadership, Project Management"
+            />
+          </div>
+          <div class="form-group">
+            <label for="skillCategory">Category *</label>
+            <select id="skillCategory" required>
+              <option value="">Select category...</option>
+              <option value="technical">Technical Skills</option>
+              <option value="leadership">Leadership</option>
+              <option value="communication">Communication</option>
+              <option value="analytical">Analytical</option>
+              <option value="project_management">Project Management</option>
+              <option value="continuous_improvement">
+                Continuous Improvement
+              </option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="currentLevel">Current Level (1-10) *</label>
+              <input
+                type="range"
+                id="currentLevel"
+                min="1"
+                max="10"
+                value="5"
+                required
+              />
+              <span class="range-value" id="currentLevelValue">5</span>
+            </div>
+            <div class="form-group">
+              <label for="targetLevel">Target Level (1-10) *</label>
+              <input
+                type="range"
+                id="targetLevel"
+                min="1"
+                max="10"
+                value="8"
+                required
+              />
+              <span class="range-value" id="targetLevelValue">8</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="selfAssessmentScore">Self Assessment (1-10)</label>
+            <input
+              type="range"
+              id="selfAssessmentScore"
+              min="1"
+              max="10"
+              value="5"
+            />
+            <span class="range-value" id="selfAssessmentValue">5</span>
+          </div>
+          <div class="form-group">
+            <label for="assessmentNotes">Assessment Notes</label>
+            <textarea
+              id="assessmentNotes"
+              rows="3"
+              placeholder="Add notes about your current capabilities, experience, or development plans..."
+            ></textarea>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelSkillModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save Skill</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Achievement Modal -->
     <div class="modal" id="achievementModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="achievementModalTitle">New Achievement</h3>
-                <button class="modal-close" id="closeAchievementModal">&times;</button>
-            </div>
-            <form id="achievementForm">
-                <div class="form-group">
-                    <label for="achievementName">Achievement Name *</label>
-                    <input type="text" id="achievementName" required placeholder="e.g., Complete Lean Six Sigma Certification">
-                </div>
-                <div class="form-group">
-                    <label for="achievementType">Type *</label>
-                    <select id="achievementType" required>
-                        <option value="">Select type...</option>
-                        <option value="project">Project Goals</option>
-                        <option value="skill">Skill Development</option>
-                        <option value="personal">Personal Growth</option>
-                        <option value="professional">Professional</option>
-                        <option value="learning">Learning & Education</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="achievementDescription">Description</label>
-                    <textarea id="achievementDescription" rows="3" placeholder="Describe what this achievement involves and why it's important..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="achievementCriteria">Success Criteria</label>
-                    <textarea id="achievementCriteria" rows="2" placeholder="What specific criteria must be met to complete this achievement?"></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="targetValue">Target Value</label>
-                        <input type="number" id="targetValue" placeholder="e.g., 100 (for percentages or counts)">
-                    </div>
-                    <div class="form-group">
-                        <label for="currentValue">Current Progress</label>
-                        <input type="number" id="currentValue" value="0" placeholder="Current progress towards target">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="priorityLevel">Priority Level</label>
-                    <select id="priorityLevel">
-                        <option value="low">Low</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="celebrationMessage">Celebration Message</label>
-                    <input type="text" id="celebrationMessage" placeholder="Custom message to display when achievement is completed">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelAchievementModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Achievement</button>
-                </div>
-            </form>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="achievementModalTitle">New Achievement</h3>
+          <button class="modal-close" id="closeAchievementModal">
+            &times;
+          </button>
         </div>
+        <form id="achievementForm">
+          <div class="form-group">
+            <label for="achievementName">Achievement Name *</label>
+            <input
+              type="text"
+              id="achievementName"
+              required
+              placeholder="e.g., Complete Lean Six Sigma Certification"
+            />
+          </div>
+          <div class="form-group">
+            <label for="achievementType">Type *</label>
+            <select id="achievementType" required>
+              <option value="">Select type...</option>
+              <option value="project">Project Goals</option>
+              <option value="skill">Skill Development</option>
+              <option value="personal">Personal Growth</option>
+              <option value="professional">Professional</option>
+              <option value="learning">Learning & Education</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="achievementDescription">Description</label>
+            <textarea
+              id="achievementDescription"
+              rows="3"
+              placeholder="Describe what this achievement involves and why it's important..."
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="achievementCriteria">Success Criteria</label>
+            <textarea
+              id="achievementCriteria"
+              rows="2"
+              placeholder="What specific criteria must be met to complete this achievement?"
+            ></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="targetValue">Target Value</label>
+              <input
+                type="number"
+                id="targetValue"
+                placeholder="e.g., 100 (for percentages or counts)"
+              />
+            </div>
+            <div class="form-group">
+              <label for="currentValue">Current Progress</label>
+              <input
+                type="number"
+                id="currentValue"
+                value="0"
+                placeholder="Current progress towards target"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="priorityLevel">Priority Level</label>
+            <select id="priorityLevel">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="celebrationMessage">Celebration Message</label>
+            <input
+              type="text"
+              id="celebrationMessage"
+              placeholder="Custom message to display when achievement is completed"
+            />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelAchievementModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Save Achievement
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Reflection Modal -->
     <div class="modal" id="reflectionModal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3 id="reflectionModalTitle">New Reflection</h3>
-                <button class="modal-close" id="closeReflectionModal">&times;</button>
-            </div>
-            <form id="reflectionForm">
-                <div class="form-group">
-                    <label for="reflectionTemplate">Reflection Template *</label>
-                    <select id="reflectionTemplate" required>
-                        <option value="">Select template...</option>
-                        <!-- Templates will be populated dynamically -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="reflectionDate">Reflection Date *</label>
-                    <input type="date" id="reflectionDate" required>
-                </div>
-                <div class="form-group">
-                    <label for="moodAtReflection">Mood During Reflection (1-10)</label>
-                    <input type="range" id="moodAtReflection" min="1" max="10" value="7">
-                    <span class="range-value" id="moodReflectionValue">7</span>
-                </div>
-                <div id="reflectionQuestions" class="reflection-questions">
-                    <!-- Questions will be populated based on selected template -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="cancelReflectionModal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Reflection</button>
-                </div>
-            </form>
+      <div class="modal-content" style="max-width: 600px">
+        <div class="modal-header">
+          <h3 id="reflectionModalTitle">New Reflection</h3>
+          <button class="modal-close" id="closeReflectionModal">&times;</button>
         </div>
+        <form id="reflectionForm">
+          <div class="form-group">
+            <label for="reflectionTemplate">Reflection Template *</label>
+            <select id="reflectionTemplate" required>
+              <option value="">Select template...</option>
+              <!-- Templates will be populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reflectionDate">Reflection Date *</label>
+            <input type="date" id="reflectionDate" required />
+          </div>
+          <div class="form-group">
+            <label for="moodAtReflection">Mood During Reflection (1-10)</label>
+            <input
+              type="range"
+              id="moodAtReflection"
+              min="1"
+              max="10"
+              value="7"
+            />
+            <span class="range-value" id="moodReflectionValue">7</span>
+          </div>
+          <div id="reflectionQuestions" class="reflection-questions">
+            <!-- Questions will be populated based on selected template -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelReflectionModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Save Reflection
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <script src="app.js"></script>
-</body>
+    <!-- Mood Entry Modal -->
+    <div class="modal" id="moodModal">
+      <div class="modal-content" style="max-width: 600px">
+        <div class="modal-header">
+          <h3 id="moodModalTitle">Log Mood Entry</h3>
+          <button class="modal-close" id="closeMoodModal">&times;</button>
+        </div>
+        <form id="moodForm">
+          <div class="form-group">
+            <label for="moodDate">Date *</label>
+            <input type="date" id="moodDate" required />
+          </div>
+
+          <div class="mood-sliders">
+            <div class="form-group">
+              <label for="moodScore">Overall Mood (1-10) *</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="moodScore"
+                  min="1"
+                  max="10"
+                  value="7"
+                  required
+                />
+                <div class="slider-labels">
+                  <span>😞 Very Low</span>
+                  <span>😊 Very High</span>
+                </div>
+                <span class="range-value" id="moodScoreValue">7</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="energyLevel">Energy Level (1-10)</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="energyLevel"
+                  min="1"
+                  max="10"
+                  value="7"
+                />
+                <div class="slider-labels">
+                  <span>😴 Very Low</span>
+                  <span>⚡ Very High</span>
+                </div>
+                <span class="range-value" id="energyLevelValue">7</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="stressLevel">Stress Level (1-10)</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="stressLevel"
+                  min="1"
+                  max="10"
+                  value="3"
+                />
+                <div class="slider-labels">
+                  <span>😌 Very Low</span>
+                  <span>😰 Very High</span>
+                </div>
+                <span class="range-value" id="stressLevelValue">3</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="motivationLevel">Motivation Level (1-10)</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="motivationLevel"
+                  min="1"
+                  max="10"
+                  value="7"
+                />
+                <div class="slider-labels">
+                  <span>😔 Very Low</span>
+                  <span>🚀 Very High</span>
+                </div>
+                <span class="range-value" id="motivationLevelValue">7</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="moodTags">Mood Tags (comma-separated)</label>
+            <input
+              type="text"
+              id="moodTags"
+              placeholder="e.g., productive, anxious, excited, tired"
+            />
+            <small class="form-help"
+              >Add descriptive tags to help identify patterns</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="moodNotes">Notes</label>
+            <textarea
+              id="moodNotes"
+              rows="3"
+              placeholder="What's contributing to your mood today? Any specific events or thoughts?"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="moodTriggers">Triggers (comma-separated)</label>
+            <input
+              type="text"
+              id="moodTriggers"
+              placeholder="e.g., work pressure, good news, lack of sleep"
+            />
+            <small class="form-help"
+              >What might have influenced your mood?</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="copingStrategies"
+              >Coping Strategies Used (comma-separated)</label
+            >
+            <input
+              type="text"
+              id="copingStrategies"
+              placeholder="e.g., meditation, exercise, talking to friends"
+            />
+            <small class="form-help"
+              >What helped you manage your mood today?</small
+            >
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelMoodModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Save Mood Entry
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Coping Strategy Modal -->
+    <div class="modal" id="strategyModal">
+      <div class="modal-content" style="max-width: 600px">
+        <div class="modal-header">
+          <h3 id="strategyModalTitle">Add Coping Strategy</h3>
+          <button class="modal-close" id="closeStrategyModal">&times;</button>
+        </div>
+        <form id="strategyForm">
+          <div class="form-group">
+            <label for="strategyName">Strategy Name *</label>
+            <input
+              type="text"
+              id="strategyName"
+              required
+              placeholder="e.g., Deep Breathing Exercise"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="strategyCategory">Category *</label>
+            <select id="strategyCategory" required>
+              <option value="">Select a category</option>
+              <option value="breathing">Breathing</option>
+              <option value="mindfulness">Mindfulness</option>
+              <option value="physical">Physical</option>
+              <option value="cognitive">Cognitive</option>
+              <option value="social">Social</option>
+              <option value="creative">Creative</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="strategyDescription">Description *</label>
+            <textarea
+              id="strategyDescription"
+              rows="2"
+              required
+              placeholder="Brief description of what this strategy does"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="strategyInstructions">Instructions *</label>
+            <textarea
+              id="strategyInstructions"
+              rows="4"
+              required
+              placeholder="Step-by-step instructions for using this strategy"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="strategyDuration">Duration (minutes)</label>
+              <input
+                type="number"
+                id="strategyDuration"
+                min="1"
+                placeholder="e.g., 5"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="strategyDifficulty">Difficulty (1-5)</label>
+              <select id="strategyDifficulty">
+                <option value="1">1 - Very Easy</option>
+                <option value="2">2 - Easy</option>
+                <option value="3">3 - Moderate</option>
+                <option value="4">4 - Challenging</option>
+                <option value="5">5 - Very Challenging</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="strategyMoodTags">Mood Tags (comma-separated)</label>
+            <input
+              type="text"
+              id="strategyMoodTags"
+              placeholder="e.g., anxious, stressed, overwhelmed"
+            />
+            <small class="form-help"
+              >When these moods are present, this strategy will be
+              recommended</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="strategyStressLevels"
+              >Stress Levels (comma-separated)</label
+            >
+            <input
+              type="text"
+              id="strategyStressLevels"
+              placeholder="e.g., 6,7,8,9,10"
+            />
+            <small class="form-help"
+              >Stress levels (1-10) when this strategy is most helpful</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="strategyTriggers">Triggers (comma-separated)</label>
+            <input
+              type="text"
+              id="strategyTriggers"
+              placeholder="e.g., work pressure, deadlines, meetings"
+            />
+            <small class="form-help"
+              >Situations or triggers when this strategy is most
+              effective</small
+            >
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelStrategyModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Save Strategy</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Workload Entry Modal -->
+    <div class="modal" id="workloadModal">
+      <div class="modal-content" style="max-width: 700px">
+        <div class="modal-header">
+          <h3 id="workloadModalTitle">Log Work Session</h3>
+          <button class="modal-close" id="closeWorkloadModal">&times;</button>
+        </div>
+        <form id="workloadForm">
+          <div class="form-group">
+            <label for="workloadDate">Date *</label>
+            <input type="date" id="workloadDate" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startTime">Start Time *</label>
+              <input type="time" id="startTime" required />
+            </div>
+            <div class="form-group">
+              <label for="endTime">End Time *</label>
+              <input type="time" id="endTime" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="breakDuration">Break Duration (minutes)</label>
+              <input
+                type="number"
+                id="breakDuration"
+                min="0"
+                placeholder="e.g., 30"
+              />
+            </div>
+            <div class="form-group">
+              <label for="workType">Work Type</label>
+              <select id="workType">
+                <option value="">Select type...</option>
+                <option value="meetings">Meetings</option>
+                <option value="focused_work">Focused Work</option>
+                <option value="administrative">Administrative</option>
+                <option value="research">Research</option>
+                <option value="collaboration">Collaboration</option>
+                <option value="learning">Learning</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="workload-sliders">
+            <div class="form-group">
+              <label for="intensityLevel">Work Intensity (1-10) *</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="intensityLevel"
+                  min="1"
+                  max="10"
+                  value="5"
+                  required
+                />
+                <div class="slider-labels">
+                  <span>😴 Very Low</span>
+                  <span>⚡ Very High</span>
+                </div>
+                <span class="range-value" id="intensityLevelValue">5</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="focusLevel">Focus Level (1-10)</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="focusLevel"
+                  min="1"
+                  max="10"
+                  value="7"
+                />
+                <div class="slider-labels">
+                  <span>😵 Very Low</span>
+                  <span>🎯 Very High</span>
+                </div>
+                <span class="range-value" id="focusLevelValue">7</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="productivityScore">Productivity Score (1-10)</label>
+              <div class="slider-container">
+                <input
+                  type="range"
+                  id="productivityScore"
+                  min="1"
+                  max="10"
+                  value="7"
+                />
+                <div class="slider-labels">
+                  <span>🐌 Very Low</span>
+                  <span>🚀 Very High</span>
+                </div>
+                <span class="range-value" id="productivityScoreValue">7</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="tasksCompleted">Tasks Completed</label>
+              <input
+                type="number"
+                id="tasksCompleted"
+                min="0"
+                placeholder="e.g., 5"
+              />
+            </div>
+            <div class="form-group">
+              <label for="workloadLocation">Location</label>
+              <input
+                type="text"
+                id="workloadLocation"
+                placeholder="e.g., Office, Home, Remote"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="workloadNotes">Notes</label>
+            <textarea
+              id="workloadNotes"
+              rows="3"
+              placeholder="What did you work on? Any challenges or achievements?"
+            ></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelWorkloadModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Save Work Session
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Work Preferences Modal -->
+    <div class="modal" id="workPreferencesModal">
+      <div class="modal-content" style="max-width: 800px">
+        <div class="modal-header">
+          <h3>Work Preferences & Boundaries</h3>
+          <button class="modal-close" id="closeWorkPreferencesModal">
+            &times;
+          </button>
+        </div>
+        <form id="workPreferencesForm">
+          <div class="preferences-sections">
+            <!-- Work Hours Section -->
+            <div class="preferences-section">
+              <h4><i class="fas fa-clock"></i> Work Hours</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="maxDailyHours">Max Daily Hours</label>
+                  <input
+                    type="number"
+                    id="maxDailyHours"
+                    min="1"
+                    max="24"
+                    step="0.5"
+                    value="8"
+                  />
+                  <small>Maximum hours per work day</small>
+                </div>
+                <div class="form-group">
+                  <label for="maxWeeklyHours">Max Weekly Hours</label>
+                  <input
+                    type="number"
+                    id="maxWeeklyHours"
+                    min="1"
+                    max="168"
+                    step="0.5"
+                    value="40"
+                  />
+                  <small>Maximum hours per week</small>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="preferredStartTime">Preferred Start Time</label>
+                  <input type="time" id="preferredStartTime" value="09:00" />
+                </div>
+                <div class="form-group">
+                  <label for="preferredEndTime">Preferred End Time</label>
+                  <input type="time" id="preferredEndTime" value="17:00" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Breaks & Intensity Section -->
+            <div class="preferences-section">
+              <h4><i class="fas fa-pause"></i> Breaks & Intensity</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="breakDurationMinutes"
+                    >Break Duration (minutes)</label
+                  >
+                  <input
+                    type="number"
+                    id="breakDurationMinutes"
+                    min="0"
+                    max="480"
+                    value="60"
+                  />
+                  <small>Total break time per day</small>
+                </div>
+                <div class="form-group">
+                  <label for="breakReminderInterval"
+                    >Break Reminder (minutes)</label
+                  >
+                  <input
+                    type="number"
+                    id="breakReminderInterval"
+                    min="15"
+                    max="240"
+                    value="90"
+                  />
+                  <small>How often to remind about breaks</small>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="maxIntensityLevel"
+                    >Max Intensity Level (1-10)</label
+                  >
+                  <input
+                    type="range"
+                    id="maxIntensityLevel"
+                    min="1"
+                    max="10"
+                    value="8"
+                  />
+                  <div class="slider-labels">
+                    <span>1 (Light)</span>
+                    <span id="maxIntensityValue">8</span>
+                    <span>10 (Intense)</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="stressThreshold">Stress Threshold (1-10)</label>
+                  <input
+                    type="range"
+                    id="stressThreshold"
+                    min="1"
+                    max="10"
+                    value="7"
+                  />
+                  <div class="slider-labels">
+                    <span>1 (Low)</span>
+                    <span id="stressThresholdValue">7</span>
+                    <span>10 (High)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weekend Work Section -->
+            <div class="preferences-section">
+              <h4><i class="fas fa-calendar-weekend"></i> Weekend Work</h4>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="weekendWorkAllowed" />
+                  <span class="checkmark"></span>
+                  Allow weekend work
+                </label>
+              </div>
+              <div
+                class="form-group"
+                id="weekendHoursGroup"
+                style="display: none"
+              >
+                <label for="maxWeekendHours">Max Weekend Hours</label>
+                <input
+                  type="number"
+                  id="maxWeekendHours"
+                  min="0"
+                  max="48"
+                  step="0.5"
+                  value="4"
+                />
+                <small>Maximum hours per weekend day</small>
+              </div>
+            </div>
+
+            <!-- Overtime Section -->
+            <div class="preferences-section">
+              <h4>
+                <i class="fas fa-exclamation-triangle"></i> Overtime & Alerts
+              </h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="overtimeThresholdHours"
+                    >Overtime Threshold (hours)</label
+                  >
+                  <input
+                    type="number"
+                    id="overtimeThresholdHours"
+                    min="0"
+                    max="12"
+                    step="0.5"
+                    value="2"
+                  />
+                  <small>When to consider work as overtime</small>
+                </div>
+                <div class="form-group">
+                  <label for="workLifeBalanceGoal"
+                    >Work-Life Balance Goal</label
+                  >
+                  <select id="workLifeBalanceGoal">
+                    <option value="work_focused">Work Focused</option>
+                    <option value="balanced" selected>Balanced</option>
+                    <option value="life_focused">Life Focused</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="preferences-section">
+              <h4><i class="fas fa-bell"></i> Notifications & Alerts</h4>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="autoBreakSuggestions" checked />
+                  <span class="checkmark"></span>
+                  Auto break suggestions
+                </label>
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="intensityWarnings" checked />
+                  <span class="checkmark"></span>
+                  Intensity warnings
+                </label>
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="overworkAlerts" checked />
+                  <span class="checkmark"></span>
+                  Overwork alerts
+                </label>
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="weeklySummary" checked />
+                  <span class="checkmark"></span>
+                  Weekly summary
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="resetWorkPreferencesBtn"
+            >
+              <i class="fas fa-undo"></i> Reset to Defaults
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelWorkPreferencesModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Save Preferences
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Gratitude Entry Modal -->
+    <div class="modal" id="gratitudeModal">
+      <div class="modal-content" style="max-width: 600px">
+        <div class="modal-header">
+          <h3 id="gratitudeModalTitle">New Gratitude Entry</h3>
+          <button class="modal-close" id="closeGratitudeModal">&times;</button>
+        </div>
+        <form id="gratitudeForm">
+          <div class="form-group">
+            <label for="gratitudeDate">Date *</label>
+            <input type="date" id="gratitudeDate" required />
+          </div>
+
+          <div class="form-group">
+            <label for="gratitudeCategory">Category</label>
+            <select id="gratitudeCategory">
+              <option value="">Select a category</option>
+              <option value="personal">Personal</option>
+              <option value="professional">Professional</option>
+              <option value="relationships">Relationships</option>
+              <option value="health">Health</option>
+              <option value="growth">Growth</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="gratitudePrompt">Gratitude Prompt *</label>
+            <textarea
+              id="gratitudePrompt"
+              rows="3"
+              required
+              placeholder="What are you grateful for today?"
+            ></textarea>
+            <small class="form-help"
+              >Use the AI prompts button to get personalized suggestions</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="gratitudeResponse">Your Response *</label>
+            <textarea
+              id="gratitudeResponse"
+              rows="4"
+              required
+              placeholder="Share what you're grateful for and why..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="gratitudeMoodBefore">Mood Before (1-10)</label>
+            <input
+              type="range"
+              id="gratitudeMoodBefore"
+              min="1"
+              max="10"
+              value="5"
+            />
+            <div class="range-value" id="gratitudeMoodBeforeValue">5</div>
+          </div>
+
+          <div class="form-group">
+            <label for="gratitudeMoodAfter">Mood After (1-10)</label>
+            <input
+              type="range"
+              id="gratitudeMoodAfter"
+              min="1"
+              max="10"
+              value="5"
+            />
+            <div class="range-value" id="gratitudeMoodAfterValue">5</div>
+          </div>
+
+          <div class="form-group">
+            <label for="gratitudeTags">Tags (comma-separated)</label>
+            <input
+              type="text"
+              id="gratitudeTags"
+              placeholder="e.g., family, work, health, growth"
+            />
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="cancelGratitudeModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Save Gratitude Entry
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Load JavaScript modules in dependency order -->
+    <script src="js/config.js"></script>
+    <script src="js/core/api.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/events.js"></script>
+    <script src="js/core/router.js"></script>
+    <script src="js/utils/dom.js"></script>
+    <script src="js/utils/format.js"></script>
+    <script src="js/utils/validation.js"></script>
+    <script src="js/utils/storage.js"></script>
+    <script src="js/components/modals.js"></script>
+    <script src="js/components/forms.js"></script>
+    <script src="js/components/charts.js"></script>
+    <script src="js/modules/projects/projects.api.js"></script>
+    <script src="js/modules/projects/projects.ui.js"></script>
+    <script src="js/modules/projects/projects.controller.js"></script>
+    <script src="js/utils/moduleLoader.js"></script>
+    <script src="js/modules/workload/workload.api.js"></script>
+    <script src="js/modules/workload/workload.ui.js"></script>
+    <script src="js/modules/workload/workload.controller.js"></script>
+    <script>
+      // Workload module is loaded lazily via moduleLoader (medium priority)
+      // This will be handled by moduleLoader on user interaction
+    </script>
+    <!-- Notes and Reports module scripts are loaded lazily via moduleLoader -->
+    <script src="js/modules/reports/reports.api.js"></script>
+    <script src="js/modules/reports/reports.ui.js"></script>
+    <script>
+      // Reports module is loaded lazily via moduleLoader (medium priority)
+      // This will be handled by moduleLoader on user interaction
+    </script>
+    <script src="js/app.js"></script>
+  </body>
 </html>

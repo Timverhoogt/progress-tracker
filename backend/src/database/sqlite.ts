@@ -110,8 +110,11 @@ class SQLiteService {
   }
 
   // Transaction support
-  transaction(fn: () => void): any {
-    return this.db.transaction(fn)();
+  async transaction(fn: () => Promise<void>): Promise<any> {
+    const transaction = this.db.transaction(async () => {
+      return await fn();
+    });
+    return await transaction();
   }
 
   // Close database connection

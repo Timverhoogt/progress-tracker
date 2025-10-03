@@ -44,6 +44,41 @@ class LLMCoachingService {
   }
 
   /**
+   * Generate mood-adaptive coaching response
+   */
+  async generateMoodAdaptiveCoaching(userMessage: string, userId: string = 'default'): Promise<CoachingResponse> {
+    try {
+      // Get recent mood data
+      const recentMood = await this.getRecentMoodData(userId);
+      const moodContext = this.buildMoodContext(recentMood);
+      
+      // Get other context data
+      const context = await this.buildCoachingContext(userId);
+      
+      // Determine coaching style based on mood
+      const coachingStyle = this.determineCoachingStyle(recentMood);
+      
+      const request: CoachingRequest = {
+        user_message: userMessage,
+        session_type: 'mood_adaptive',
+        coaching_style: coachingStyle,
+        context: context,
+        mood_context: moodContext
+      };
+      
+      return await this.generateCoachingResponse(request);
+    } catch (error) {
+      console.error('Error in mood-adaptive coaching:', error);
+      return {
+        ai_response: "I'm here to support you. Could you tell me more about what's on your mind?",
+        coaching_insights: [],
+        suggested_actions: [],
+        follow_up_questions: ["How are you feeling today?", "What would be most helpful right now?"]
+      };
+    }
+  }
+
+  /**
    * Generate personalized coaching response
    */
   async generateCoachingResponse(request: CoachingRequest): Promise<CoachingResponse> {
@@ -93,6 +128,15 @@ class LLMCoachingService {
 
     let basePersonality = '';
     switch (coaching_style) {
+      case 'gentle_supportive':
+        basePersonality = 'You are a gentle, nurturing coach who prioritizes emotional support and validation. Use warm, encouraging language and focus on building confidence. Be extra patient and understanding, offering comfort and reassurance.';
+        break;
+      case 'balanced_encouraging':
+        basePersonality = 'You are a balanced coach who provides both support and gentle challenge. Offer encouragement while suggesting manageable steps forward. Be understanding but also motivational.';
+        break;
+      case 'motivational_challenging':
+        basePersonality = 'You are an energetic, motivational coach who can push for growth and set ambitious goals. Use confident, inspiring language and challenge the user to reach their potential.';
+        break;
       case 'supportive':
         basePersonality = 'You are a warm, encouraging, and empathetic coach who focuses on building confidence and providing emotional support.';
         break;
@@ -125,6 +169,18 @@ class LLMCoachingService {
     const focusAreas = preferences.focus_areas?.split(',') || ['general'];
     const focusGuidance = `Focus particularly on: ${focusAreas.join(', ')}.`;
 
+    let moodGuidance = '';
+    if (request.mood_context) {
+      moodGuidance = `
+MOOD-AWARE COACHING:
+- ${request.mood_context}
+- Adjust your tone and approach based on their current emotional state
+- If they're struggling (low mood/high stress), be extra gentle and supportive
+- If they're doing well (high mood/low stress), you can be more challenging and motivational
+- Always validate their feelings while offering constructive guidance
+- Consider their recent triggers and coping strategies in your suggestions`;
+    }
+
     return `${basePersonality}
 
 CONTEXT ABOUT USER:
@@ -139,6 +195,7 @@ COACHING APPROACH:
 - Draw connections between current situation and user's past experiences when relevant
 - Suggest specific, actionable next steps
 - Ask thoughtful follow-up questions to deepen reflection
+${moodGuidance}
 
 RESPONSE FORMAT:
 Structure your response as a coaching conversation with:
@@ -485,6 +542,106 @@ Provide insights and recommendations for maintaining good wellbeing while managi
       data_points: moodData.length,
       period_days: 30,
       generated_at: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get recent mood data for adaptive coaching
+   */
+  private async getRecentMoodData(userId: string): Promise<any[]> {
+    try {
+      const result = await db.query(`
+        SELECT mood_score, energy_level, stress_level, motivation_level, 
+               mood_tags, notes, triggers, coping_strategies_used, mood_date
+        FROM mood_tracking 
+        WHERE user_id = ? 
+        ORDER BY mood_date DESC 
+        LIMIT 7
+      `, [userId]);
+      
+      return result.rows || [];
+    } catch (error) {
+      console.error('Error fetching recent mood data:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Build mood context for coaching
+   */
+  private buildMoodContext(recentMood: any[]): string {
+    if (recentMood.length === 0) {
+      return "No recent mood data available. User hasn't logged mood entries recently.";
+    }
+
+    const latest = recentMood[0];
+    const avgMood = recentMood.reduce((sum, entry) => sum + entry.mood_score, 0) / recentMood.length;
+    const avgStress = recentMood.reduce((sum, entry) => sum + entry.stress_level, 0) / recentMood.length;
+    const avgEnergy = recentMood.reduce((sum, entry) => sum + entry.energy_level, 0) / recentMood.length;
+
+    let context = `Recent mood context (last ${recentMood.length} entries):\n`;
+    context += `- Latest mood: ${latest.mood_score}/10 (${latest.mood_date})\n`;
+    context += `- Average mood: ${avgMood.toFixed(1)}/10\n`;
+    context += `- Average stress: ${avgStress.toFixed(1)}/10\n`;
+    context += `- Average energy: ${avgEnergy.toFixed(1)}/10\n`;
+    
+    if (latest.mood_tags) {
+      context += `- Recent mood tags: ${latest.mood_tags}\n`;
+    }
+    if (latest.triggers) {
+      context += `- Recent triggers: ${latest.triggers}\n`;
+    }
+    if (latest.coping_strategies_used) {
+      context += `- Coping strategies used: ${latest.coping_strategies_used}\n`;
+    }
+
+    return context;
+  }
+
+  /**
+   * Determine coaching style based on mood
+   */
+  private determineCoachingStyle(recentMood: any[]): string {
+    if (recentMood.length === 0) {
+      return 'supportive';
+    }
+
+    const latest = recentMood[0];
+    const avgMood = recentMood.reduce((sum, entry) => sum + entry.mood_score, 0) / recentMood.length;
+    const avgStress = recentMood.reduce((sum, entry) => sum + entry.stress_level, 0) / recentMood.length;
+
+    // Low mood or high stress = gentle, supportive
+    if (avgMood < 5 || avgStress > 7) {
+      return 'gentle_supportive';
+    }
+    
+    // Moderate mood/stress = balanced
+    if (avgMood >= 5 && avgMood < 7 && avgStress >= 4 && avgStress <= 7) {
+      return 'balanced_encouraging';
+    }
+    
+    // High mood, low stress = motivational, challenging
+    if (avgMood >= 7 && avgStress < 4) {
+      return 'motivational_challenging';
+    }
+
+    // Default to supportive
+    return 'supportive';
+  }
+
+  /**
+   * Build coaching context with mood data
+   */
+  private async buildCoachingContext(userId: string): Promise<CoachingContext> {
+    // This would integrate with existing context building
+    // For now, return a basic context
+    return {
+      user_preferences: {},
+      recent_mood: await this.getRecentMoodData(userId),
+      active_achievements: [],
+      skill_gaps: [],
+      recent_work: [],
+      recent_reflections: []
     };
   }
 }

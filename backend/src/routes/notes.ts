@@ -96,29 +96,29 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const validatedData = createNoteSchema.parse(req.body);
-    
+
     // Get project context for LLM enhancement
     const projectResult = await pool.query(
       'SELECT name, description FROM projects WHERE id = ?',
       [validatedData.project_id]
     );
-    
+
     if (projectResult.rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
+
     const project = projectResult.rows[0];
     const projectContext = `${project.name}: ${project.description || ''}`;
-    
+
     // Enhance note with LLM
     const llmResult = await llmService.enhanceNote({
       content: validatedData.content,
       projectContext
     });
-    
+
     let enhancedContent = null;
     let structuredData = null;
-    
+
     if (llmResult.success) {
       const parsedData = extractJsonObject(String(llmResult.data || ''));
       if (parsedData) {
@@ -128,24 +128,32 @@ router.post('/', async (req, res) => {
         console.error('Error parsing LLM response: unable to extract JSON');
       }
     }
-    
+
     // Save note to database
     const noteId = uuidv4();
     await pool.query(
       'INSERT INTO notes (id, project_id, content, enhanced_content, structured_data) VALUES (?, ?, ?, ?, ?)',
       [noteId, validatedData.project_id, validatedData.content, enhancedContent, structuredData]
     );
-    
+    console.log('✅ Note saved to database:', noteId);
+
     // Fetch the created note
     const result = await pool.query('SELECT * FROM notes WHERE id = ?', [noteId]);
-    
+
+    if (result.rows.length === 0) {
+      console.error('❌ Note not found after insert:', noteId);
+      return res.status(500).json({ error: 'Failed to retrieve created note' });
+    }
+
+    console.log('✅ Note retrieved from database:', noteId);
     res.status(201).json(parseStructured(result.rows[0]));
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid input', details: error.errors });
     }
-    console.error('Error creating note:', error);
-    res.status(500).json({ error: 'Failed to create note' });
+    console.error('❌ Error creating note:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ error: 'Failed to create note', details: errorMessage });
   }
 });
 
