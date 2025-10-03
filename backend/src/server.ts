@@ -53,6 +53,7 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL || 'https://tracker.evosgpt.eu',
       'http://localhost:8080',
+      'http://localhost:8082',
       'http://localhost:3000',
       'https://tracker.evosgpt.eu'
     ];
