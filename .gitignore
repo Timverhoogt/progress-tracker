@@ -38,6 +38,14 @@ coverage/
 # nyc test coverage
 .nyc_output
 
+# Test artifacts
+test-results/
+*.test.db
+*.test.db-wal
+*.test.db-shm
+backend/data/test_*.db
+backend/data/test-backups/
+
 # Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
@@ -101,7 +109,7 @@ tmp/
 temp/
 
 # Editor directories and files
-.vscode/
+# .vscode/ - Now tracked for shared workspace configuration
 .idea/
 *.swp
 *.swo

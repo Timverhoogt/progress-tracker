@@ -1,0 +1,57 @@
+{
+  // Jest Test Explorer Configuration
+  "jest.autoRun": "off",
+  "jest.jestCommandLine": "node_modules/.bin/jest",
+  "jest.rootPath": "backend",
+  "jest.showCoverageOnLoad": false,
+  "jest.coverageFormatter": "DefaultFormatter",
+  "jest.nodeEnv": {
+    "NODE_ENV": "test"
+  },
+  "jest.enable": true,
+  "jest.runMode": "on-demand",
+
+  // Test Explorer UI
+  "testExplorer.useNativeTesting": true,
+  
+  // Editor settings for test files
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  
+  // File associations
+  "files.associations": {
+    "*.test.ts": "typescript"
+  },
+  
+  // Exclude test artifacts from search
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/coverage": true,
+    "**/.nyc_output": true,
+    "**/test-results": true,
+    "**/*.test.db": true
+  },
+  
+  // File watcher exclusions
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/coverage/**": true,
+    "**/.nyc_output/**": true,
+    "**/test-results/**": true
+  },
+  
+  // TypeScript settings
+  "typescript.tsdk": "backend/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  
+  // Terminal settings
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  
+  // Code lens for tests
+  "testing.automaticallyOpenPeekView": "failureInVisibleDocument",
+  "testing.openTesting": "neverOpen",
+  "testing.automaticallyOpenTestResults": "neverOpen"
+}
+

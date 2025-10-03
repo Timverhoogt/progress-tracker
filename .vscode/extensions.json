@@ -1,0 +1,28 @@
+{
+  "recommendations": [
+    // Testing
+    "orta.vscode-jest",
+    "hbenl.vscode-test-explorer",
+    "kavod-io.vscode-jest-test-adapter",
+    
+    // TypeScript & JavaScript
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    
+    // Docker
+    "ms-azuretools.vscode-docker",
+    
+    // Git
+    "eamodio.gitlens",
+    
+    // Database
+    "qwtel.sqlite-viewer",
+    "alexcvzz.vscode-sqlite",
+    
+    // Utilities
+    "christian-kohler.path-intellisense",
+    "visualstudioexptteam.vscodeintellicode",
+    "gruntfuggly.todo-tree"
+  ]
+}
+
