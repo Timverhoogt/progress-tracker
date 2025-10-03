@@ -2,12 +2,16 @@
 
 ## 🔧 Common Issues and Solutions
 
-### Issue 1: "jest is not recognized as an internal or external command"
+### Issue 1: "jest is not recognized as an internal or external command" or "'node_modules' is not recognized"
 
 **Symptoms:**
 ```
 'jest' is not recognized as an internal or external command,
 operable program or batch file.
+```
+Or:
+```
+'node_modules' is not recognized as an internal or external command
 ```
 
 **Solutions:**
@@ -22,6 +26,19 @@ Then reload VS Code:
 - Press `Ctrl+Shift+P`
 - Type "Reload Window"
 - Press Enter
+
+#### Solution B: Windows Path Issue (FIXED) ✅
+On Windows, the Jest extension needs to use `npm test --` instead of direct path.
+
+This is already configured in `.vscode/settings.json`:
+```json
+{
+  "jest.jestCommandLine": "npm test --",
+  "jest.shell": "powershell"
+}
+```
+
+If you still see the error, reload VS Code window.
 
 #### Solution B: Verify Jest Installation
 ```bash

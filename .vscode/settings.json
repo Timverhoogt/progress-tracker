@@ -1,7 +1,7 @@
 {
   // Jest Test Explorer Configuration
   "jest.autoRun": "off",
-  "jest.jestCommandLine": "node_modules/.bin/jest",
+  "jest.jestCommandLine": "npm test --",
   "jest.rootPath": "backend",
   "jest.showCoverageOnLoad": false,
   "jest.coverageFormatter": "DefaultFormatter",
@@ -10,10 +10,15 @@
   },
   "jest.enable": true,
   "jest.runMode": "on-demand",
+  "jest.shell": "powershell",
 
   // Test Explorer UI
   "testExplorer.useNativeTesting": true,
-  
+
+  // Testing UI settings
+  "testing.automaticallyOpenPeekView": "failureInVisibleDocument",
+  "testing.openTesting": "neverOpen",
+
   // Editor settings for test files
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -47,11 +52,6 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   
   // Terminal settings
-  "terminal.integrated.cwd": "${workspaceFolder}",
-  
-  // Code lens for tests
-  "testing.automaticallyOpenPeekView": "failureInVisibleDocument",
-  "testing.openTesting": "neverOpen",
-  "testing.automaticallyOpenTestResults": "neverOpen"
+  "terminal.integrated.cwd": "${workspaceFolder}"
 }
 
