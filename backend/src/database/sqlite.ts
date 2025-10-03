@@ -153,6 +153,18 @@ export function initializeDatabase(dbPath?: string): SQLiteService {
   return sqliteService;
 }
 
+export function reinitializeDatabase(dbPath?: string): SQLiteService {
+  if (sqliteService) {
+    try {
+      sqliteService.close();
+    } catch (error) {
+      // Ignore errors if already closed
+    }
+  }
+  sqliteService = new SQLiteService(dbPath);
+  return sqliteService;
+}
+
 export function getDatabase(): SQLiteService {
   if (!sqliteService) {
     throw new Error(

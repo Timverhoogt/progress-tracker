@@ -24,7 +24,7 @@ global.pool = initializeDatabase();
 // Mock LLM service
 jest.mock("../../../src/services/llm", () => ({
   default: {
-    enhanceNote: jest.fn<any, any>().mockResolvedValue({
+    enhanceNote: jest.fn().mockResolvedValue({
       success: true,
       data: JSON.stringify({
         enhanced_content: "Enhanced test content",

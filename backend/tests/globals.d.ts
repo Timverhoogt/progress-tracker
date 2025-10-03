@@ -6,5 +6,10 @@ declare global {
   var pool: any;
 }
 
-export {};
+declare namespace NodeJS {
+  interface Global {
+    pool: any;
+  }
+}
 
+export {};

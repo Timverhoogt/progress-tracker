@@ -24,7 +24,7 @@ global.pool = initializeDatabase();
 // Mock LLM service
 jest.mock("../../../src/services/llm", () => ({
   default: {
-    generateTodos: jest.fn<any, any>().mockResolvedValue({
+    generateTodos: jest.fn().mockResolvedValue({
       success: true,
       data: JSON.stringify({
         todos: [
