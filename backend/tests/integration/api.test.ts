@@ -16,6 +16,9 @@ import noteRoutes from '../../src/routes/notes';
 import todoRoutes from '../../src/routes/todos';
 import timelineRoutes from '../../src/routes/timelines';
 
+// Initialize database for routes
+initializeDatabase();
+
 // Create test app
 const app = express();
 app.use(cors());
@@ -24,9 +27,6 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/todos', todoRoutes);
 app.use('/api/timelines', timelineRoutes);
-
-// Mock pool for routes
-global.pool = initializeDatabase();
 
 describe('API Integration Tests', () => {
   beforeEach(async () => {

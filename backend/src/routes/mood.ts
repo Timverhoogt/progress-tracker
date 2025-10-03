@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -142,14 +142,15 @@ const UpdateMoodEntrySchema = z.object({
 // GET /api/mood - Get mood entries
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const startDate = req.query.start_date;
     const endDate = req.query.end_date;
     const limit = parseInt(String(req.query.limit || '30')) || 30;
-    
+
     let query = 'SELECT * FROM mood_tracking WHERE user_id = ?';
     let params: any[] = [userId];
-    
+
     if (startDate && endDate) {
       query += ' AND mood_date BETWEEN ? AND ?';
       params.push(startDate, endDate);
@@ -160,11 +161,11 @@ router.get('/', async (req, res) => {
       query += ' AND mood_date <= ?';
       params.push(endDate);
     }
-    
+
     query += ' ORDER BY mood_date DESC LIMIT ?';
     params.push(limit);
-    
-    const result = await pool.query(query, params);
+
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching mood entries:', error);
@@ -175,16 +176,17 @@ router.get('/', async (req, res) => {
 // GET /api/mood/latest - Get latest mood entry
 router.get('/latest', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM mood_tracking WHERE user_id = ? ORDER BY mood_date DESC LIMIT 1',
       [userId]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'No mood entries found' });
     }
-    
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching latest mood entry:', error);
@@ -195,18 +197,19 @@ router.get('/latest', async (req, res) => {
 // GET /api/mood/today - Get today's mood entry
 router.get('/today', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const today = new Date().toISOString().split('T')[0];
-    
-    const result = await pool.query(
+
+    const result = await db.query(
       'SELECT * FROM mood_tracking WHERE user_id = ? AND mood_date = ?',
       [userId, today]
     );
-    
+
     if (result.rows.length === 0) {
       return res.json(null);
     }
-    
+
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching today\'s mood entry:', error);
@@ -217,13 +220,14 @@ router.get('/today', async (req, res) => {
 // GET /api/mood/stats - Get mood statistics
 router.get('/stats', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = startDate.toISOString().split('T')[0];
     
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         COUNT(*) as total_entries,
         AVG(mood_score) as avg_mood_score,
@@ -240,7 +244,7 @@ router.get('/stats', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get mood trends (weekly averages)
-    const trends = await pool.query(`
+    const trends = await db.query(`
       SELECT 
         strftime('%Y-%W', mood_date) as week,
         AVG(mood_score) as avg_mood,
@@ -273,7 +277,7 @@ router.get('/patterns', async (req, res) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Get day-of-week patterns
-    const dayPatterns = await pool.query(`
+    const dayPatterns = await db.query(`
       SELECT 
         CASE strftime('%w', mood_date)
           WHEN '0' THEN 'Sunday'
@@ -295,7 +299,7 @@ router.get('/patterns', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get common triggers
-    const triggers = await pool.query(`
+    const triggers = await db.query(`
       SELECT triggers, COUNT(*) as frequency
       FROM mood_tracking 
       WHERE user_id = ? AND mood_date >= ? AND triggers IS NOT NULL AND triggers != ''
@@ -305,7 +309,7 @@ router.get('/patterns', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get effective coping strategies
-    const copingStrategies = await pool.query(`
+    const copingStrategies = await db.query(`
       SELECT coping_strategies_used, AVG(mood_score) as avg_mood_after, COUNT(*) as usage_count
       FROM mood_tracking 
       WHERE user_id = ? AND mood_date >= ? AND coping_strategies_used IS NOT NULL AND coping_strategies_used != ''
@@ -335,7 +339,7 @@ router.get('/ai-analysis', async (req, res) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Get detailed mood data for AI analysis
-    const moodData = await pool.query(`
+    const moodData = await db.query(`
       SELECT 
         mood_date,
         mood_score,
@@ -441,7 +445,7 @@ router.post('/', async (req, res) => {
     
     const id = uuidv4();
     
-    await pool.query(`
+    await db.query(`
       INSERT INTO mood_tracking (
         id, user_id, mood_date, mood_score, energy_level, stress_level, 
         motivation_level, mood_tags, notes, triggers, coping_strategies_used
@@ -496,7 +500,7 @@ router.put('/:date', async (req, res) => {
     
     updateValues.push(userId, date);
     
-    const result = await pool.query(`
+    const result = await db.query(`
       UPDATE mood_tracking 
       SET ${updateFields.join(', ')}
       WHERE user_id = ? AND mood_date = ?
@@ -506,7 +510,7 @@ router.put('/:date', async (req, res) => {
       return res.status(404).json({ error: 'Mood entry not found for this date' });
     }
     
-    const updated = await pool.query(
+    const updated = await db.query(
       'SELECT * FROM mood_tracking WHERE user_id = ? AND mood_date = ?',
       [userId, date]
     );
@@ -555,7 +559,7 @@ router.get('/intervention-triggers', async (req, res) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Get recent mood data
-    const moodData = await pool.query(`
+    const moodData = await db.query(`
       SELECT 
         mood_date,
         mood_score,
@@ -594,7 +598,7 @@ router.post('/intervention-log', async (req, res) => {
     
     const id = uuidv4();
     
-    await pool.query(`
+    await db.query(`
       INSERT INTO intervention_logs (
         id, user_id, trigger_type, action_taken, notes, effectiveness, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))

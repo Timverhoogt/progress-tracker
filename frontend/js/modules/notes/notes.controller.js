@@ -31,12 +31,42 @@ class NotesController {
     }
 
     bindUIEvents() {
+        this.bindProjectSelector();
         this.ui.bindAddNote(() => this.handleAddNote());
         this.ui.bindDeleteNote((noteId) => this.handleDeleteNote(noteId));
         this.ui.bindVoiceRecording(
             () => this.startVoiceRecording(),
             () => this.stopVoiceRecording()
         );
+    }
+
+    bindProjectSelector() {
+        const selector = document.getElementById('notesProjectSelector');
+        if (!selector || selector.dataset.notesSelectorBound) {
+            return;
+        }
+
+        selector.addEventListener('change', async (event) => {
+            const projectId = event.target.value || null;
+
+            // Ensure legacy global stays in sync for modules that still depend on it
+            window.currentProject = projectId;
+
+            if (this.hasGlobalState) {
+                this.state.setState('currentProject', projectId);
+                return;
+            }
+
+            this.currentProjectId = projectId;
+            if (!projectId) {
+                this.ui.showEmptyState();
+                return;
+            }
+
+            await this.loadNotes(projectId);
+        });
+
+        selector.dataset.notesSelectorBound = 'true';
     }
 
     subscribeToState() {
@@ -71,6 +101,8 @@ class NotesController {
         } catch (error) {
             console.error('Failed to load notes:', error);
             this.ui.showError('Failed to load notes');
+        } finally {
+            this.ui.hideLoading();
         }
     }
 
@@ -99,6 +131,8 @@ class NotesController {
         } catch (error) {
             console.error('Failed to add note:', error);
             this.ui.showError('Failed to add note');
+        } finally {
+            this.ui.hideLoading();
         }
     }
 
@@ -117,6 +151,8 @@ class NotesController {
         } catch (error) {
             console.error('Failed to delete note:', error);
             this.ui.showError('Failed to delete note');
+        } finally {
+            this.ui.hideLoading();
         }
     }
 

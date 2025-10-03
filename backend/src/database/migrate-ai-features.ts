@@ -1,9 +1,8 @@
-import { initializeDatabase } from './sqlite';
+import { initializeDatabase, getDatabase } from './sqlite';
 import crypto from 'crypto';
 
-const db = initializeDatabase();
-
 const createAITables = async () => {
+  const db = getDatabase();
   try {
     console.log('🧠 Creating AI-powered personal development tables...');
 

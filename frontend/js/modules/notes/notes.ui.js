@@ -9,11 +9,13 @@ class NotesUI {
             addNoteBtn: document.getElementById('addNoteBtn'),
             recordVoiceBtn: document.getElementById('recordVoiceBtn'),
             recordStatus: document.getElementById('recordStatus'),
-            notesList: document.getElementById('notesList')
+            notesList: document.getElementById('notesList'),
+            loadingOverlay: document.getElementById('loadingOverlay')
         };
     }
 
     renderNotes(notes) {
+        this.hideLoading();
         // Enhanced notes rendering with AI content
         this.elements.notesList.innerHTML = notes.map(note => `
             <div class="note-item" data-id="${note.id}">
@@ -47,6 +49,7 @@ class NotesUI {
     }
 
     showEmptyState() {
+        this.hideLoading();
         this.elements.notesList.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-sticky-note"></i>
@@ -57,8 +60,17 @@ class NotesUI {
     }
 
     showLoading() {
+        if (this.elements.loadingOverlay) {
+            LoadingUtils.show(this.elements.loadingOverlay);
+        }
         if (this.elements.notesList) {
-            this.elements.notesList.innerHTML = '<div class="loading">Loading notes...</div>';
+            this.elements.notesList.innerHTML = '<div class="loading">Processing note with AI...</div>';
+        }
+    }
+
+    hideLoading() {
+        if (this.elements.loadingOverlay) {
+            LoadingUtils.hide(this.elements.loadingOverlay);
         }
     }
 

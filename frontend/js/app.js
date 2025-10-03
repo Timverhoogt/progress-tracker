@@ -169,6 +169,7 @@ class ProgressTracker {
                 // Avoid redundant navigation
                 if (window.router && window.router.getCurrentRoute() === targetTab) {
                     this.showTab(targetTab);
+                    this.closeMobileNav();
                     return;
                 }
 
@@ -178,10 +179,83 @@ class ProgressTracker {
                     console.warn('Router not available, falling back to direct tab switch');
                     this.showTab(targetTab);
                 }
+
+                this.closeMobileNav();
             });
         });
 
+        this.setupNavSections();
+        this.setupNavCollapse();
+
         console.log('✅ Navigation setup complete');
+    }
+
+    setupNavSections() {
+        document.querySelectorAll('.nav-section-toggle').forEach((toggle) => {
+            const section = toggle.closest('.nav-section');
+            const items = section?.querySelector('.nav-section-items');
+            const expanded = toggle.getAttribute('aria-expanded') === 'true';
+
+            if (!expanded) {
+                section?.classList.add('collapsed');
+                if (items) items.hidden = true;
+            }
+
+            toggle.addEventListener('click', (event) => {
+                event.preventDefault();
+                const currentlyExpanded = toggle.getAttribute('aria-expanded') === 'true';
+                const nextExpanded = !currentlyExpanded;
+                toggle.setAttribute('aria-expanded', String(nextExpanded));
+                section?.classList.toggle('collapsed', !nextExpanded);
+                if (items) items.hidden = !nextExpanded;
+            });
+        });
+    }
+
+    setupNavCollapse() {
+        const collapseToggle = document.querySelector('.nav-collapse-toggle');
+        const nav = document.querySelector('.nav-tabs');
+        if (!collapseToggle || !nav) {
+            return;
+        }
+
+        this.navCollapseToggle = collapseToggle;
+        this.navElement = nav;
+
+        const syncNavVisibility = () => {
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            if (!isMobile) {
+                nav.classList.add('active');
+                collapseToggle.setAttribute('aria-expanded', 'false');
+                return;
+            }
+
+            const expanded = collapseToggle.getAttribute('aria-expanded') === 'true';
+            nav.classList.toggle('active', expanded);
+        };
+
+        collapseToggle.addEventListener('click', () => {
+            const expanded = collapseToggle.getAttribute('aria-expanded') === 'true';
+            collapseToggle.setAttribute('aria-expanded', String(!expanded));
+            nav.classList.toggle('active', !expanded);
+        });
+
+        window.addEventListener('resize', syncNavVisibility);
+        syncNavVisibility();
+    }
+
+    closeMobileNav() {
+        if (!this.navCollapseToggle || !this.navElement) {
+            return;
+        }
+
+        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+        if (!isMobile) {
+            return;
+        }
+
+        this.navCollapseToggle.setAttribute('aria-expanded', 'false');
+        this.navElement.classList.remove('active');
     }
 
     // Show specific tab
@@ -201,6 +275,19 @@ class ProgressTracker {
 
         if (targetTab) targetTab.classList.add('active');
         if (targetContent) targetContent.style.display = 'block';
+
+        if (targetTab) {
+            const parentSection = targetTab.closest('.nav-section');
+            if (parentSection) {
+                const toggle = parentSection.querySelector('.nav-section-toggle');
+                const items = parentSection.querySelector('.nav-section-items');
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'true');
+                }
+                parentSection.classList.remove('collapsed');
+                if (items) items.hidden = false;
+            }
+        }
 
         // Update state
         state.setState('ui.activeTab', tabName);

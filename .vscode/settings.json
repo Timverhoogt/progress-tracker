@@ -1,7 +1,7 @@
 {
   // Jest Test Explorer Configuration
   "jest.autoRun": "off",
-  "jest.jestCommandLine": "node_modules/jest/bin/jest.js",
+  "jest.jestCommandLine": "node node_modules/jest/bin/jest.js",
   "jest.rootPath": "backend",
   "jest.showCoverageOnLoad": false,
   "jest.coverageFormatter": "DefaultFormatter",

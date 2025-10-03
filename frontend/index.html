@@ -39,49 +39,87 @@
       </header>
 
       <!-- Navigation -->
-      <nav class="nav-tabs">
-        <button class="nav-tab active" data-tab="projects">
-          <i class="fas fa-folder"></i> Projects
-        </button>
-        <button class="nav-tab" data-tab="notes">
-          <i class="fas fa-sticky-note"></i> Notes
-        </button>
-        <button class="nav-tab" data-tab="todos">
-          <i class="fas fa-tasks"></i> Todos
-        </button>
-        <button class="nav-tab" data-tab="timelines">
-          <i class="fas fa-stream"></i> Timelines
-        </button>
-        <button class="nav-tab" data-tab="reports">
-          <i class="fas fa-file-alt"></i> Reports
-        </button>
-        <button class="nav-tab" data-tab="skills">
-          <i class="fas fa-brain"></i> Skills
-        </button>
-        <button class="nav-tab" data-tab="achievements">
-          <i class="fas fa-trophy"></i> Achievements
-        </button>
-        <button class="nav-tab" data-tab="reflections">
-          <i class="fas fa-mirror"></i> Reflections
-        </button>
-        <button class="nav-tab" data-tab="mood">
-          <i class="fas fa-smile"></i> Mood
-        </button>
-        <button class="nav-tab" data-tab="workload">
-          <i class="fas fa-clock"></i> Workload
-        </button>
-        <button class="nav-tab" data-tab="gratitude">
-          <i class="fas fa-heart"></i> Gratitude
-        </button>
-        <button class="nav-tab" data-tab="coaching">
-          <i class="fas fa-robot"></i> AI Coaching
-        </button>
-        <button class="nav-tab" data-tab="learning">
-          <i class="fas fa-graduation-cap"></i> Learning
-        </button>
-        <button class="nav-tab" data-tab="settings">
-          <i class="fas fa-cog"></i> Settings
-        </button>
+      <button class="nav-collapse-toggle" aria-expanded="false" aria-controls="primaryNavigation">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <nav class="nav-tabs" id="primaryNavigation">
+        <div class="nav-section" data-section="planning">
+          <button class="nav-section-toggle" aria-expanded="true">
+            <i class="fas fa-project-diagram"></i>
+            Planning
+            <i class="fas fa-chevron-down section-caret"></i>
+          </button>
+          <div class="nav-section-items">
+            <button class="nav-tab active" data-tab="projects">
+              <i class="fas fa-folder"></i> Projects
+            </button>
+            <button class="nav-tab" data-tab="notes">
+              <i class="fas fa-sticky-note"></i> Notes
+            </button>
+            <button class="nav-tab" data-tab="todos">
+              <i class="fas fa-tasks"></i> Todos
+            </button>
+            <button class="nav-tab" data-tab="timelines">
+              <i class="fas fa-stream"></i> Timelines
+            </button>
+            <button class="nav-tab" data-tab="reports">
+              <i class="fas fa-file-alt"></i> Reports
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-section" data-section="growth">
+          <button class="nav-section-toggle" aria-expanded="false">
+            <i class="fas fa-seedling"></i>
+            Growth
+            <i class="fas fa-chevron-down section-caret"></i>
+          </button>
+          <div class="nav-section-items" hidden>
+            <button class="nav-tab" data-tab="skills">
+              <i class="fas fa-brain"></i> Skills
+            </button>
+            <button class="nav-tab" data-tab="achievements">
+              <i class="fas fa-trophy"></i> Achievements
+            </button>
+            <button class="nav-tab" data-tab="reflections">
+              <i class="fas fa-mirror"></i> Reflections
+            </button>
+            <button class="nav-tab" data-tab="learning">
+              <i class="fas fa-graduation-cap"></i> Learning
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-section" data-section="wellbeing">
+          <button class="nav-section-toggle" aria-expanded="false">
+            <i class="fas fa-heartbeat"></i>
+            Wellbeing
+            <i class="fas fa-chevron-down section-caret"></i>
+          </button>
+          <div class="nav-section-items" hidden>
+            <button class="nav-tab" data-tab="mood">
+              <i class="fas fa-smile"></i> Mood
+            </button>
+            <button class="nav-tab" data-tab="workload">
+              <i class="fas fa-clock"></i> Workload
+            </button>
+            <button class="nav-tab" data-tab="gratitude">
+              <i class="fas fa-heart"></i> Gratitude
+            </button>
+            <button class="nav-tab" data-tab="coaching">
+              <i class="fas fa-robot"></i> AI Coaching
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-section single">
+          <div class="nav-section-items">
+            <button class="nav-tab" data-tab="settings">
+              <i class="fas fa-cog"></i> Settings
+            </button>
+          </div>
+        </div>
       </nav>
 
       <!-- Main Content -->

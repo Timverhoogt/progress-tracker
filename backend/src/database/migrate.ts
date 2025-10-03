@@ -1,13 +1,12 @@
-import { initializeDatabase } from './sqlite';
+import { initializeDatabase, getDatabase } from './sqlite';
 import { v4 as uuidv4 } from 'uuid';
 import { createAITables } from './migrate-ai-features';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const db = initializeDatabase();
-
 const createTables = async () => {
+  const db = getDatabase();
   try {
     // Projects table (SQLite compatible)
     await db.query(`
