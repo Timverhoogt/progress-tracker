@@ -5,35 +5,40 @@
 import { describe, test, expect, beforeEach, jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
-import noteRoutes from "../../../src/routes/notes";
-import { initializeDatabase } from "../../../src/database/sqlite";
+import { initializeDatabase, getDatabase } from "../../../src/database/sqlite";
 import {
   clearDatabase,
   createTestProject,
   createTestNote,
 } from "../../helpers/test-utils";
 
+// Mock pool for routes
+(global as any).pool = initializeDatabase();
+
+// Mock LLM service BEFORE importing the routes
+const mockEnhanceNote = jest.fn<(...args: any[]) => Promise<any>>();
+mockEnhanceNote.mockResolvedValue({
+  success: true,
+  data: JSON.stringify({
+    enhanced_content: "Enhanced test content",
+    key_points: ["Point 1", "Point 2"],
+    action_items: ["Action 1"],
+  }),
+});
+
+jest.mock("../../../src/services/llm", () => ({
+  __esModule: true,
+  default: {
+    enhanceNote: mockEnhanceNote,
+  },
+}));
+
+import noteRoutes from "../../../src/routes/notes";
+
 // Create test app
 const app = express();
 app.use(express.json());
 app.use("/api/notes", noteRoutes);
-
-// Mock pool for routes
-global.pool = initializeDatabase();
-
-// Mock LLM service
-jest.mock("../../../src/services/llm", () => ({
-  default: {
-    enhanceNote: jest.fn().mockResolvedValue({
-      success: true,
-      data: JSON.stringify({
-        enhanced_content: "Enhanced test content",
-        key_points: ["Point 1", "Point 2"],
-        action_items: ["Action 1"],
-      }),
-    }),
-  },
-}));
 
 describe("Notes API Routes", () => {
   let testProject: any;
@@ -87,9 +92,14 @@ describe("Notes API Routes", () => {
     });
 
     test("should return notes ordered by created_at DESC", async () => {
-      await createTestNote(testProject.id, { content: "First" });
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await createTestNote(testProject.id, { content: "Second" });
+      const note1 = await createTestNote(testProject.id, { content: "First" });
+      // Wait to ensure different timestamps (SQLite datetime has second precision)
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      const note2 = await createTestNote(testProject.id, { content: "Second" });
+
+      // Manually update note2 to ensure it has a later timestamp
+      const db = getDatabase();
+      await db.query("UPDATE notes SET created_at = datetime('now', '+1 second') WHERE id = ?", [note2.id]);
 
       const response = await request(app)
         .get("/api/notes")

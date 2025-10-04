@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { z } from 'zod';
 import llmService from '../services/llm';
 import emailService from '../services/email';
@@ -43,13 +43,14 @@ function buildNarrativePrompt(template: 'self'|'manager'|'company'|undefined, ra
 // GET /api/reports?project_id=uuid - Get reports for a project
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const { project_id } = req.query;
     
     if (!project_id) {
       return res.status(400).json({ error: 'project_id is required' });
     }
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM reports WHERE project_id = ? ORDER BY created_at DESC',
       [project_id]
     );
@@ -64,10 +65,11 @@ router.get('/', async (req, res) => {
 // POST /api/reports/generate - Generate a new report
 router.post('/generate', async (req, res) => {
   try {
+    const db = getDatabase();
     const validatedData = generateReportSchema.parse(req.body);
     
     // Get project info
-    const projectResult = await pool.query(
+    const projectResult = await db.query(
       'SELECT name, description FROM projects WHERE id = ?',
       [validatedData.project_id]
     );
@@ -79,7 +81,7 @@ router.post('/generate', async (req, res) => {
     const project = projectResult.rows[0];
     
     // Get notes for the project
-    const notesResult = await pool.query(
+    const notesResult = await db.query(
       'SELECT content, enhanced_content FROM notes WHERE project_id = ? ORDER BY created_at DESC',
       [validatedData.project_id]
     );
@@ -89,7 +91,7 @@ router.post('/generate', async (req, res) => {
     );
     
     // Get todos for the project
-    const todosResult = await pool.query(
+    const todosResult = await db.query(
       'SELECT title, description, status, priority FROM todos WHERE project_id = ? ORDER BY created_at DESC',
       [validatedData.project_id]
     );
@@ -99,7 +101,7 @@ router.post('/generate', async (req, res) => {
     );
     
     // Include timeline context (upcoming deadlines and milestones) to help the LLM generate richer reports
-    const upcomingTodosResult = await pool.query(
+    const upcomingTodosResult = await db.query(
       `SELECT title, description, status, due_date
        FROM todos
        WHERE project_id = ?
@@ -108,7 +110,7 @@ router.post('/generate', async (req, res) => {
        ORDER BY due_date ASC`,
       [validatedData.project_id]
     );
-    const upcomingMilestonesResult = await pool.query(
+    const upcomingMilestonesResult = await db.query(
       `SELECT title, description, status, target_date
        FROM milestones
        WHERE project_id = ?
@@ -142,7 +144,7 @@ router.post('/generate', async (req, res) => {
     const reportTitle = `${validatedData.report_type.charAt(0).toUpperCase() + validatedData.report_type.slice(1)} Report - ${project.name}`;
     const reportId = uuidv4();
     
-    await pool.query(
+    await db.query(
       'INSERT INTO reports (id, project_id, title, content, report_type, recipient) VALUES (?, ?, ?, ?, ?, ?)',
       [
         reportId,
@@ -155,7 +157,7 @@ router.post('/generate', async (req, res) => {
     );
     
     // Fetch the created report
-    const result = await pool.query('SELECT * FROM reports WHERE id = ?', [reportId]);
+    const result = await db.query('SELECT * FROM reports WHERE id = ?', [reportId]);
     const savedReport = result.rows[0];
     
     // Send email if requested
@@ -245,6 +247,7 @@ router.post('/generate', async (req, res) => {
   // POST /api/reports/weekly - Generate and send weekly report
 router.post('/weekly', async (req, res) => {
   try {
+    const db = getDatabase();
     const validatedData = weeklyReportSchema.parse(req.body);
     
     // Get the date range for the last week
@@ -256,28 +259,28 @@ router.post('/weekly', async (req, res) => {
     const dateRange = `${fmt(startDate)} - ${fmt(endDate)}`;
     
     // Get all projects
-    const projectsResult = await pool.query("SELECT * FROM projects WHERE status = 'active'");
+    const projectsResult = await db.query("SELECT * FROM projects WHERE status = 'active'");
     const projectsCompleted = projectsResult.rows.length;
     
     // Get notes from the last week
-    const notesResult = await pool.query(
+    const notesResult = await db.query(
       "SELECT COUNT(*) as count FROM notes WHERE created_at >= date('now', '-7 days')"
     );
     const totalNotes = notesResult.rows[0]?.count || 0;
     
     // Get todos from the last week
-    const todosResult = await pool.query(
+    const todosResult = await db.query(
       "SELECT COUNT(*) as total FROM todos WHERE created_at >= date('now', '-7 days')"
     );
     const totalTodos = todosResult.rows[0]?.total || 0;
     
-    const completedTodosResult = await pool.query(
+    const completedTodosResult = await db.query(
       "SELECT COUNT(*) as completed FROM todos WHERE status = 'completed' AND updated_at >= date('now', '-7 days')"
     );
     const completedTodos = completedTodosResult.rows[0]?.completed || 0;
     
     // Get recent project activity for report content
-    const recentNotesResult = await pool.query(`
+    const recentNotesResult = await db.query(`
       SELECT n.content, n.enhanced_content, p.name as project_name, p.description as project_description
       FROM notes n
       JOIN projects p ON n.project_id = p.id
@@ -286,7 +289,7 @@ router.post('/weekly', async (req, res) => {
       LIMIT 10
     `);
     
-    const recentTodosResult = await pool.query(`
+    const recentTodosResult = await db.query(`
       SELECT t.title, t.description, t.status, p.name as project_name
       FROM todos t
       JOIN projects p ON t.project_id = p.id
@@ -296,7 +299,7 @@ router.post('/weekly', async (req, res) => {
     `);
     
     // Timeline: milestones completed last 7 days and upcoming next 7 days; upcoming task deadlines next 7 days
-    const completedMilestonesResult = await pool.query(`
+    const completedMilestonesResult = await db.query(`
       SELECT m.title, m.description, m.status, m.target_date, p.name as project_name
       FROM milestones m
       JOIN projects p ON m.project_id = p.id
@@ -306,7 +309,7 @@ router.post('/weekly', async (req, res) => {
       ORDER BY m.target_date DESC
       LIMIT 10
     `);
-    const upcomingMilestonesNextWeekResult = await pool.query(`
+    const upcomingMilestonesNextWeekResult = await db.query(`
       SELECT m.title, m.description, m.status, m.target_date, p.name as project_name
       FROM milestones m
       JOIN projects p ON m.project_id = p.id
@@ -315,7 +318,7 @@ router.post('/weekly', async (req, res) => {
       ORDER BY m.target_date ASC
       LIMIT 10
     `);
-    const upcomingDeadlinesNextWeekResult = await pool.query(`
+    const upcomingDeadlinesNextWeekResult = await db.query(`
       SELECT t.title, t.description, t.status, t.due_date, p.name as project_name
       FROM todos t
       JOIN projects p ON t.project_id = p.id
@@ -336,7 +339,7 @@ router.post('/weekly', async (req, res) => {
       const useAI = await settingsService.get('weekly_use_ai_status', true);
       const primaryProjectId = await settingsService.get('primary_project_id', '');
       if (useAI && primaryProjectId) {
-        const projectRes = await pool.query('SELECT name, description FROM projects WHERE id = ?', [primaryProjectId]);
+        const projectRes = await db.query('SELECT name, description FROM projects WHERE id = ?', [primaryProjectId]);
         if (projectRes.rows.length > 0) {
           const llmStatus = await llmService.generateReport({
             projectName: projectRes.rows[0].name,
@@ -506,6 +509,7 @@ router.post('/weekly', async (req, res) => {
 // POST /api/reports/weekly/preview - Build and return email HTML/Text
 router.post('/weekly/preview', async (req, res) => {
   try {
+    const db = getDatabase();
     const validatedData = weeklyReportSchema.parse({ ...req.body, send_email: false });
 
     // Reuse the same data generation path as /weekly
@@ -515,17 +519,17 @@ router.post('/weekly/preview', async (req, res) => {
     const fmt = (d: Date) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
     const dateRange = `${fmt(startDate)} - ${fmt(endDate)}`;
 
-    const projectsResult = await pool.query("SELECT * FROM projects WHERE status = 'active'");
+    const projectsResult = await db.query("SELECT * FROM projects WHERE status = 'active'");
     const projectsCompleted = projectsResult.rows.length;
 
-    const notesResult = await pool.query("SELECT COUNT(*) as count FROM notes WHERE created_at >= date('now', '-7 days')");
+    const notesResult = await db.query("SELECT COUNT(*) as count FROM notes WHERE created_at >= date('now', '-7 days')");
     const totalNotes = notesResult.rows[0]?.count || 0;
-    const todosResult = await pool.query("SELECT COUNT(*) as total FROM todos WHERE created_at >= date('now', '-7 days')");
+    const todosResult = await db.query("SELECT COUNT(*) as total FROM todos WHERE created_at >= date('now', '-7 days')");
     const totalTodos = todosResult.rows[0]?.total || 0;
-    const completedTodosResult = await pool.query("SELECT COUNT(*) as completed FROM todos WHERE status = 'completed' AND updated_at >= date('now', '-7 days')");
+    const completedTodosResult = await db.query("SELECT COUNT(*) as completed FROM todos WHERE status = 'completed' AND updated_at >= date('now', '-7 days')");
     const completedTodos = completedTodosResult.rows[0]?.completed || 0;
 
-    const recentNotesResult = await pool.query(`
+    const recentNotesResult = await db.query(`
       SELECT n.content, n.enhanced_content, p.name as project_name
       FROM notes n
       JOIN projects p ON n.project_id = p.id
@@ -533,7 +537,7 @@ router.post('/weekly/preview', async (req, res) => {
       ORDER BY n.created_at DESC
       LIMIT 10
     `);
-    const recentTodosResult = await pool.query(`
+    const recentTodosResult = await db.query(`
       SELECT t.title, t.description, t.status, p.name as project_name
       FROM todos t
       JOIN projects p ON t.project_id = p.id
@@ -543,7 +547,7 @@ router.post('/weekly/preview', async (req, res) => {
     `);
     
     // Timeline: milestones completed last 7 days and upcoming next 7 days; upcoming task deadlines next 7 days
-    const completedMilestonesResult = await pool.query(`
+    const completedMilestonesResult = await db.query(`
       SELECT m.title, m.description, m.status, m.target_date, p.name as project_name
       FROM milestones m
       JOIN projects p ON m.project_id = p.id
@@ -553,7 +557,7 @@ router.post('/weekly/preview', async (req, res) => {
       ORDER BY m.target_date DESC
       LIMIT 10
     `);
-    const upcomingMilestonesNextWeekResult = await pool.query(`
+    const upcomingMilestonesNextWeekResult = await db.query(`
       SELECT m.title, m.description, m.status, m.target_date, p.name as project_name
       FROM milestones m
       JOIN projects p ON m.project_id = p.id
@@ -562,7 +566,7 @@ router.post('/weekly/preview', async (req, res) => {
       ORDER BY m.target_date ASC
       LIMIT 10
     `);
-    const upcomingDeadlinesNextWeekResult = await pool.query(`
+    const upcomingDeadlinesNextWeekResult = await db.query(`
       SELECT t.title, t.description, t.status, t.due_date, p.name as project_name
       FROM todos t
       JOIN projects p ON t.project_id = p.id
@@ -626,7 +630,7 @@ router.post('/weekly/preview', async (req, res) => {
       try {
         const primaryProjectId = await settingsService.get('primary_project_id', '');
         if (primaryProjectId) {
-          const projRes = await pool.query('SELECT name, description FROM projects WHERE id = ?', [primaryProjectId]);
+          const projRes = await db.query('SELECT name, description FROM projects WHERE id = ?', [primaryProjectId]);
           if (projRes.rows.length) {
             projectNameForNarrative = projRes.rows[0].name;
           }
@@ -764,8 +768,9 @@ router.post('/scheduler/restart', async (req, res) => {
 // GET /api/reports/:id - Get single report
 router.get('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM reports WHERE id = ?', [id]);
+    const result = await db.query('SELECT * FROM reports WHERE id = ?', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Report not found' });
@@ -781,8 +786,9 @@ router.get('/:id', async (req, res) => {
 // DELETE /api/reports/:id - Delete report
 router.delete('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM reports WHERE id = ?', [id]);
+    const result = await db.query('DELETE FROM reports WHERE id = ?', [id]);
     
     if (result.rowsAffected === 0) {
       return res.status(404).json({ error: 'Report not found' });

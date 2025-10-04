@@ -100,15 +100,17 @@ const createTables = async () => {
 
     // Check if any projects exist before inserting sample data
     const existingProjects = await db.query('SELECT COUNT(*) as count FROM projects');
-    
-    // Only insert sample data if no projects exist (fresh installation)
-    if (existingProjects.rows[0].count === 0) {
+
+    // Only insert sample data if no projects exist (fresh installation) and not in test mode
+    if (existingProjects.rows[0].count === 0 && process.env.NODE_ENV !== 'test') {
       const projectId = uuidv4();
       await db.query(`
         INSERT INTO projects (id, name, description, status) VALUES
         (?, 'ML Terminal Time Prediction - Terneuzen', 'Testing a machine learning model to predict ship terminal processing times at our Terneuzen facility. This project involves working with the customer service team and building monitoring dashboards.', 'active')
       `, [projectId]);
       console.log('✅ Sample project inserted');
+    } else if (process.env.NODE_ENV === 'test') {
+      console.log('ℹ️ Test environment detected, skipping sample data insertion');
     } else {
       console.log('ℹ️ Projects already exist, skipping sample data insertion');
     }

@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +20,8 @@ const updateProjectSchema = z.object({
 // GET /api/projects - Get all projects
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(
+    const db = getDatabase();
+    const result = await db.query(
       'SELECT * FROM projects ORDER BY updated_at DESC'
     );
     res.json(result.rows);
@@ -33,8 +34,9 @@ router.get('/', async (req, res) => {
 // GET /api/projects/:id - Get single project
 router.get('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM projects WHERE id = ?', [id]);
+    const result = await db.query('SELECT * FROM projects WHERE id = ?', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
@@ -50,16 +52,17 @@ router.get('/:id', async (req, res) => {
 // POST /api/projects - Create new project
 router.post('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const validatedData = createProjectSchema.parse(req.body);
     const projectId = uuidv4();
     
-    await pool.query(
+    await db.query(
       'INSERT INTO projects (id, name, description) VALUES (?, ?, ?)',
       [projectId, validatedData.name, validatedData.description]
     );
     
     // Fetch the created project
-    const result = await pool.query('SELECT * FROM projects WHERE id = ?', [projectId]);
+    const result = await db.query('SELECT * FROM projects WHERE id = ?', [projectId]);
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -74,6 +77,7 @@ router.post('/', async (req, res) => {
 // PUT /api/projects/:id - Update project
 router.put('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
     const validatedData = updateProjectSchema.parse(req.body);
     
@@ -95,7 +99,7 @@ router.put('/:id', async (req, res) => {
     updateFields.push(`updated_at = datetime('now')`);
     values.push(id);
     
-    const updateResult = await pool.query(
+    const updateResult = await db.query(
       `UPDATE projects SET ${updateFields.join(', ')} WHERE id = ?`,
       values
     );
@@ -105,7 +109,7 @@ router.put('/:id', async (req, res) => {
     }
     
     // Fetch the updated project
-    const result = await pool.query('SELECT * FROM projects WHERE id = ?', [id]);
+    const result = await db.query('SELECT * FROM projects WHERE id = ?', [id]);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -120,14 +124,15 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/projects/:id - Delete project
 router.delete('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM projects WHERE id = ?', [id]);
-    
+    const result = await db.query('DELETE FROM projects WHERE id = ?', [id]);
+
     if (result.rowsAffected === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
-    res.json({ message: 'Project deleted successfully' });
+
+    res.status(204).send();
   } catch (error) {
     console.error('Error deleting project:', error);
     res.status(500).json({ error: 'Failed to delete project' });

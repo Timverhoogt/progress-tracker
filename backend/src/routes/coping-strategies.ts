@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -32,6 +32,7 @@ const StrategyUsageSchema = z.object({
 // GET /api/coping-strategies - Get all coping strategies
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const category = req.query.category;
     const mood = req.query.mood;
@@ -63,7 +64,7 @@ router.get('/', async (req, res) => {
     query += ' ORDER BY effectiveness_rating DESC, usage_count DESC LIMIT ?';
     params.push(limit);
     
-    const result = await pool.query(query, params);
+    const result = await db.query(query, params);
     
     res.json(result.rows);
   } catch (error) {
@@ -75,9 +76,10 @@ router.get('/', async (req, res) => {
 // GET /api/coping-strategies/categories - Get strategy categories
 router.get('/categories', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT strategy_category, COUNT(*) as count
       FROM coping_strategies 
       WHERE user_id = ? AND is_active = 1
@@ -95,13 +97,14 @@ router.get('/categories', async (req, res) => {
 // GET /api/coping-strategies/recommended - Get AI-recommended strategies
 router.get('/recommended', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const mood = req.query.mood;
     const stressLevel = req.query.stress_level;
     const triggers = req.query.triggers;
     
     // Get recent mood data for context
-    const recentMood = await pool.query(`
+    const recentMood = await db.query(`
       SELECT mood_score, stress_level, mood_tags, triggers
       FROM mood_tracking 
       WHERE user_id = ? 
@@ -148,11 +151,11 @@ router.get('/recommended', async (req, res) => {
       
       query += ' ORDER BY effectiveness_rating DESC, usage_count DESC LIMIT 5';
       
-      const result = await pool.query(query, params);
+      const result = await db.query(query, params);
       recommendations = result.rows;
     } else {
       // Fallback to most effective strategies
-      const result = await pool.query(`
+      const result = await db.query(`
         SELECT * FROM coping_strategies 
         WHERE user_id = ? AND is_active = 1
         ORDER BY effectiveness_rating DESC, usage_count DESC
@@ -178,6 +181,7 @@ router.get('/recommended', async (req, res) => {
 // POST /api/coping-strategies - Create new coping strategy
 router.post('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const validation = CopingStrategySchema.safeParse(req.body);
     
@@ -199,7 +203,7 @@ router.post('/', async (req, res) => {
     
     const strategyId = uuidv4();
     
-    await pool.query(`
+    await db.query(`
       INSERT INTO coping_strategies (
         id, user_id, strategy_name, strategy_category, description, instructions,
         duration_minutes, difficulty_level, mood_tags, stress_levels, triggers,
@@ -232,6 +236,7 @@ router.post('/', async (req, res) => {
 // POST /api/coping-strategies/use - Record strategy usage
 router.post('/use', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const validation = StrategyUsageSchema.safeParse(req.body);
     
@@ -254,7 +259,7 @@ router.post('/use', async (req, res) => {
     const usedAt = new Date().toISOString();
     
     // Record usage
-    await pool.query(`
+    await db.query(`
       INSERT INTO coping_strategy_usage (
         id, user_id, strategy_id, used_at, mood_before, mood_after,
         stress_before, stress_after, effectiveness_rating, notes, context
@@ -275,7 +280,7 @@ router.post('/use', async (req, res) => {
     
     // Update strategy usage count and effectiveness
     if (effectiveness_rating) {
-      await pool.query(`
+      await db.query(`
         UPDATE coping_strategies 
         SET usage_count = usage_count + 1,
             last_used = ?,
@@ -287,7 +292,7 @@ router.post('/use', async (req, res) => {
         WHERE id = ?
       `, [usedAt, strategy_id, strategy_id]);
     } else {
-      await pool.query(`
+      await db.query(`
         UPDATE coping_strategies 
         SET usage_count = usage_count + 1,
             last_used = ?
@@ -308,6 +313,7 @@ router.post('/use', async (req, res) => {
 // GET /api/coping-strategies/usage - Get usage history
 router.get('/usage', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const strategyId = req.query.strategy_id;
     const limit = parseInt(String(req.query.limit || '20')) || 20;
@@ -328,7 +334,7 @@ router.get('/usage', async (req, res) => {
     query += ' ORDER BY csu.used_at DESC LIMIT ?';
     params.push(limit);
     
-    const result = await pool.query(query, params);
+    const result = await db.query(query, params);
     
     res.json(result.rows);
   } catch (error) {
@@ -340,11 +346,12 @@ router.get('/usage', async (req, res) => {
 // GET /api/coping-strategies/analytics - Get strategy effectiveness analytics
 router.get('/analytics', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     
     // Get strategy effectiveness summary
-    const effectiveness = await pool.query(`
+    const effectiveness = await db.query(`
       SELECT 
         cs.strategy_name,
         cs.strategy_category,
@@ -362,7 +369,7 @@ router.get('/analytics', async (req, res) => {
     `, [userId]);
     
     // Get category effectiveness
-    const categoryStats = await pool.query(`
+    const categoryStats = await db.query(`
       SELECT 
         cs.strategy_category,
         COUNT(csu.id) as total_usage,

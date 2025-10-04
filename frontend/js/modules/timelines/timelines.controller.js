@@ -54,9 +54,19 @@ class TimelinesController {
     async getProjectById(projectId) {
         try {
             // This would typically come from a projects API, but for now we'll get it from global state
-            if (window.allProjects) {
+            if (window.allProjects && window.allProjects.length) {
                 return window.allProjects.find(p => p.id === projectId);
             }
+
+            if (window.projects && window.projects.length) {
+                return window.projects.find(p => p.id === projectId);
+            }
+
+            if (window.state && typeof window.state.getState === 'function') {
+                const projects = window.state.getState('projects') || [];
+                return projects.find((project) => project.id === projectId) || null;
+            }
+
             return null;
         } catch (error) {
             console.error('Error getting project:', error);

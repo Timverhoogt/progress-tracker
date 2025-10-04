@@ -11,8 +11,9 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // Mock settings service
 jest.mock("../../../src/services/settings", () => ({
+  __esModule: true,
   default: {
-    get: jest.fn().mockImplementation((...args: any[]) => {
+    get: jest.fn<(...args: any[]) => Promise<any>>().mockImplementation((...args: any[]) => {
       const key = args[0] as string;
       const defaultValue = args[1];
       const settings: Record<string, any> = {
@@ -20,6 +21,7 @@ jest.mock("../../../src/services/settings", () => ({
         llm_detail_level: "balanced",
         llm_language: "auto",
         llm_preset_template: "default",
+        llm_system_prompt_mode: "generated",
       };
       return Promise.resolve(settings[key] || defaultValue);
     }),
@@ -42,7 +44,7 @@ describe("LLM Service", () => {
               message: {
                 content: JSON.stringify({
                   enhanced_content: "Enhanced note content",
-                  key_points: ["Point 1", "Point 2"],
+                  key_insights: ["Point 1", "Point 2"],
                   action_items: ["Action 1"],
                 }),
               },
@@ -60,6 +62,8 @@ describe("LLM Service", () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
+      // The data is returned as a string (JSON), not parsed
+      expect(typeof result.data).toBe("string");
       expect(mockedAxios.post).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
@@ -340,8 +344,9 @@ describe("LLM Service", () => {
         content: "Test",
       });
 
-      // Should handle gracefully even with unexpected response structure
+      // Should handle gracefully - will error trying to access choices[0]
       expect(result).toBeDefined();
+      expect(result.success).toBe(false);
     });
   });
 });

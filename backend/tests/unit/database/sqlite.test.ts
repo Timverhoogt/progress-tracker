@@ -142,7 +142,7 @@ describe("SQLite Database Service", () => {
       // Try to insert a note with non-existent project_id
       await expect(
         db.query(
-          "INSERT INTO notes (id, project_id, content) VALUES (?, ?, ?)",
+          "INSERT INTO notes (id, project_id, content, created_at) VALUES (?, ?, ?, datetime('now'))",
           [noteId, invalidProjectId, "Test content"]
         )
       ).rejects.toThrow();
@@ -151,15 +151,15 @@ describe("SQLite Database Service", () => {
     test("should cascade delete when parent is deleted", async () => {
       // Create project
       const projectId = generateUUID();
-      await db.query("INSERT INTO projects (id, name) VALUES (?, ?)", [
-        projectId,
-        "Parent Project",
-      ]);
+      await db.query(
+        "INSERT INTO projects (id, name, created_at, updated_at) VALUES (?, ?, datetime('now'), datetime('now'))",
+        [projectId, "Parent Project"]
+      );
 
       // Create note for project
       const noteId = generateUUID();
       await db.query(
-        "INSERT INTO notes (id, project_id, content) VALUES (?, ?, ?)",
+        "INSERT INTO notes (id, project_id, content, created_at, updated_at) VALUES (?, ?, ?, datetime('now'), datetime('now'))",
         [noteId, projectId, "Child note"]
       );
 

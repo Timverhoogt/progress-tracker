@@ -55,9 +55,9 @@ export async function createTestProject(data?: Partial<{
 }>) {
   const db = getDatabase();
   const projectId = uuidv4();
-  
+
   await db.query(
-    'INSERT INTO projects (id, name, description, status) VALUES (?, ?, ?, ?)',
+    'INSERT INTO projects (id, name, description, status, created_at, updated_at) VALUES (?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
     [
       projectId,
       data?.name || 'Test Project',
@@ -65,7 +65,7 @@ export async function createTestProject(data?: Partial<{
       data?.status || 'active'
     ]
   );
-  
+
   const result = await db.query('SELECT * FROM projects WHERE id = ?', [projectId]);
   return result.rows[0];
 }
@@ -80,9 +80,9 @@ export async function createTestNote(projectId: string, data?: Partial<{
 }>) {
   const db = getDatabase();
   const noteId = uuidv4();
-  
+
   await db.query(
-    'INSERT INTO notes (id, project_id, content, enhanced_content, structured_data) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO notes (id, project_id, content, enhanced_content, structured_data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
     [
       noteId,
       projectId,
@@ -91,7 +91,7 @@ export async function createTestNote(projectId: string, data?: Partial<{
       data?.structured_data || null
     ]
   );
-  
+
   const result = await db.query('SELECT * FROM notes WHERE id = ?', [noteId]);
   return result.rows[0];
 }
@@ -108,9 +108,9 @@ export async function createTestTodo(projectId: string, data?: Partial<{
 }>) {
   const db = getDatabase();
   const todoId = uuidv4();
-  
+
   await db.query(
-    'INSERT INTO todos (id, project_id, title, description, status, priority, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO todos (id, project_id, title, description, status, priority, due_date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'))',
     [
       todoId,
       projectId,
@@ -121,7 +121,7 @@ export async function createTestTodo(projectId: string, data?: Partial<{
       data?.due_date || null
     ]
   );
-  
+
   const result = await db.query('SELECT * FROM todos WHERE id = ?', [todoId]);
   return result.rows[0];
 }

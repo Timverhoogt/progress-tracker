@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -27,6 +27,7 @@ const GratitudePromptSchema = z.object({
 // GET /api/gratitude - Get gratitude entries
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const startDate = req.query.start_date;
     const endDate = req.query.end_date;
@@ -55,7 +56,7 @@ router.get('/', async (req, res) => {
     query += ' ORDER BY gratitude_date DESC LIMIT ?';
     params.push(limit);
     
-    const result = await pool.query(query, params);
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching gratitude entries:', error);
@@ -66,10 +67,11 @@ router.get('/', async (req, res) => {
 // GET /api/gratitude/today - Get today's gratitude entry
 router.get('/today', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const today = new Date().toISOString().split('T')[0];
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM gratitude_entries WHERE user_id = ? AND gratitude_date = ?',
       [userId, today]
     );
@@ -88,6 +90,7 @@ router.get('/today', async (req, res) => {
 // GET /api/gratitude/prompts - Get AI-generated gratitude prompts
 router.get('/prompts', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const validation = GratitudePromptSchema.safeParse(req.query);
     
@@ -99,21 +102,21 @@ router.get('/prompts', async (req, res) => {
     
     // Get user context for personalized prompts
     const [moodData, achievementData, gratitudeHistory] = await Promise.all([
-      pool.query(`
+      db.query(`
         SELECT mood_level, energy_level, stress_level, motivation_level
         FROM mood_tracking 
         WHERE user_id = ? AND mood_date >= date('now', '-7 days')
         ORDER BY mood_date DESC LIMIT 1
       `, [userId]).catch(() => ({ rows: [] })),
       
-      recent_achievements ? pool.query(`
+      recent_achievements ? db.query(`
         SELECT title, description, completion_date
         FROM achievements 
         WHERE user_id = ? AND status = 'completed' AND completion_date >= date('now', '-30 days')
         ORDER BY completion_date DESC LIMIT 3
       `, [userId]).catch(() => ({ rows: [] })) : Promise.resolve({ rows: [] }),
       
-      pool.query(`
+      db.query(`
         SELECT category, COUNT(*) as count
         FROM gratitude_entries 
         WHERE user_id = ? AND gratitude_date >= date('now', '-30 days')
@@ -141,10 +144,11 @@ router.get('/prompts', async (req, res) => {
 // GET /api/gratitude/achievement-based - Get achievement-based gratitude prompts
 router.get('/achievement-based', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     
-    const achievements = await pool.query(`
+    const achievements = await db.query(`
       SELECT 
         id,
         title,
@@ -175,6 +179,7 @@ router.get('/achievement-based', async (req, res) => {
 // GET /api/gratitude/reframing - Get positive reframing suggestions
 router.get('/reframing', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const challenge = req.query.challenge as string;
     
@@ -183,7 +188,7 @@ router.get('/reframing', async (req, res) => {
     }
     
     // Get user's recent mood and stress data for context
-    const moodData = await pool.query(`
+    const moodData = await db.query(`
       SELECT mood_level, stress_level, energy_level, notes
       FROM mood_tracking 
       WHERE user_id = ? AND mood_date >= date('now', '-7 days')
@@ -201,24 +206,25 @@ router.get('/reframing', async (req, res) => {
 // GET /api/gratitude/encouragement - Get personalized encouragement
 router.get('/encouragement', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     
     // Get user context
     const [moodData, achievementData, workloadData] = await Promise.all([
-      pool.query(`
+      db.query(`
         SELECT mood_level, stress_level, energy_level, motivation_level, notes
         FROM mood_tracking 
         WHERE user_id = ? AND mood_date >= date('now', '-7 days')
         ORDER BY mood_date DESC LIMIT 1
       `, [userId]).catch(() => ({ rows: [] })),
       
-      pool.query(`
+      db.query(`
         SELECT COUNT(*) as recent_achievements
         FROM achievements 
         WHERE user_id = ? AND status = 'completed' AND completion_date >= date('now', '-30 days')
       `, [userId]).catch(() => ({ rows: [{ recent_achievements: 0 }] })),
       
-      pool.query(`
+      db.query(`
         SELECT AVG(intensity_level) as avg_intensity, AVG(productivity_score) as avg_productivity
         FROM workload_tracking 
         WHERE user_id = ? AND work_date >= date('now', '-7 days')
@@ -241,10 +247,11 @@ router.get('/encouragement', async (req, res) => {
 // GET /api/gratitude/stats - Get gratitude statistics
 router.get('/stats', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     
-    const stats = await pool.query(`
+    const stats = await db.query(`
       SELECT 
         COUNT(*) as total_entries,
         COUNT(DISTINCT gratitude_date) as days_with_gratitude,
@@ -258,7 +265,7 @@ router.get('/stats', async (req, res) => {
       WHERE user_id = ? AND gratitude_date >= date('now', '-${days} days')
     `, [userId]);
     
-    const categoryStats = await pool.query(`
+    const categoryStats = await db.query(`
       SELECT 
         category,
         COUNT(*) as count,
@@ -282,6 +289,7 @@ router.get('/stats', async (req, res) => {
 // POST /api/gratitude - Create new gratitude entry
 router.post('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const validation = GratitudeEntrySchema.safeParse(req.body);
     
@@ -302,14 +310,14 @@ router.post('/', async (req, res) => {
     
     const id = uuidv4();
     
-    await pool.query(`
+    await db.query(`
       INSERT INTO gratitude_entries (
         id, user_id, gratitude_date, category, prompt, response,
         mood_before, mood_after, achievement_id, tags
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [id, userId, gratitude_date, category, prompt, response, mood_before, mood_after, achievement_id, tags]);
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM gratitude_entries WHERE id = ?',
       [id]
     );
@@ -324,6 +332,7 @@ router.post('/', async (req, res) => {
 // PUT /api/gratitude/:id - Update gratitude entry
 router.put('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { id } = req.params;
     const validation = GratitudeEntrySchema.partial().safeParse(req.body);
@@ -349,7 +358,7 @@ router.put('/:id', async (req, res) => {
     
     updateValues.push(userId, id);
     
-    const result = await pool.query(`
+    const result = await db.query(`
       UPDATE gratitude_entries 
       SET ${updateFields.join(', ')}, updated_at = datetime('now')
       WHERE user_id = ? AND id = ?
@@ -359,7 +368,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Gratitude entry not found' });
     }
     
-    const updated = await pool.query(
+    const updated = await db.query(
       'SELECT * FROM gratitude_entries WHERE user_id = ? AND id = ?',
       [userId, id]
     );
@@ -374,10 +383,11 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/gratitude/:id - Delete gratitude entry
 router.delete('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { id } = req.params;
     
-    const result = await pool.query(
+    const result = await db.query(
       'DELETE FROM gratitude_entries WHERE user_id = ? AND id = ?',
       [userId, id]
     );

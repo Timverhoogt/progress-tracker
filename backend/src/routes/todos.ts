@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { z } from 'zod';
 import llmService from '../services/llm';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,13 +26,14 @@ const updateTodoSchema = z.object({
 // GET /api/todos?project_id=uuid - Get todos for a project
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const { project_id } = req.query;
     
     if (!project_id) {
       return res.status(400).json({ error: 'project_id is required' });
     }
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM todos WHERE project_id = ? ORDER BY created_at DESC',
       [project_id]
     );
@@ -47,10 +48,11 @@ router.get('/', async (req, res) => {
 // POST /api/todos - Create new todo
 router.post('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const validatedData = createTodoSchema.parse(req.body);
     const todoId = uuidv4();
     
-    await pool.query(
+    await db.query(
       'INSERT INTO todos (id, project_id, title, description, priority, due_date) VALUES (?, ?, ?, ?, ?, ?)',
       [
         todoId,
@@ -63,7 +65,7 @@ router.post('/', async (req, res) => {
     );
     
     // Fetch the created todo
-    const result = await pool.query('SELECT * FROM todos WHERE id = ?', [todoId]);
+    const result = await db.query('SELECT * FROM todos WHERE id = ?', [todoId]);
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -78,6 +80,7 @@ router.post('/', async (req, res) => {
 // POST /api/todos/generate - Generate AI-suggested todos
 router.post('/generate', async (req, res) => {
   try {
+    const db = getDatabase();
     const { project_id } = req.body;
     
     if (!project_id) {
@@ -85,7 +88,7 @@ router.post('/generate', async (req, res) => {
     }
     
     // Get project info and recent notes
-    const projectResult = await pool.query(
+    const projectResult = await db.query(
       'SELECT name, description FROM projects WHERE id = ?',
       [project_id]
     );
@@ -97,7 +100,7 @@ router.post('/generate', async (req, res) => {
     const project = projectResult.rows[0];
     
     // Get recent notes for context
-    const notesResult = await pool.query(
+    const notesResult = await db.query(
       'SELECT content FROM notes WHERE project_id = ? ORDER BY created_at DESC LIMIT 5',
       [project_id]
     );
@@ -131,13 +134,13 @@ router.post('/generate', async (req, res) => {
     const insertedTodos = [];
     for (const todo of generatedTodos) {
       const todoId = uuidv4();
-      await pool.query(
+      await db.query(
         'INSERT INTO todos (id, project_id, title, description, priority, llm_generated) VALUES (?, ?, ?, ?, ?, ?)',
         [todoId, project_id, todo.title, todo.description, todo.priority || 'medium', 1] // 1 for true in SQLite
       );
       
       // Fetch the created todo
-      const result = await pool.query('SELECT * FROM todos WHERE id = ?', [todoId]);
+      const result = await db.query('SELECT * FROM todos WHERE id = ?', [todoId]);
       insertedTodos.push(result.rows[0]);
     }
     
@@ -151,6 +154,7 @@ router.post('/generate', async (req, res) => {
 // PUT /api/todos/:id - Update todo
 router.put('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
     const validatedData = updateTodoSchema.parse(req.body);
     
@@ -172,7 +176,7 @@ router.put('/:id', async (req, res) => {
     updateFields.push(`updated_at = datetime('now')`);
     values.push(id);
     
-    const updateResult = await pool.query(
+    const updateResult = await db.query(
       `UPDATE todos SET ${updateFields.join(', ')} WHERE id = ?`,
       values
     );
@@ -182,7 +186,7 @@ router.put('/:id', async (req, res) => {
     }
     
     // Fetch the updated todo
-    const result = await pool.query('SELECT * FROM todos WHERE id = ?', [id]);
+    const result = await db.query('SELECT * FROM todos WHERE id = ?', [id]);
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -197,14 +201,15 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/todos/:id - Delete todo
 router.delete('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM todos WHERE id = ?', [id]);
-    
+    const result = await db.query('DELETE FROM todos WHERE id = ?', [id]);
+
     if (result.rowsAffected === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
-    
-    res.json({ message: 'Todo deleted successfully' });
+
+    res.status(204).send();
   } catch (error) {
     console.error('Error deleting todo:', error);
     res.status(500).json({ error: 'Failed to delete todo' });

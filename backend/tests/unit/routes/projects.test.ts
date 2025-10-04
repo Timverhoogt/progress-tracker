@@ -6,8 +6,8 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import projectRoutes from '../../../src/routes/projects';
-import { initializeDatabase } from '../../../src/database/sqlite';
-import { clearDatabase, createTestProject } from '../../helpers/test-utils';
+import { initializeDatabase, getDatabase } from '../../../src/database/sqlite';
+import { clearDatabase, createTestProject, createTestNote } from '../../helpers/test-utils';
 
 // Create test app
 const app = express();
@@ -15,7 +15,7 @@ app.use(express.json());
 app.use('/api/projects', projectRoutes);
 
 // Mock pool for routes
-global.pool = initializeDatabase();
+(global as any).pool = initializeDatabase();
 
 describe('Projects API Routes', () => {
   beforeEach(async () => {
@@ -48,11 +48,15 @@ describe('Projects API Routes', () => {
 
     test('should return projects ordered by updated_at DESC', async () => {
       const project1 = await createTestProject({ name: 'First' });
-      
-      // Wait a bit to ensure different timestamps
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+
+      // Manually update the second project to have a later timestamp
+      await new Promise(resolve => setTimeout(resolve, 1100));
+
       const project2 = await createTestProject({ name: 'Second' });
+
+      // Manually update project2 to ensure it has a later timestamp
+      const db = getDatabase();
+      await db.query("UPDATE projects SET updated_at = datetime('now', '+1 second') WHERE id = ?", [project2.id]);
 
       const response = await request(app)
         .get('/api/projects')
@@ -269,13 +273,17 @@ describe('Projects API Routes', () => {
 
     test('should cascade delete related notes', async () => {
       const project = await createTestProject();
-      
-      // This would require importing note creation
-      // Simplified for this test
-      
+      const note = await createTestNote(project.id);
+
+      // Delete the project
       await request(app)
         .delete(`/api/projects/${project.id}`)
         .expect(204);
+
+      // Verify note was cascade deleted
+      const db = getDatabase();
+      const noteResult = await db.query('SELECT * FROM notes WHERE id = ?', [note.id]);
+      expect(noteResult.rows.length).toBe(0);
     });
   });
 });

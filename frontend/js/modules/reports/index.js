@@ -35,18 +35,21 @@ class ReportsController {
 
         // Subscribe to state changes
         this.state.subscribe('currentProject', (project) => {
-            this.currentProject = project;
-            if (project) {
-                this.loadReports(project.id);
+            const resolved = this.resolveProject(project);
+            this.currentProject = resolved;
+
+            if (resolved) {
+                this.loadReports(resolved.id);
             } else {
                 this.ui.showProjectSelectionState();
             }
         });
 
         // Load initial data
-        if (this.state.getState('currentProject')) {
-            this.currentProject = this.state.getState('currentProject');
-            this.loadReports(this.currentProject.id);
+        const initialProject = this.resolveProject(this.state.getState('currentProject'));
+        if (initialProject) {
+            this.currentProject = initialProject;
+            this.loadReports(initialProject.id);
         } else {
             this.ui.showProjectSelectionState();
         }
@@ -108,6 +111,19 @@ class ReportsController {
         document.addEventListener('reports:view', (e) => {
             this.viewReport(e.detail.reportId);
         });
+    }
+
+    resolveProject(projectOrId) {
+        if (!projectOrId) {
+            return null;
+        }
+
+        if (typeof projectOrId === 'object') {
+            return projectOrId;
+        }
+
+        const projects = this.state.getState('projects') || [];
+        return projects.find((project) => project.id === projectOrId) || null;
     }
 
     /**

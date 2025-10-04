@@ -121,7 +121,9 @@ class ProjectsUI {
         // Select project events
         DOMUtils.getAllElements('.select-project-btn').forEach(btn => {
             DOMUtils.on(btn, 'click', (e) => {
-                const projectId = e.target.closest('button').dataset.id;
+                const button = e.currentTarget || e.target.closest('button');
+                if (!button) return;
+                const projectId = button.dataset.id;
                 this.emit('project:select', projectId);
             });
         });

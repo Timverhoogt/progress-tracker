@@ -5,8 +5,28 @@
 import { describe, test, expect, beforeEach, jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
+
+// Mock LLM service BEFORE importing routes
+const mockGenerateTodos = jest.fn<(...args: any[]) => Promise<any>>();
+mockGenerateTodos.mockResolvedValue({
+  success: true,
+  data: JSON.stringify({
+    todos: [
+      { title: "Generated Todo 1", priority: "high" },
+      { title: "Generated Todo 2", priority: "medium" },
+    ],
+  }),
+});
+
+jest.mock("../../../src/services/llm", () => ({
+  __esModule: true,
+  default: {
+    generateTodos: mockGenerateTodos,
+  },
+}));
+
 import todoRoutes from "../../../src/routes/todos";
-import { initializeDatabase } from "../../../src/database/sqlite";
+import { initializeDatabase, getDatabase } from "../../../src/database/sqlite";
 import {
   clearDatabase,
   createTestProject,
@@ -19,22 +39,7 @@ app.use(express.json());
 app.use("/api/todos", todoRoutes);
 
 // Mock pool for routes
-global.pool = initializeDatabase();
-
-// Mock LLM service
-jest.mock("../../../src/services/llm", () => ({
-  default: {
-    generateTodos: jest.fn().mockResolvedValue({
-      success: true,
-      data: JSON.stringify({
-        todos: [
-          { title: "Generated Todo 1", priority: "high" },
-          { title: "Generated Todo 2", priority: "medium" },
-        ],
-      }),
-    }),
-  },
-}));
+(global as any).pool = initializeDatabase();
 
 describe("Todos API Routes", () => {
   let testProject: any;
@@ -287,9 +292,14 @@ describe("Todos API Routes", () => {
 
   describe("Todo Filtering and Sorting", () => {
     test("should return todos ordered by created_at DESC", async () => {
-      await createTestTodo(testProject.id, { title: "First" });
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      await createTestTodo(testProject.id, { title: "Second" });
+      const todo1 = await createTestTodo(testProject.id, { title: "First" });
+      // Wait to ensure different timestamps (SQLite datetime has second precision)
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      const todo2 = await createTestTodo(testProject.id, { title: "Second" });
+
+      // Manually update todo2 to ensure it has a later timestamp
+      const db = getDatabase();
+      await db.query("UPDATE todos SET created_at = datetime('now', '+1 second') WHERE id = ?", [todo2.id]);
 
       const response = await request(app)
         .get("/api/todos")

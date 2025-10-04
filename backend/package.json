@@ -12,7 +12,7 @@
     "migrate-ai:build": "npm run build && node dist/database/migrate-ai-features.js",
     "cleanup-duplicates": "npx ts-node src/database/cleanup-duplicates.ts",
     "cleanup-duplicates:build": "npm run build && node dist/database/cleanup-duplicates.js",
-    "test": "jest --coverage",
+    "test": "jest --coverage --runInBand",
     "test:watch": "jest --watch",
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",

@@ -53,13 +53,18 @@ class BackupService {
     }
 
     try {
-      // Use SQLite's built-in backup functionality
-      db.backup(backupPath);
+      // Use better-sqlite3's backup functionality
+      const rawDb = db.getDatabase();
+
+      // backup() is synchronous in better-sqlite3 v9+
+      // It takes a destination path and optional options
+      await rawDb.backup(backupPath);
 
       console.log(`✅ Database backup created successfully: ${backupPath}`);
       return backupPath;
     } catch (error) {
       console.error("❌ Error creating database backup:", error);
+      console.error("Backup path:", backupPath);
       throw error;
     }
   }

@@ -27,6 +27,7 @@ class ProjectsController {
 
             // Expose projects globally for other modules
             window.projects = projects;
+            window.allProjects = projects;
 
             // Ensure currentProject is available globally
             if (typeof window.currentProject === 'undefined') {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -36,6 +36,7 @@ const UpdateWorkloadEntrySchema = z.object({
 // GET /api/workload - Get workload entries
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const startDate = req.query.start_date;
     const endDate = req.query.end_date;
@@ -58,7 +59,7 @@ router.get('/', async (req, res) => {
     query += ' ORDER BY work_date DESC LIMIT ?';
     params.push(limit);
     
-    const result = await pool.query(query, params);
+    const result = await db.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching workload entries:', error);
@@ -69,10 +70,11 @@ router.get('/', async (req, res) => {
 // GET /api/workload/today - Get today's workload entry
 router.get('/today', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const today = new Date().toISOString().split('T')[0];
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM workload_tracking WHERE user_id = ? AND work_date = ?',
       [userId, today]
     );
@@ -91,13 +93,14 @@ router.get('/today', async (req, res) => {
 // GET /api/workload/stats - Get workload statistics
 router.get('/stats', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = startDate.toISOString().split('T')[0];
     
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT 
         COUNT(*) as total_entries,
         AVG(CAST((julianday(end_time) - julianday(start_time)) * 24 AS REAL)) as avg_work_hours,
@@ -113,7 +116,7 @@ router.get('/stats', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get weekly patterns
-    const weeklyPatterns = await pool.query(`
+    const weeklyPatterns = await db.query(`
       SELECT 
         strftime('%Y-%W', work_date) as week,
         AVG(CAST((julianday(end_time) - julianday(start_time)) * 24 AS REAL)) as avg_hours,
@@ -139,6 +142,7 @@ router.get('/stats', async (req, res) => {
 // GET /api/workload/patterns - Get workload patterns and insights
 router.get('/patterns', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '90')) || 90;
     const startDate = new Date();
@@ -146,7 +150,7 @@ router.get('/patterns', async (req, res) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Get day-of-week patterns
-    const dayPatterns = await pool.query(`
+    const dayPatterns = await db.query(`
       SELECT 
         CASE strftime('%w', work_date)
           WHEN '0' THEN 'Sunday'
@@ -168,7 +172,7 @@ router.get('/patterns', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get work type patterns
-    const workTypePatterns = await pool.query(`
+    const workTypePatterns = await db.query(`
       SELECT 
         work_type,
         AVG(CAST((julianday(end_time) - julianday(start_time)) * 24 AS REAL)) as avg_hours,
@@ -194,6 +198,7 @@ router.get('/patterns', async (req, res) => {
 // GET /api/workload/balance-analysis - Get work-life balance analysis
 router.get('/balance-analysis', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     const startDate = new Date();
@@ -201,7 +206,7 @@ router.get('/balance-analysis', async (req, res) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Get workload data
-    const workloadData = await pool.query(`
+    const workloadData = await db.query(`
       SELECT 
         work_date,
         start_time,
@@ -236,6 +241,7 @@ router.get('/balance-analysis', async (req, res) => {
 // GET /api/workload/break-recommendations - Get personalized break recommendations
 router.get('/break-recommendations', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '7')) || 7;
     const startDate = new Date();
@@ -243,7 +249,7 @@ router.get('/break-recommendations', async (req, res) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Get recent workload data
-    const workloadData = await pool.query(`
+    const workloadData = await db.query(`
       SELECT 
         work_date,
         start_time,
@@ -261,13 +267,13 @@ router.get('/break-recommendations', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get work preferences
-    const preferencesResult = await pool.query(
+    const preferencesResult = await db.query(
       'SELECT * FROM work_preferences WHERE user_id = ?',
       [userId]
     );
     
     // Get recent mood data for context
-    const moodData = await pool.query(`
+    const moodData = await db.query(`
       SELECT 
         mood_date,
         mood_level,
@@ -304,6 +310,7 @@ router.get('/break-recommendations', async (req, res) => {
 // GET /api/workload/balance-dashboard - Get comprehensive work-life balance dashboard
 router.get('/balance-dashboard', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     const startDate = new Date();
@@ -311,7 +318,7 @@ router.get('/balance-dashboard', async (req, res) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     
     // Get workload data
-    const workloadData = await pool.query(`
+    const workloadData = await db.query(`
       SELECT 
         work_date,
         start_time,
@@ -329,7 +336,7 @@ router.get('/balance-dashboard', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get mood data
-    const moodData = await pool.query(`
+    const moodData = await db.query(`
       SELECT 
         mood_date,
         mood_level,
@@ -343,13 +350,13 @@ router.get('/balance-dashboard', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get work preferences
-    const preferencesResult = await pool.query(
+    const preferencesResult = await db.query(
       'SELECT * FROM work_preferences WHERE user_id = ?',
       [userId]
     );
     
     // Get coping strategies usage
-    const copingData = await pool.query(`
+    const copingData = await db.query(`
       SELECT 
         strategy_id,
         used_at,
@@ -390,6 +397,7 @@ router.get('/balance-dashboard', async (req, res) => {
 // GET /api/workload/stress-alerts - Get stress alerts and warnings
 router.get('/stress-alerts', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '7')) || 7;
     const startDate = new Date();
@@ -398,12 +406,12 @@ router.get('/stress-alerts', async (req, res) => {
     
     // Get recent workload and mood data
     const [workloadData, moodData] = await Promise.all([
-      pool.query(`
+      db.query(`
         SELECT * FROM workload_tracking 
         WHERE user_id = ? AND work_date >= ?
         ORDER BY work_date DESC
       `, [userId, startDateStr]),
-      pool.query(`
+      db.query(`
         SELECT * FROM mood_tracking 
         WHERE user_id = ? AND mood_date >= ?
         ORDER BY mood_date DESC
@@ -498,6 +506,7 @@ router.get('/stress-alerts', async (req, res) => {
 // POST /api/workload - Create new workload entry
 router.post('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const validation = WorkloadEntrySchema.safeParse(req.body);
     
@@ -521,7 +530,7 @@ router.post('/', async (req, res) => {
     
     const id = uuidv4();
     
-    await pool.query(`
+    await db.query(`
       INSERT INTO workload_tracking (
         id, user_id, work_date, start_time, end_time, break_duration,
         intensity_level, focus_level, productivity_score, tasks_completed,
@@ -529,7 +538,7 @@ router.post('/', async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [id, userId, work_date, start_time, end_time, break_duration, intensity_level, focus_level, productivity_score, tasks_completed, notes, work_type, location]);
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM workload_tracking WHERE id = ?',
       [id]
     );
@@ -547,6 +556,7 @@ router.post('/', async (req, res) => {
 // PUT /api/workload/:date - Update workload entry
 router.put('/:date', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { date } = req.params;
     const validation = UpdateWorkloadEntrySchema.safeParse(req.body);
@@ -577,7 +587,7 @@ router.put('/:date', async (req, res) => {
     
     updateValues.push(userId, date);
     
-    const result = await pool.query(`
+    const result = await db.query(`
       UPDATE workload_tracking 
       SET ${updateFields.join(', ')}
       WHERE user_id = ? AND work_date = ?
@@ -587,7 +597,7 @@ router.put('/:date', async (req, res) => {
       return res.status(404).json({ error: 'Workload entry not found for this date' });
     }
     
-    const updated = await pool.query(
+    const updated = await db.query(
       'SELECT * FROM workload_tracking WHERE user_id = ? AND work_date = ?',
       [userId, date]
     );
@@ -602,6 +612,7 @@ router.put('/:date', async (req, res) => {
 // DELETE /api/workload/:date - Delete workload entry
 router.delete('/:date', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { date } = req.params;
     
@@ -610,7 +621,7 @@ router.delete('/:date', async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
     }
     
-    const result = await pool.query(
+    const result = await db.query(
       'DELETE FROM workload_tracking WHERE user_id = ? AND work_date = ?',
       [userId, date]
     );

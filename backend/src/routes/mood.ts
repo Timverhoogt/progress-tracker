@@ -270,6 +270,7 @@ router.get('/stats', async (req, res) => {
 // GET /api/mood/patterns - Get mood patterns and insights
 router.get('/patterns', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '90')) || 90;
     const startDate = new Date();
@@ -332,6 +333,7 @@ router.get('/patterns', async (req, res) => {
 // GET /api/mood/ai-analysis - Get AI-powered mood pattern analysis
 router.get('/ai-analysis', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '90')) || 90;
     const startDate = new Date();
@@ -393,6 +395,7 @@ router.get('/ai-analysis', async (req, res) => {
 // GET /api/mood/:date - Get mood entry for specific date
 router.get('/:date', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { date } = req.params;
     
@@ -401,7 +404,7 @@ router.get('/:date', async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
     }
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM mood_tracking WHERE user_id = ? AND mood_date = ?',
       [userId, date]
     );
@@ -420,6 +423,7 @@ router.get('/:date', async (req, res) => {
 // POST /api/mood - Create new mood entry
 router.post('/', async (req, res) => {
   try {
+    const db = getDatabase();
     console.log('Mood API: Received request', req.body);
     const userId = req.query.user_id || 'default';
     const validation = MoodEntrySchema.safeParse(req.body);
@@ -452,7 +456,7 @@ router.post('/', async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [id, userId, mood_date, mood_score, energy_level, stress_level, motivation_level, mood_tags, notes, triggers, coping_strategies_used]);
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM mood_tracking WHERE id = ?',
       [id]
     );
@@ -470,6 +474,7 @@ router.post('/', async (req, res) => {
 // PUT /api/mood/:date - Update mood entry
 router.put('/:date', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { date } = req.params;
     const validation = UpdateMoodEntrySchema.safeParse(req.body);
@@ -525,6 +530,7 @@ router.put('/:date', async (req, res) => {
 // DELETE /api/mood/:date - Delete mood entry
 router.delete('/:date', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { date } = req.params;
     
@@ -533,7 +539,7 @@ router.delete('/:date', async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
     }
     
-    const result = await pool.query(
+    const result = await db.query(
       'DELETE FROM mood_tracking WHERE user_id = ? AND mood_date = ?',
       [userId, date]
     );
@@ -552,6 +558,7 @@ router.delete('/:date', async (req, res) => {
 // GET /api/mood/intervention-triggers - Check for intervention triggers
 router.get('/intervention-triggers', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '14')) || 14;
     const startDate = new Date();
@@ -593,6 +600,7 @@ router.get('/intervention-triggers', async (req, res) => {
 // POST /api/mood/intervention-log - Log intervention action taken
 router.post('/intervention-log', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const { trigger_type, action_taken, notes, effectiveness } = req.body;
     

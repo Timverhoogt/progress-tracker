@@ -1,5 +1,5 @@
 import express from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { z } from 'zod';
 import llmService from '../services/llm';
 import { v4 as uuidv4 } from 'uuid';
@@ -57,13 +57,14 @@ function parseStructured(row: any) {
 // GET /api/notes?project_id=uuid - Get notes for a project
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const { project_id } = req.query;
     
     if (!project_id) {
       return res.status(400).json({ error: 'project_id is required' });
     }
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM notes WHERE project_id = ? ORDER BY created_at DESC',
       [project_id]
     );
@@ -78,8 +79,9 @@ router.get('/', async (req, res) => {
 // GET /api/notes/:id - Get single note
 router.get('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM notes WHERE id = ?', [id]);
+    const result = await db.query('SELECT * FROM notes WHERE id = ?', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Note not found' });
@@ -95,10 +97,11 @@ router.get('/:id', async (req, res) => {
 // POST /api/notes - Create new note (with LLM enhancement)
 router.post('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const validatedData = createNoteSchema.parse(req.body);
 
     // Get project context for LLM enhancement
-    const projectResult = await pool.query(
+    const projectResult = await db.query(
       'SELECT name, description FROM projects WHERE id = ?',
       [validatedData.project_id]
     );
@@ -131,14 +134,14 @@ router.post('/', async (req, res) => {
 
     // Save note to database
     const noteId = uuidv4();
-    await pool.query(
+    await db.query(
       'INSERT INTO notes (id, project_id, content, enhanced_content, structured_data) VALUES (?, ?, ?, ?, ?)',
       [noteId, validatedData.project_id, validatedData.content, enhancedContent, structuredData]
     );
     console.log('✅ Note saved to database:', noteId);
 
     // Fetch the created note
-    const result = await pool.query('SELECT * FROM notes WHERE id = ?', [noteId]);
+    const result = await db.query('SELECT * FROM notes WHERE id = ?', [noteId]);
 
     if (result.rows.length === 0) {
       console.error('❌ Note not found after insert:', noteId);
@@ -160,6 +163,7 @@ router.post('/', async (req, res) => {
 // PUT /api/notes/:id - Update note
 router.put('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
     const validatedData = updateNoteSchema.parse(req.body);
     
@@ -168,7 +172,7 @@ router.put('/:id', async (req, res) => {
     }
     
     // Get note and project context for re-enhancement
-    const noteResult = await pool.query(
+    const noteResult = await db.query(
       'SELECT n.*, p.name, p.description FROM notes n JOIN projects p ON n.project_id = p.id WHERE n.id = ?',
       [id]
     );
@@ -200,7 +204,7 @@ router.put('/:id', async (req, res) => {
     }
     
     // Update note
-    const updateResult = await pool.query(
+    const updateResult = await db.query(
       "UPDATE notes SET content = ?, enhanced_content = ?, structured_data = ?, updated_at = datetime('now') WHERE id = ?",
       [validatedData.content, enhancedContent, structuredData, id]
     );
@@ -210,7 +214,7 @@ router.put('/:id', async (req, res) => {
     }
     
     // Fetch the updated note
-    const result = await pool.query('SELECT * FROM notes WHERE id = ?', [id]);
+    const result = await db.query('SELECT * FROM notes WHERE id = ?', [id]);
     
     res.json(parseStructured(result.rows[0]));
   } catch (error) {
@@ -225,21 +229,20 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/notes/:id - Delete note
 router.delete('/:id', async (req, res) => {
   try {
+    const db = getDatabase();
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM notes WHERE id = ?', [id]);
-    
+    const result = await db.query('DELETE FROM notes WHERE id = ?', [id]);
+
     if (result.rowsAffected === 0) {
       return res.status(404).json({ error: 'Note not found' });
     }
-    
-    res.json({ message: 'Note deleted successfully' });
+
+    res.status(204).send();
   } catch (error) {
     console.error('Error deleting note:', error);
     res.status(500).json({ error: 'Failed to delete note' });
   }
 });
-
-export default router;
 
 // POST /api/notes/transcribe - Transcribe audio to text via OpenAI Whisper
 // Uses multipart/form-data with field name "audio"
@@ -284,3 +287,5 @@ router.post('/transcribe', upload.single('audio'), async (req, res) => {
     return res.status(500).json({ success: false, error: 'Failed to transcribe audio' });
   }
 });
+
+export default router;

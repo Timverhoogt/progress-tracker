@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool } from '../server';
+import { getDatabase } from '../database/sqlite';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -29,9 +29,10 @@ const WorkPreferencesSchema = z.object({
 // GET /api/work-preferences - Get user's work preferences
 router.get('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM work_preferences WHERE user_id = ?',
       [userId]
     );
@@ -39,7 +40,7 @@ router.get('/', async (req, res) => {
     if (result.rows.length === 0) {
       // Create default preferences if none exist
       const id = uuidv4();
-      await pool.query(`
+      await db.query(`
         INSERT INTO work_preferences (
           id, user_id, max_daily_hours, max_weekly_hours, preferred_start_time, preferred_end_time,
           break_duration_minutes, max_intensity_level, stress_threshold, weekend_work_allowed,
@@ -49,7 +50,7 @@ router.get('/', async (req, res) => {
                   '{"email": true, "browser": true, "mobile": false}', 1, 1, 1, 1)
       `, [id, userId]);
       
-      const newResult = await pool.query(
+      const newResult = await db.query(
         'SELECT * FROM work_preferences WHERE user_id = ?',
         [userId]
       );
@@ -67,6 +68,7 @@ router.get('/', async (req, res) => {
 // PUT /api/work-preferences - Update user's work preferences
 router.put('/', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const validation = WorkPreferencesSchema.safeParse(req.body);
     
@@ -92,7 +94,7 @@ router.put('/', async (req, res) => {
     updateValues.push(userId);
     
     // Check if preferences exist
-    const existing = await pool.query(
+    const existing = await db.query(
       'SELECT id FROM work_preferences WHERE user_id = ?',
       [userId]
     );
@@ -103,13 +105,13 @@ router.put('/', async (req, res) => {
       const allFields = ['id', 'user_id', ...Object.keys(updateData)];
       const allValues = [id, userId, ...Object.values(updateData)];
       
-      await pool.query(`
+      await db.query(`
         INSERT INTO work_preferences (${allFields.join(', ')})
         VALUES (${allFields.map(() => '?').join(', ')})
       `, allValues);
     } else {
       // Update existing preferences
-      await pool.query(`
+      await db.query(`
         UPDATE work_preferences 
         SET ${updateFields.join(', ')}, updated_at = datetime('now')
         WHERE user_id = ?
@@ -117,7 +119,7 @@ router.put('/', async (req, res) => {
     }
     
     // Return updated preferences
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM work_preferences WHERE user_id = ?',
       [userId]
     );
@@ -132,11 +134,12 @@ router.put('/', async (req, res) => {
 // GET /api/work-preferences/boundaries - Get work boundary analysis
 router.get('/boundaries', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '30')) || 30;
     
     // Get user preferences
-    const preferencesResult = await pool.query(
+    const preferencesResult = await db.query(
       'SELECT * FROM work_preferences WHERE user_id = ?',
       [userId]
     );
@@ -152,7 +155,7 @@ router.get('/boundaries', async (req, res) => {
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = startDate.toISOString().split('T')[0];
     
-    const workloadResult = await pool.query(`
+    const workloadResult = await db.query(`
       SELECT 
         work_date,
         start_time,
@@ -338,15 +341,16 @@ router.get('/boundaries', async (req, res) => {
 // POST /api/work-preferences/reset - Reset to default preferences
 router.post('/reset', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     
-    await pool.query(
+    await db.query(
       'DELETE FROM work_preferences WHERE user_id = ?',
       [userId]
     );
     
     const id = uuidv4();
-    await pool.query(`
+    await db.query(`
       INSERT INTO work_preferences (
         id, user_id, max_daily_hours, max_weekly_hours, preferred_start_time, preferred_end_time,
         break_duration_minutes, max_intensity_level, stress_threshold, weekend_work_allowed,
@@ -356,7 +360,7 @@ router.post('/reset', async (req, res) => {
                 '{"email": true, "browser": true, "mobile": false}', 1, 1, 1, 1)
     `, [id, userId]);
     
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT * FROM work_preferences WHERE user_id = ?',
       [userId]
     );
@@ -371,11 +375,12 @@ router.post('/reset', async (req, res) => {
 // GET /api/work-preferences/stress-alerts - Get stress threshold alerts and warnings
 router.get('/stress-alerts', async (req, res) => {
   try {
+    const db = getDatabase();
     const userId = req.query.user_id || 'default';
     const days = parseInt(String(req.query.days || '7')) || 7;
     
     // Get user preferences
-    const preferencesResult = await pool.query(
+    const preferencesResult = await db.query(
       'SELECT * FROM work_preferences WHERE user_id = ?',
       [userId]
     );
@@ -391,7 +396,7 @@ router.get('/stress-alerts', async (req, res) => {
     startDate.setDate(startDate.getDate() - days);
     const startDateStr = startDate.toISOString().split('T')[0];
     
-    const workloadResult = await pool.query(`
+    const workloadResult = await db.query(`
       SELECT 
         work_date,
         start_time,
@@ -408,7 +413,7 @@ router.get('/stress-alerts', async (req, res) => {
     `, [userId, startDateStr]);
     
     // Get recent mood data
-    const moodResult = await pool.query(`
+    const moodResult = await db.query(`
       SELECT 
         mood_date,
         mood_level,

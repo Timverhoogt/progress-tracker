@@ -7,7 +7,6 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import cors from 'cors';
-import { initializeDatabase } from '../../src/database/sqlite';
 import { clearDatabase } from '../helpers/test-utils';
 
 // Import routes
@@ -15,9 +14,6 @@ import projectRoutes from '../../src/routes/projects';
 import noteRoutes from '../../src/routes/notes';
 import todoRoutes from '../../src/routes/todos';
 import timelineRoutes from '../../src/routes/timelines';
-
-// Initialize database for routes
-initializeDatabase();
 
 // Create test app
 const app = express();

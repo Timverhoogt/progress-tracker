@@ -24,11 +24,7 @@ describe("Backup Service", () => {
   afterEach(() => {
     // Clean up test backups
     if (fs.existsSync(testBackupDir)) {
-      const files = fs.readdirSync(testBackupDir);
-      files.forEach((file) => {
-        fs.unlinkSync(path.join(testBackupDir, file));
-      });
-      fs.rmdirSync(testBackupDir);
+      fs.rmSync(testBackupDir, { recursive: true, force: true });
     }
   });
 
@@ -116,8 +112,9 @@ describe("Backup Service", () => {
       // Restore from backup
       await BackupService.restoreBackup(backupPath);
 
-      // Verify restoration
-      const restoredResult = await db.query(
+      // Verify restoration - get fresh db instance after restore
+      const restoredDb = getDatabase();
+      const restoredResult = await restoredDb.query(
         "SELECT name FROM projects WHERE id = ?",
         [originalProject.id]
       );
@@ -146,9 +143,10 @@ describe("Backup Service", () => {
       const jsonContent = fs.readFileSync(jsonPath, "utf-8");
       const data = JSON.parse(jsonContent);
 
-      expect(data).toHaveProperty("projects");
-      expect(Array.isArray(data.projects)).toBe(true);
-      expect(data.projects.length).toBeGreaterThan(0);
+      expect(data).toHaveProperty("tables");
+      expect(data.tables).toHaveProperty("projects");
+      expect(Array.isArray(data.tables.projects)).toBe(true);
+      expect(data.tables.projects.length).toBeGreaterThan(0);
 
       // Cleanup
       fs.unlinkSync(jsonPath);
@@ -165,10 +163,10 @@ describe("Backup Service", () => {
       const data = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
 
       // Check for expected tables
-      expect(data).toHaveProperty("projects");
-      expect(data).toHaveProperty("notes");
-      expect(data).toHaveProperty("todos");
-      expect(data).toHaveProperty("settings");
+      expect(data.tables).toHaveProperty("projects");
+      expect(data.tables).toHaveProperty("notes");
+      expect(data.tables).toHaveProperty("todos");
+      expect(data.tables).toHaveProperty("settings");
 
       // Cleanup
       fs.unlinkSync(jsonPath);
@@ -183,10 +181,11 @@ describe("Backup Service", () => {
 
       const stats = (await BackupService.getStats()) as any;
 
-      expect(stats).toHaveProperty("projects");
-      expect(stats.projects).toBeGreaterThanOrEqual(2);
-      expect(stats).toHaveProperty("notes");
-      expect(stats).toHaveProperty("todos");
+      expect(stats).toHaveProperty("tables");
+      expect(stats.tables).toHaveProperty("projects");
+      expect(stats.tables.projects.row_count).toBeGreaterThanOrEqual(2);
+      expect(stats.tables).toHaveProperty("notes");
+      expect(stats.tables).toHaveProperty("todos");
     });
 
     test("should return zero counts for empty database", async () => {
@@ -194,9 +193,9 @@ describe("Backup Service", () => {
 
       const stats = (await BackupService.getStats()) as any;
 
-      expect(stats.projects).toBe(0);
-      expect(stats.notes).toBe(0);
-      expect(stats.todos).toBe(0);
+      expect(stats.tables.projects.row_count).toBe(0);
+      expect(stats.tables.notes.row_count).toBe(0);
+      expect(stats.tables.todos.row_count).toBe(0);
     });
   });
 
