@@ -153,7 +153,7 @@ npm test
    - Press `Ctrl+Shift+P` → "Extensions: Show Recommended Extensions"
    - Install "Jest" by Orta
 
-2. **Open Test Explorer:**
+2. **Open Testing Sidebar:**
    - Click the Testing icon (🧪) in the Activity Bar (left sidebar)
    - See all tests organized by file
    - Click ▶️ to run any test

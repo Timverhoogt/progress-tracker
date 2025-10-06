@@ -2,8 +2,6 @@
   "recommendations": [
     // Testing
     "orta.vscode-jest",
-    "hbenl.vscode-test-explorer",
-    "kavod-io.vscode-jest-test-adapter",
     
     // TypeScript & JavaScript
     "dbaeumer.vscode-eslint",

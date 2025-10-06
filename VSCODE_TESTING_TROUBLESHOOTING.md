@@ -72,10 +72,10 @@ This is already configured in your workspace.
 
 ---
 
-### Issue 2: Tests Not Showing in Test Explorer
+### Issue 2: Tests Not Showing in Testing Sidebar
 
 **Symptoms:**
-- Test Explorer is empty
+- Testing sidebar is empty
 - No tests appear in the sidebar
 
 **Solutions:**

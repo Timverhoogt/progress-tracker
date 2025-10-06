@@ -37,7 +37,7 @@ Or just close and reopen VS Code.
 
 ---
 
-## Step 3: Open Test Explorer
+## Step 3: Open Testing Sidebar
 
 1. Click the **Testing** icon (🧪 beaker) in the Activity Bar (left sidebar)
 2. You should see your tests organized by file
@@ -49,7 +49,7 @@ Or just close and reopen VS Code.
 
 You should now see:
 
-### In Test Explorer (🧪 sidebar):
+### In Testing Sidebar (🧪):
 ```
 🧪 Tests
   ▶️ backend/tests
@@ -86,19 +86,19 @@ describe('Projects API', () => {
 ## 🚀 Quick Actions
 
 ### Run All Tests
-- Click ▶️ at the top of Test Explorer
+- Click ▶️ at the top of Testing sidebar
 - Or: `Ctrl+Shift+P` → "Jest: Run All Tests"
 
 ### Run a Single Test
 - Click "Run" above the test in your editor
-- Or: Click ▶️ next to the test in Test Explorer
+- Or: Click ▶️ next to the test in Testing sidebar
 
 ### Debug a Test
 - Click "Debug" above the test in your editor
-- Or: Click 🐛 next to the test in Test Explorer
+- Or: Click 🐛 next to the test in Testing sidebar
 
 ### Watch Mode (Auto-run on changes)
-- Click 👁️ in Test Explorer
+- Click 👁️ in Testing sidebar
 - Tests will re-run when you save files
 
 ---
@@ -142,15 +142,15 @@ describe('Projects API', () => {
 - [x] Dependencies installed (`npm install` completed)
 - [ ] Jest extension installed
 - [ ] VS Code window reloaded
-- [ ] Test Explorer opened (🧪 icon)
-- [ ] Tests visible in Test Explorer
+- [ ] Testing sidebar opened (🧪 icon)
+- [ ] Tests visible in Testing sidebar
 - [ ] "Run | Debug" links visible in test files
 
 ---
 
 ## 🎯 Next Steps
 
-Once you see tests in the Test Explorer:
+Once you see tests in the Testing sidebar:
 
 1. **Run all tests** to verify everything works
 2. **Try debugging** a test with breakpoints

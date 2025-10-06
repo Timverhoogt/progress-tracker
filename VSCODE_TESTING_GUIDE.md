@@ -15,10 +15,6 @@ Your Progress Tracker project is now fully configured to use VS Code's built-in 
    - Provides inline test results, debugging, and more
    - [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=orta.vscode-jest)
 
-2. **Test Explorer UI** (Optional but helpful)
-   - Extension ID: `hbenl.vscode-test-explorer`
-   - Provides a unified test explorer view
-
 ### Quick Install
 
 Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac), type "Extensions: Show Recommended Extensions", and install the suggested extensions.
@@ -26,14 +22,13 @@ Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac), type "Extensions: Show Recommend
 Or install via command line:
 ```bash
 code --install-extension orta.vscode-jest
-code --install-extension hbenl.vscode-test-explorer
 ```
 
 ---
 
 ## 🚀 Using VS Code Testing Features
 
-### 1. **Test Explorer Sidebar**
+### 1. **Testing Sidebar**
 
 - Click the **Testing** icon in the Activity Bar (left sidebar) - looks like a beaker 🧪
 - You'll see all your tests organized by file
@@ -157,11 +152,11 @@ Then:
 
 ---
 
-## 🎨 Test Explorer Features
+## 🎨 Testing Sidebar Features
 
 ### Filter Tests
 
-In the Test Explorer sidebar:
+In the Testing sidebar:
 - Click the filter icon (funnel)
 - Options:
   - Show only failed tests
@@ -177,7 +172,7 @@ In the Test Explorer sidebar:
 
 ### Watch Mode
 
-- Click the 👁️ watch icon in Test Explorer
+- Click the 👁️ watch icon in the Testing sidebar
 - Tests will re-run automatically when files change
 
 ---
@@ -186,7 +181,7 @@ In the Test Explorer sidebar:
 
 ### `.vscode/settings.json`
 - Jest configuration
-- Test Explorer settings
+- Testing settings
 - File associations
 - Search exclusions
 
@@ -209,7 +204,7 @@ In the Test Explorer sidebar:
 ## 🔧 Common Tasks
 
 ### Run All Tests
-- **Test Explorer**: Click ▶️ at the top
+- **Testing Sidebar**: Click ▶️ at the top
 - **Command Palette**: `Jest: Run All Tests`
 - **Task**: `Ctrl+Shift+P` → "Tasks: Run Task" → "npm: test"
 - **Keyboard**: `Ctrl+Shift+T` (if configured)
@@ -221,15 +216,15 @@ In the Test Explorer sidebar:
 
 ### Run Single Test
 - **Code Lens**: Click "Run" above the test
-- **Test Explorer**: Click ▶️ next to the test name
+- **Testing Sidebar**: Click ▶️ next to the test name
 
 ### Watch Mode
-- **Test Explorer**: Click 👁️ watch icon
+- **Testing Sidebar**: Click 👁️ watch icon
 - **Task**: Run task "npm: test:watch"
 - **Debug Config**: Select "Jest: Watch All Tests"
 
 ### Debug Failing Test
-- **Test Explorer**: Click 🐛 debug icon next to failed test
+- **Testing Sidebar**: Click 🐛 debug icon next to failed test
 - **Code Lens**: Click "Debug" above the test
 - **Right-click**: In test file → "Debug Tests"
 
@@ -251,7 +246,7 @@ Enable watch mode while developing to get instant feedback on test results.
 ### 3. **Breakpoint Debugging**
 Set breakpoints in your source code (not just tests) to debug the actual implementation.
 
-### 4. **Test Explorer Filters**
+### 4. **Testing Sidebar Filters**
 Use filters to focus on failing tests when fixing bugs.
 
 ### 5. **Keyboard Shortcuts**
@@ -278,7 +273,7 @@ View detailed test output in the "Test Results" panel at the bottom.
 ### Test-Driven Development (TDD)
 
 1. Open test file and source file side-by-side
-2. Enable watch mode (👁️ in Test Explorer)
+2. Enable watch mode (👁️ in Testing sidebar)
 3. Write a failing test
 4. Watch it fail (red ❌)
 5. Implement the feature
@@ -287,7 +282,7 @@ View detailed test output in the "Test Results" panel at the bottom.
 
 ### Debugging a Failing Test
 
-1. Find the failing test in Test Explorer (red ❌)
+1. Find the failing test in Testing sidebar (red ❌)
 2. Click the 🐛 debug icon next to it
 3. Set breakpoints in the source code
 4. Step through to find the issue
@@ -296,7 +291,7 @@ View detailed test output in the "Test Results" panel at the bottom.
 
 ### Running Tests Before Commit
 
-1. Click ▶️ at the top of Test Explorer
+1. Click ▶️ at the top of Testing sidebar
 2. Wait for all tests to pass
 3. Check coverage if needed
 4. Commit with confidence
@@ -344,8 +339,7 @@ View detailed test output in the "Test Results" panel at the bottom.
 ## ✅ Quick Checklist
 
 - [ ] Install Jest extension (`orta.vscode-jest`)
-- [ ] Install Test Explorer UI (optional)
-- [ ] Open Test Explorer sidebar (beaker icon 🧪)
+- [ ] Open Testing sidebar (beaker icon 🧪)
 - [ ] Run all tests to verify setup
 - [ ] Try debugging a test
 - [ ] Enable watch mode

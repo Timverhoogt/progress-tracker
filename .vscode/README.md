@@ -8,7 +8,7 @@ Workspace settings including:
 - TypeScript settings
 - File associations
 - Search exclusions
-- Test Explorer configuration
+- Testing configuration
 
 ### `launch.json`
 Debug configurations:
@@ -50,7 +50,7 @@ Or manually:
 2. Type "Extensions: Show Recommended Extensions"
 3. Click "Install All"
 
-### 2. Open Test Explorer
+### 2. Open Testing Sidebar
 
 1. Click the Testing icon (🧪) in the Activity Bar (left sidebar)
 2. You'll see all your tests organized by file
@@ -58,7 +58,7 @@ Or manually:
 
 ### 3. Run Tests
 
-**From Test Explorer:**
+**From Testing Sidebar:**
 - Click ▶️ next to any test, suite, or file
 
 **From Editor:**
@@ -166,7 +166,7 @@ View detailed output in the "Test Results" panel at the bottom.
 
 Edit `.vscode/settings.json` to customize:
 - Jest auto-run behavior
-- Test Explorer settings
+- Testing settings
 - Editor preferences
 
 ### Add Debug Configurations
@@ -190,7 +190,7 @@ Edit `.vscode/tasks.json` to add custom tasks.
 ## ✅ Checklist
 
 - [ ] Install recommended extensions
-- [ ] Open Test Explorer (🧪 icon)
+- [ ] Open Testing sidebar (🧪 icon)
 - [ ] Run all tests to verify setup
 - [ ] Try debugging a test
 - [ ] Run tests with coverage
