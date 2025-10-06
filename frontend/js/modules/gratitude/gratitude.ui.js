@@ -1,5 +1,5 @@
-
-
+// DOMUtils, ModalUtils, LoadingUtils, MessageUtils are available globally via window
+// TextUtils is available globally via window
 
 class GratitudeUI {
     constructor() {
@@ -663,4 +663,7 @@ class GratitudeUI {
     }
 }
 
-
+// GratitudeUI is available globally via window.GratitudeUI
+if (typeof window !== 'undefined') {
+    window.GratitudeUI = GratitudeUI;
+}

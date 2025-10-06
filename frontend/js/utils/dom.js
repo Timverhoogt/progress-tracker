@@ -172,3 +172,10 @@ class MessageUtils {
     }
 }
 
+// Export to global scope for non-module usage
+if (typeof window !== 'undefined') {
+    window.DOMUtils = DOMUtils;
+    window.ModalUtils = ModalUtils;
+    window.LoadingUtils = LoadingUtils;
+    window.MessageUtils = MessageUtils;
+}

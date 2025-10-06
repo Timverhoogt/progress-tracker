@@ -1,3 +1,5 @@
+// MessageUtils, LoadingUtils, ModalUtils, TextUtils are available globally via window
+
 class TodosUI {
     constructor() {
         this.elements = this.initializeElements();
@@ -263,6 +265,7 @@ class TodosUI {
     }
 }
 
-// Expose to global scope for traditional script loading
-window.TodosUI = TodosUI;
-
+// TodosUI is available globally via window.TodosUI
+if (typeof window !== 'undefined') {
+    window.TodosUI = TodosUI;
+}

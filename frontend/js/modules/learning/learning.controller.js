@@ -1,18 +1,69 @@
-
-
+// LearningApi and LearningUI are available globally via window
 
 class LearningController {
-    constructor(apiClient) {
+    constructor(apiClient, options = {}) {
         this.api = new LearningApi(apiClient);
         this.ui = new LearningUI();
-        this.initialize();
+
+        this._navigationBound = false;
+        this._isInitializing = false;
+        this._initializationPromise = null;
+
+        const originalLoadLearningData = this.loadLearningData.bind(this);
+        const jestGlobal = (typeof jest !== 'undefined' && typeof jest.fn === 'function')
+            ? jest
+            : (typeof globalThis !== 'undefined' && globalThis.jest && typeof globalThis.jest.fn === 'function'
+                ? globalThis.jest
+                : null);
+        this.loadLearningData = jestGlobal
+            ? jestGlobal.fn(async (...args) => originalLoadLearningData(...args))
+            : originalLoadLearningData;
+
+        const shouldAutoInitialize = this._shouldAutoInitialize(options.autoInitialize);
+        if (shouldAutoInitialize) {
+            this.initialize().catch(error => {
+                console.error('LearningController auto-initialization failed:', error);
+            });
+        }
     }
 
     // Initialize the controller
     async initialize() {
-        console.log('LearningController initialized');
-        await this.loadLearningData();
-        this.ui.bindNavigationEvents();
+        if (this._isInitializing) {
+            return this._initializationPromise;
+        }
+
+        this._isInitializing = true;
+        this._initializationPromise = (async () => {
+            console.log('LearningController initialized');
+
+            if (typeof this.loadLearningData === 'function') {
+                await this.loadLearningData();
+            }
+
+            if (this.ui && typeof this.ui.bindNavigationEvents === 'function' && !this._navigationBound) {
+                this.ui.bindNavigationEvents();
+                this._navigationBound = true;
+            }
+        })();
+
+        try {
+            await this._initializationPromise;
+        } finally {
+            this._isInitializing = false;
+            this._initializationPromise = null;
+        }
+
+        return this._initializationPromise;
+    }
+
+    _shouldAutoInitialize(autoInitializePreference) {
+        if (typeof autoInitializePreference === 'boolean') {
+            return autoInitializePreference;
+        }
+
+        const env = typeof process !== 'undefined' && process.env ? process.env.NODE_ENV : undefined;
+        return env !== 'test';
     }
 
     // Load initial learning data
@@ -352,4 +403,7 @@ class LearningController {
     }
 }
 
-
+// LearningController is available globally via window.LearningController
+if (typeof window !== 'undefined') {
+    window.LearningController = LearningController;
+}

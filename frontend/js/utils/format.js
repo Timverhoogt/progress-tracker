@@ -140,6 +140,11 @@ class TextUtils {
     }
 }
 
+// Export to global scope for non-module usage
+if (typeof window !== 'undefined') {
+    window.DateUtils = DateUtils;
+    window.TextUtils = TextUtils;
+}
 // Color utilities
 class ColorUtils {
     // Get mood color based on level
@@ -186,5 +191,10 @@ class ColorUtils {
             (G > 255 ? 255 : G < 0 ? 0 : G) * 0x100 +
             (B > 255 ? 255 : B < 0 ? 0 : B)).toString(16).slice(1);
     }
+}
+
+// Export to global scope
+if (typeof window !== 'undefined') {
+    window.ColorUtils = ColorUtils;
 }
 

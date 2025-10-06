@@ -16,7 +16,17 @@ class ProjectsUI {
             projectForm: DOMUtils.getElement('#projectForm'),
             projectName: DOMUtils.getElement('#projectName'),
             projectDescription: DOMUtils.getElement('#projectDescription'),
-            loadingOverlay: DOMUtils.getElement('#loadingOverlay')
+            loadingOverlay: DOMUtils.getElement('#loadingOverlay'),
+            // Details modal elements
+            projectDetailsModal: DOMUtils.getElement('#projectDetailsModal'),
+            detailProjectName: DOMUtils.getElement('#detailProjectName'),
+            detailProjectDescription: DOMUtils.getElement('#detailProjectDescription'),
+            detailProjectStatus: DOMUtils.getElement('#detailProjectStatus'),
+            detailProjectCreated: DOMUtils.getElement('#detailProjectCreated'),
+            detailProjectUpdated: DOMUtils.getElement('#detailProjectUpdated'),
+            closeProjectDetailsBtn: DOMUtils.getElement('#closeProjectDetailsBtn'),
+            closeProjectDetailsModal: DOMUtils.getElement('#closeProjectDetailsModal'),
+            editProjectFromDetailsBtn: DOMUtils.getElement('#editProjectFromDetailsBtn')
         };
     }
 
@@ -116,15 +126,42 @@ class ProjectsUI {
         MessageUtils.showSuccess(message);
     }
 
+    // Show project details modal
+    showDetailsModal(project) {
+        if (!this.elements.projectDetailsModal) return;
+
+        // Populate details
+        DOMUtils.setText(this.elements.detailProjectName, project.name || '-');
+        DOMUtils.setText(this.elements.detailProjectDescription, project.description || 'No description provided');
+        DOMUtils.setText(this.elements.detailProjectStatus, (project.status || 'active').replace('_', ' '));
+        DOMUtils.setText(this.elements.detailProjectCreated,
+            project.created_at ? DateUtils.formatDateTime(project.created_at) : '-');
+        DOMUtils.setText(this.elements.detailProjectUpdated,
+            project.updated_at ? DateUtils.formatDateTime(project.updated_at) : '-');
+
+        // Store project ID for edit button
+        this.elements.projectDetailsModal.dataset.projectId = project.id;
+
+        // Show modal
+        ModalUtils.show(this.elements.projectDetailsModal);
+    }
+
+    // Hide project details modal
+    hideDetailsModal() {
+        if (!this.elements.projectDetailsModal) return;
+        ModalUtils.hide(this.elements.projectDetailsModal);
+        delete this.elements.projectDetailsModal.dataset.projectId;
+    }
+
     // Bind project card events
     bindProjectEvents() {
-        // Select project events
+        // View project details events
         DOMUtils.getAllElements('.select-project-btn').forEach(btn => {
             DOMUtils.on(btn, 'click', (e) => {
                 const button = e.currentTarget || e.target.closest('button');
                 if (!button) return;
                 const projectId = button.dataset.id;
-                this.emit('project:select', projectId);
+                this.emit('project:view', projectId);
             });
         });
 
@@ -168,6 +205,34 @@ class ProjectsUI {
         }
     }
 
+    // Bind details modal events
+    bindDetailsModalEvents() {
+        // Close button
+        if (this.elements.closeProjectDetailsBtn) {
+            DOMUtils.on(this.elements.closeProjectDetailsBtn, 'click', () => {
+                this.hideDetailsModal();
+            });
+        }
+
+        // Close X button
+        if (this.elements.closeProjectDetailsModal) {
+            DOMUtils.on(this.elements.closeProjectDetailsModal, 'click', () => {
+                this.hideDetailsModal();
+            });
+        }
+
+        // Edit from details button
+        if (this.elements.editProjectFromDetailsBtn) {
+            DOMUtils.on(this.elements.editProjectFromDetailsBtn, 'click', () => {
+                const projectId = this.elements.projectDetailsModal.dataset.projectId;
+                if (projectId) {
+                    this.hideDetailsModal();
+                    this.emit('project:edit', projectId);
+                }
+            });
+        }
+    }
+
     // Bind form submission
     bindFormSubmission(handler) {
         DOMUtils.on(this.elements.projectForm, 'submit', (e) => {
@@ -178,4 +243,7 @@ class ProjectsUI {
         });
     }
 }
+
+// Expose to global scope
+window.ProjectsUI = ProjectsUI;
 

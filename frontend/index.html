@@ -1909,7 +1909,7 @@
     </div>
 
     <!-- Modals -->
-    <!-- Project Modal -->
+    <!-- Project Modal (Edit/Create) -->
     <div class="modal" id="projectModal">
       <div class="modal-content">
         <div class="modal-header">
@@ -1940,6 +1940,48 @@
             <button type="submit" class="btn btn-primary">Save Project</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Project Details Modal (View) -->
+    <div class="modal" id="projectDetailsModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="projectDetailsTitle">Project Details</h3>
+          <button class="modal-close" id="closeProjectDetailsModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="project-details">
+            <div class="detail-group">
+              <label>Project Name</label>
+              <p id="detailProjectName">-</p>
+            </div>
+            <div class="detail-group">
+              <label>Description</label>
+              <p id="detailProjectDescription">-</p>
+            </div>
+            <div class="detail-group">
+              <label>Status</label>
+              <p id="detailProjectStatus">-</p>
+            </div>
+            <div class="detail-group">
+              <label>Created</label>
+              <p id="detailProjectCreated">-</p>
+            </div>
+            <div class="detail-group">
+              <label>Last Updated</label>
+              <p id="detailProjectUpdated">-</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="closeProjectDetailsBtn">
+            Close
+          </button>
+          <button type="button" class="btn btn-primary" id="editProjectFromDetailsBtn">
+            <i class="fas fa-edit"></i> Edit Project
+          </button>
+        </div>
       </div>
     </div>
 

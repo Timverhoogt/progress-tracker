@@ -1,3 +1,5 @@
+// TodosApi and TodosUI are available globally via window
+
 class TodosController {
     constructor(apiClient, appState, ui = null, api = null) {
         this.api = api || new TodosApi(apiClient);
@@ -220,6 +222,7 @@ class TodosController {
     }
 }
 
-// Expose to global scope for traditional script loading
-window.TodosController = TodosController;
-
+// TodosController is available globally via window.TodosController
+if (typeof window !== 'undefined') {
+    window.TodosController = TodosController;
+}

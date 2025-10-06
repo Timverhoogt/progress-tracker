@@ -1,5 +1,5 @@
-
-
+// DOMUtils, ModalUtils, LoadingUtils, MessageUtils are available globally via window
+// TextUtils is available globally via window
 
 class MoodUI {
     constructor() {
@@ -421,3 +421,7 @@ class MoodUI {
     }
 }
 
+// MoodUI is available globally via window.MoodUI
+if (typeof window !== 'undefined') {
+    window.MoodUI = MoodUI;
+}

@@ -145,3 +145,7 @@ class ReportsApi {
     }
 }
 
+// ReportsApi is available globally via window.ReportsApi
+if (typeof window !== 'undefined') {
+    window.ReportsApi = ReportsApi;
+}

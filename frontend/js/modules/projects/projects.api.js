@@ -32,3 +32,6 @@ class ProjectsApi {
     }
 }
 
+// Expose to global scope
+window.ProjectsApi = ProjectsApi;
+

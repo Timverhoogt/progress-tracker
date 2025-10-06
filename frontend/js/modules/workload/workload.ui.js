@@ -1,5 +1,5 @@
-
-
+// DOMUtils, ModalUtils, LoadingUtils, MessageUtils are available globally via window
+// TextUtils is available globally via window
 
 class WorkloadUI {
     constructor() {
@@ -480,3 +480,7 @@ class WorkloadUI {
     }
 }
 
+// WorkloadUI is available globally via window.WorkloadUI
+if (typeof window !== 'undefined') {
+    window.WorkloadUI = WorkloadUI;
+}

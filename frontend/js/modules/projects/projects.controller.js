@@ -15,6 +15,7 @@ class ProjectsController {
         await this.loadProjects();
         this.bindEvents();
         this.ui.bindNewProjectButton();
+        this.ui.bindDetailsModalEvents();
     }
 
     // Load all projects
@@ -184,7 +185,22 @@ class ProjectsController {
         }
     }
 
-    // Select a project
+    // View project details
+    async viewProject(id) {
+        try {
+            const project = await this.api.getById(id);
+            if (project) {
+                this.ui.showDetailsModal(project);
+            } else {
+                this.ui.showError('Project not found');
+            }
+        } catch (error) {
+            console.error('Failed to load project details:', error);
+            this.ui.showError('Failed to load project details');
+        }
+    }
+
+    // Select a project (for other modules)
     selectProject(id) {
         // Emit event for other modules to handle
         this.emit('project:selected', id);
@@ -201,9 +217,9 @@ class ProjectsController {
             }
         });
 
-        // Handle project selection
-        this.ui.on('project:select', (id) => {
-            this.selectProject(id);
+        // Handle project view (details)
+        this.ui.on('project:view', (id) => {
+            this.viewProject(id);
         });
 
         // Handle project editing
@@ -238,4 +254,7 @@ class ProjectsController {
         return [];
     }
 }
+
+// Expose to global scope
+window.ProjectsController = ProjectsController;
 

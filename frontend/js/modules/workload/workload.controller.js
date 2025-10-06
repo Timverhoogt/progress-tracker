@@ -1,5 +1,4 @@
-
-
+// WorkloadApi and WorkloadUI are available globally via window
 
 class WorkloadController {
     constructor(apiClient) {
@@ -315,3 +314,7 @@ class WorkloadController {
     }
 }
 
+// WorkloadController is available globally via window.WorkloadController
+if (typeof window !== 'undefined') {
+    window.WorkloadController = WorkloadController;
+}

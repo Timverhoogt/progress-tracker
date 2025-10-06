@@ -168,4 +168,7 @@ class TimelinesApi {
     }
 }
 
-
+// TimelinesApi is available globally via window.TimelinesApi
+if (typeof window !== 'undefined') {
+    window.TimelinesApi = TimelinesApi;
+}

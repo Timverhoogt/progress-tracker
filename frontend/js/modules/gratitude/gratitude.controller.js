@@ -1,5 +1,4 @@
-
-
+// GratitudeApi and GratitudeUI are available globally via window
 
 class GratitudeController {
     constructor(apiClient) {
@@ -412,4 +411,7 @@ class GratitudeController {
     }
 }
 
-
+// GratitudeController is available globally via window.GratitudeController
+if (typeof window !== 'undefined') {
+    window.GratitudeController = GratitudeController;
+}

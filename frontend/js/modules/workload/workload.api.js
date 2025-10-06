@@ -72,3 +72,7 @@ class WorkloadApi {
     }
 }
 
+// WorkloadApi is available globally via window.WorkloadApi
+if (typeof window !== 'undefined') {
+    window.WorkloadApi = WorkloadApi;
+}

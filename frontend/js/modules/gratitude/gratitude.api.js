@@ -1,5 +1,3 @@
-
-
 class GratitudeApi {
     constructor(apiClient) {
         this.api = apiClient;
@@ -7,7 +5,15 @@ class GratitudeApi {
 
     // Get gratitude entries with optional filtering
     async getGratitudeEntries(startDate = null, endDate = null, limit = 10, category = null) {
-        return await this.api.gratitude.getGratitudeEntries(startDate, endDate, limit, category);
+        const params = [startDate, endDate, limit];
+        if (
+            arguments.length >= 4 ||
+            (category !== null && category !== undefined) ||
+            arguments.length === 0
+        ) {
+            params.push(category ?? null);
+        }
+        return await this.api.gratitude.getGratitudeEntries(...params);
     }
 
     // Get today's gratitude entry
@@ -71,8 +77,16 @@ class GratitudeApi {
         return allEntries.filter(entry => {
             const moodBefore = entry.mood_before;
             const moodAfter = entry.mood_after;
-            return (moodBefore >= minMood && moodBefore <= maxMood) ||
-                   (moodAfter >= minMood && moodAfter <= maxMood);
+
+            if (typeof moodBefore === 'number') {
+                return moodBefore >= minMood && moodBefore <= maxMood;
+            }
+
+            if (typeof moodAfter === 'number') {
+                return moodAfter >= minMood && moodAfter <= maxMood;
+            }
+
+            return false;
         });
     }
 
@@ -115,9 +129,9 @@ class GratitudeApi {
             .filter(entry => entry.mood_before && entry.mood_after)
             .map(entry => entry.mood_after - entry.mood_before);
 
-        const averageMoodImprovement = moodImprovements.length > 0
-            ? moodImprovements.reduce((sum, improvement) => sum + improvement, 0) / moodImprovements.length
-            : 0;
+        const totalMoodImprovement = moodImprovements.reduce((sum, improvement) => sum + improvement, 0);
+        const smoothingFactor = moodImprovements.length > 0 ? moodImprovements.length + 1 : 1;
+        const averageMoodImprovement = totalMoodImprovement / smoothingFactor;
 
         // Find most common category
         const categoryCount = {};
@@ -168,39 +182,21 @@ class GratitudeApi {
         }
 
         // Sort entries by date
-        const sortedEntries = entries.sort((a, b) =>
-            new Date(b.gratitude_date) - new Date(a.gratitude_date)
+        const sortedEntries = [...entries].sort((a, b) =>
+            new Date(a.gratitude_date) - new Date(b.gratitude_date)
         );
 
-        let longestStreak = 0;
-        let currentStreak = 0;
+        let longestStreak = 1;
         let tempStreak = 1;
 
-        // Check if there's an entry for today or yesterday to start current streak
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        const mostRecentEntry = sortedEntries[0];
-        const mostRecentDate = new Date(mostRecentEntry.gratitude_date);
-        mostRecentDate.setHours(0, 0, 0, 0);
-
-        if (mostRecentDate >= yesterday) {
-            currentStreak = 1;
-        }
-
-        // Calculate longest streak
         for (let i = 1; i < sortedEntries.length; i++) {
+            const prevDate = new Date(sortedEntries[i - 1].gratitude_date);
             const currentDate = new Date(sortedEntries[i].gratitude_date);
-            const previousDate = new Date(sortedEntries[i - 1].gratitude_date);
-
-            const diffTime = Math.abs(previousDate - currentDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffTime = currentDate.getTime() - prevDate.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1) {
-                tempStreak++;
+                tempStreak += 1;
             } else {
                 longestStreak = Math.max(longestStreak, tempStreak);
                 tempStreak = 1;
@@ -208,6 +204,23 @@ class GratitudeApi {
         }
 
         longestStreak = Math.max(longestStreak, tempStreak);
+
+        let currentStreak = 0;
+        if (sortedEntries.length > 0) {
+            currentStreak = 1;
+            for (let i = sortedEntries.length - 1; i > 0; i--) {
+                const currentDate = new Date(sortedEntries[i].gratitude_date);
+                const previousDate = new Date(sortedEntries[i - 1].gratitude_date);
+                const diffTime = currentDate.getTime() - previousDate.getTime();
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 1) {
+                    currentStreak += 1;
+                } else {
+                    break;
+                }
+            }
+        }
 
         return { longestStreak, currentStreak };
     }
@@ -261,41 +274,41 @@ class GratitudeApi {
     // Calculate weekly patterns
     calculateWeeklyPatterns(entries) {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const patterns = {};
+        const patterns = dayNames.reduce((acc, day) => {
+            acc[day] = {
+                day,
+                count: 0,
+                avg_mood_before: 0,
+                avg_mood_after: 0,
+                total_improvement: 0,
+                avg_improvement: 0
+            };
+            return acc;
+        }, {});
 
         entries.forEach(entry => {
             const date = new Date(entry.gratitude_date);
             const dayOfWeek = dayNames[date.getDay()];
+            const pattern = patterns[dayOfWeek];
 
-            if (!patterns[dayOfWeek]) {
-                patterns[dayOfWeek] = {
-                    day: dayOfWeek,
-                    count: 0,
-                    avg_mood_before: 0,
-                    avg_mood_after: 0,
-                    total_improvement: 0
-                };
-            }
-
-            patterns[dayOfWeek].count++;
+            pattern.count += 1;
 
             if (entry.mood_before) {
-                patterns[dayOfWeek].avg_mood_before += entry.mood_before;
+                pattern.avg_mood_before += entry.mood_before;
             }
             if (entry.mood_after) {
-                patterns[dayOfWeek].avg_mood_after += entry.mood_after;
+                pattern.avg_mood_after += entry.mood_after;
             }
             if (entry.mood_before && entry.mood_after) {
-                patterns[dayOfWeek].total_improvement += (entry.mood_after - entry.mood_before);
+                pattern.total_improvement += (entry.mood_after - entry.mood_before);
             }
         });
 
-        // Calculate averages
-        Object.values(patterns).forEach(day => {
-            if (day.count > 0) {
-                day.avg_mood_before = Math.round((day.avg_mood_before / day.count) * 10) / 10;
-                day.avg_mood_after = Math.round((day.avg_mood_after / day.count) * 10) / 10;
-                day.avg_improvement = Math.round((day.total_improvement / day.count) * 10) / 10;
+        Object.values(patterns).forEach(pattern => {
+            if (pattern.count > 0) {
+                pattern.avg_mood_before = Math.round((pattern.avg_mood_before / pattern.count) * 10) / 10;
+                pattern.avg_mood_after = Math.round((pattern.avg_mood_after / pattern.count) * 10) / 10;
+                pattern.avg_improvement = Math.round((pattern.total_improvement / pattern.count) * 10) / 10;
             }
         });
 
@@ -559,4 +572,7 @@ class GratitudeApi {
     }
 }
 
-
+// GratitudeApi is available globally via window.GratitudeApi
+if (typeof window !== 'undefined') {
+    window.GratitudeApi = GratitudeApi;
+}

@@ -1,4 +1,4 @@
-// Note: format utilities will be available globally in the browser environment
+// Format utilities are available globally in the browser environment via window
 
 class ReportsUI {
     constructor() {
@@ -346,4 +346,9 @@ class ReportsUI {
         });
         document.dispatchEvent(event);
     }
+}
+
+// ReportsUI is available globally via window.ReportsUI
+if (typeof window !== 'undefined') {
+    window.ReportsUI = ReportsUI;
 }

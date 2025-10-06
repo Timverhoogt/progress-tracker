@@ -336,4 +336,7 @@ class LearningApi {
     }
 }
 
-
+// LearningApi is available globally via window.LearningApi
+if (typeof window !== 'undefined') {
+    window.LearningApi = LearningApi;
+}

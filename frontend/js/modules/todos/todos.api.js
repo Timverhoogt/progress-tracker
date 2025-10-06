@@ -32,5 +32,7 @@ class TodosApi {
     }
 }
 
-// Expose to global scope for traditional script loading
-window.TodosApi = TodosApi;
+// TodosApi is available globally via window.TodosApi
+if (typeof window !== 'undefined') {
+    window.TodosApi = TodosApi;
+}

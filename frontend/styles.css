@@ -796,6 +796,10 @@ body {
     gap: 1rem;
 }
 
+.modal-body {
+    padding: 1rem 0;
+}
+
 .modal-footer {
     display: flex;
     justify-content: flex-end;
@@ -4647,4 +4651,41 @@ input[type="range"] {
   color: #6b7280;
   margin-top: 4px;
   line-height: 1.4;
+}
+
+/* Project Details Modal */
+.project-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-group label {
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-group p {
+  color: #1f2937;
+  font-size: 1rem;
+  line-height: 1.5;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  min-height: 3rem;
+}
+
+.detail-group p:empty::before {
+  content: '-';
+  color: #9ca3af;
 }

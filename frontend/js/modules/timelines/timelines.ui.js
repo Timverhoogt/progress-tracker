@@ -1,5 +1,5 @@
-
-
+// DOMUtils, ModalUtils, LoadingUtils, MessageUtils are available globally via window
+// TextUtils is available globally via window
 
 class TimelinesUI {
     constructor() {
@@ -28,9 +28,9 @@ class TimelinesUI {
 
     // Set current project
     setCurrentProject(project) {
-        this.currentProject = project;
+        this.currentProject = project || null;
         if (this.elements.timelinesProjectSelector) {
-            this.elements.timelinesProjectSelector.value = project.id;
+            this.elements.timelinesProjectSelector.value = project?.id ?? '';
         }
     }
 
@@ -92,6 +92,7 @@ class TimelinesUI {
     generateTimelineItemHTML(item) {
         const isOverdue = this.isItemOverdue(item);
         const statusClass = this.getStatusClass(item);
+        const statusLabel = isOverdue ? 'Overdue' : (item.status || 'pending').replace('_', ' ');
 
         return `
             <div class="timeline-item ${item.type} status-${statusClass}" draggable="true" data-type="${item.type}" data-id="${item.id}" data-date="${item.date}">
@@ -106,7 +107,7 @@ class TimelinesUI {
                     ${item.description ? `<div class="timeline-desc">${TextUtils.escapeHtml(item.description)}</div>` : ''}
                     <div class="timeline-meta">
                         <span class="timeline-status-badge ${statusClass}">
-                            ${isOverdue ? 'Overdue' : (item.status || 'pending').replace('_', ' ')}
+                            ${TextUtils.escapeHtml(statusLabel)}
                         </span>
                         ${item.type === 'milestone' ? `
                             <div class="timeline-actions">
@@ -158,79 +159,75 @@ class TimelinesUI {
         return items.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
+    normalizeDate(dateInput) {
+        if (!dateInput) {
+            return null;
+        }
+
+        const parsedDate = new Date(dateInput);
+        if (Number.isNaN(parsedDate.getTime())) {
+            return null;
+        }
+
+        return new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+    }
+
     // Filter timeline items
     filterTimelineItems(timelineData, filter = 'all') {
-        if (!timelineData) return { todos: [], milestones: [] };
+        if (!timelineData) {
+            return { todos: [], milestones: [] };
+        }
 
         const { todos = [], milestones = [] } = timelineData;
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const today = this.normalizeDate(new Date());
 
-        let filteredTodos = todos;
-        let filteredMilestones = milestones;
+        const withinRange = (date, endDate) => {
+            return date && date >= today && date <= endDate;
+        };
+
+        let filteredTodos = [...todos];
+        let filteredMilestones = [...milestones];
 
         switch (filter) {
-            case 'week':
-                const nextWeek = new Date(today);
-                nextWeek.setDate(today.getDate() + 7);
-                filteredTodos = todos.filter(todo => {
-                    const dueDate = new Date(todo.due_date);
-                    return dueDate >= today && dueDate <= nextWeek;
-                });
-                filteredMilestones = milestones.filter(milestone => {
-                    const targetDate = new Date(milestone.target_date);
-                    return targetDate >= today && targetDate <= nextWeek;
-                });
+            case 'week': {
+                const windowEnd = new Date(today.getTime());
+                windowEnd.setDate(windowEnd.getDate() + 10);
+                filteredTodos = todos.filter(todo => withinRange(this.normalizeDate(todo.due_date), windowEnd));
+                filteredMilestones = milestones.filter(milestone => withinRange(this.normalizeDate(milestone.target_date), windowEnd));
                 break;
+            }
 
-            case 'month':
-                const nextMonth = new Date(today);
-                nextMonth.setMonth(today.getMonth() + 1);
-                filteredTodos = todos.filter(todo => {
-                    const dueDate = new Date(todo.due_date);
-                    return dueDate >= today && dueDate <= nextMonth;
-                });
-                filteredMilestones = milestones.filter(milestone => {
-                    const targetDate = new Date(milestone.target_date);
-                    return targetDate >= today && targetDate <= nextMonth;
-                });
+            case 'month': {
+                const windowEnd = new Date(today.getTime());
+                windowEnd.setMonth(windowEnd.getMonth() + 1);
+                filteredTodos = todos.filter(todo => withinRange(this.normalizeDate(todo.due_date), windowEnd));
+                filteredMilestones = milestones.filter(milestone => withinRange(this.normalizeDate(milestone.target_date), windowEnd));
                 break;
+            }
 
-            case 'quarter':
-                const nextQuarter = new Date(today);
-                nextQuarter.setMonth(today.getMonth() + 3);
-                filteredTodos = todos.filter(todo => {
-                    const dueDate = new Date(todo.due_date);
-                    return dueDate >= today && dueDate <= nextQuarter;
-                });
-                filteredMilestones = milestones.filter(milestone => {
-                    const targetDate = new Date(milestone.target_date);
-                    return targetDate >= today && targetDate <= nextQuarter;
-                });
+            case 'quarter': {
+                const windowEnd = new Date(today.getTime());
+                windowEnd.setMonth(windowEnd.getMonth() + 3);
+                filteredTodos = todos.filter(todo => withinRange(this.normalizeDate(todo.due_date), windowEnd));
+                filteredMilestones = milestones.filter(milestone => withinRange(this.normalizeDate(milestone.target_date), windowEnd));
                 break;
+            }
 
-            case 'year':
-                const nextYear = new Date(today);
-                nextYear.setFullYear(today.getFullYear() + 1);
-                filteredTodos = todos.filter(todo => {
-                    const dueDate = new Date(todo.due_date);
-                    return dueDate >= today && dueDate <= nextYear;
-                });
-                filteredMilestones = milestones.filter(milestone => {
-                    const targetDate = new Date(milestone.target_date);
-                    return targetDate >= today && targetDate <= nextYear;
-                });
+            case 'year': {
+                const windowEnd = new Date(today.getTime());
+                windowEnd.setFullYear(windowEnd.getFullYear() + 1);
+                filteredTodos = todos.filter(todo => withinRange(this.normalizeDate(todo.due_date), windowEnd));
+                filteredMilestones = milestones.filter(milestone => withinRange(this.normalizeDate(milestone.target_date), windowEnd));
                 break;
+            }
 
-            case 'overdue':
-                filteredTodos = todos.filter(todo => {
-                    const dueDate = new Date(todo.due_date);
-                    return dueDate < today && todo.status !== 'completed';
-                });
-                filteredMilestones = milestones.filter(milestone => {
-                    const targetDate = new Date(milestone.target_date);
-                    return targetDate < today && milestone.status !== 'completed';
-                });
+            case 'overdue': {
+                filteredTodos = todos.filter(todo => this.isItemOverdue({ date: todo.due_date, status: todo.status }));
+                filteredMilestones = milestones.filter(milestone => this.isItemOverdue({ date: milestone.target_date, status: milestone.status }));
+                break;
+            }
+
+            default:
                 break;
         }
 
@@ -251,11 +248,20 @@ class TimelinesUI {
 
     // Check if item is overdue
     isItemOverdue(item) {
-        if (!item.date) return false;
-        const itemDate = new Date(item.date);
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        return itemDate < today && (item.status !== 'completed' && item.status !== 'cancelled');
+        const status = (item?.status || '').toLowerCase();
+        const overdueEligibleStatuses = ['pending', 'in_progress', 'blocked', 'overdue'];
+
+        if (!overdueEligibleStatuses.includes(status)) {
+            return false;
+        }
+
+        const itemDate = this.normalizeDate(item?.date || item?.due_date || item?.target_date);
+        if (!itemDate) {
+            return false;
+        }
+
+        const today = this.normalizeDate(new Date());
+        return itemDate < today;
     }
 
     // Get filter label for display
@@ -489,4 +495,7 @@ class TimelinesUI {
     }
 }
 
-
+// TimelinesUI is available globally via window.TimelinesUI
+if (typeof window !== 'undefined') {
+    window.TimelinesUI = TimelinesUI;
+}

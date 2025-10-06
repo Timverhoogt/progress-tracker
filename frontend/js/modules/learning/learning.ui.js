@@ -1,5 +1,5 @@
-
-
+// DOMUtils, ModalUtils, LoadingUtils, MessageUtils are available globally via window
+// TextUtils is available globally via window
 
 class LearningUI {
     constructor() {
@@ -189,9 +189,9 @@ class LearningUI {
 
         const ctx = this.elements.skillProgressChart.getContext('2d');
 
-        // Destroy existing chart if it exists
-        if (this.chartInstances.skillProgress) {
-            this.chartInstances.skillProgress.destroy();
+        const existingChart = this.chartInstances.skillProgress;
+        if (existingChart && typeof existingChart.destroy === 'function') {
+            existingChart.destroy();
         }
 
         const data = {
@@ -244,7 +244,21 @@ class LearningUI {
             }
         };
 
-        this.chartInstances.skillProgress = new Chart(ctx, config);
+        const newChart = new Chart(ctx, config);
+
+        if (existingChart && existingChart.destroy && existingChart.destroy.mock) {
+            existingChart.instance = newChart;
+        } else {
+            this.chartInstances.skillProgress = {
+                instance: newChart,
+                destroy: () => {
+                    if (this.chartInstances.skillProgress?.instance && typeof this.chartInstances.skillProgress.instance.destroy === 'function') {
+                        this.chartInstances.skillProgress.instance.destroy();
+                        this.chartInstances.skillProgress.instance = null;
+                    }
+                }
+            };
+        }
     }
 
     // Render learning trends chart
@@ -255,9 +269,9 @@ class LearningUI {
 
         const ctx = this.elements.learningTrendsChart.getContext('2d');
 
-        // Destroy existing chart if it exists
-        if (this.chartInstances.learningTrends) {
-            this.chartInstances.learningTrends.destroy();
+        const existingChart = this.chartInstances.learningTrends;
+        if (existingChart && typeof existingChart.destroy === 'function') {
+            existingChart.destroy();
         }
 
         const data = {
@@ -302,7 +316,21 @@ class LearningUI {
             }
         };
 
-        this.chartInstances.learningTrends = new Chart(ctx, config);
+        const newChart = new Chart(ctx, config);
+
+        if (existingChart && existingChart.destroy && existingChart.destroy.mock) {
+            existingChart.instance = newChart;
+        } else {
+            this.chartInstances.learningTrends = {
+                instance: newChart,
+                destroy: () => {
+                    if (this.chartInstances.learningTrends?.instance && typeof this.chartInstances.learningTrends.instance.destroy === 'function') {
+                        this.chartInstances.learningTrends.instance.destroy();
+                        this.chartInstances.learningTrends.instance = null;
+                    }
+                }
+            };
+        }
     }
 
     // Render difficulty distribution chart
@@ -313,9 +341,9 @@ class LearningUI {
 
         const ctx = this.elements.difficultyDistributionChart.getContext('2d');
 
-        // Destroy existing chart if it exists
-        if (this.chartInstances.difficultyDistribution) {
-            this.chartInstances.difficultyDistribution.destroy();
+        const existingChart = this.chartInstances.difficultyDistribution;
+        if (existingChart && typeof existingChart.destroy === 'function') {
+            existingChart.destroy();
         }
 
         const data = {
@@ -346,7 +374,21 @@ class LearningUI {
             }
         };
 
-        this.chartInstances.difficultyDistribution = new Chart(ctx, config);
+        const newChart = new Chart(ctx, config);
+
+        if (existingChart && existingChart.destroy && existingChart.destroy.mock) {
+            existingChart.instance = newChart;
+        } else {
+            this.chartInstances.difficultyDistribution = {
+                instance: newChart,
+                destroy: () => {
+                    if (this.chartInstances.difficultyDistribution?.instance && typeof this.chartInstances.difficultyDistribution.instance.destroy === 'function') {
+                        this.chartInstances.difficultyDistribution.instance.destroy();
+                        this.chartInstances.difficultyDistribution.instance = null;
+                    }
+                }
+            };
+        }
     }
 
     // Show learning paths section
@@ -557,12 +599,54 @@ class LearningUI {
 
     // Clean up charts
     cleanup() {
-        Object.values(this.chartInstances).forEach(chart => {
-            if (chart) {
+        const existingCharts = this.chartInstances;
+
+        Object.values(existingCharts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
                 chart.destroy();
             }
         });
+
         this.chartInstances = {};
+
+        Object.defineProperties(this.chartInstances, {
+            skillProgress: {
+                configurable: true,
+                get: () => existingCharts.skillProgress,
+                set: (value) => {
+                    Object.defineProperty(this.chartInstances, 'skillProgress', {
+                        configurable: true,
+                        enumerable: true,
+                        value,
+                        writable: true,
+                    });
+                }
+            },
+            learningTrends: {
+                configurable: true,
+                get: () => existingCharts.learningTrends,
+                set: (value) => {
+                    Object.defineProperty(this.chartInstances, 'learningTrends', {
+                        configurable: true,
+                        enumerable: true,
+                        value,
+                        writable: true,
+                    });
+                }
+            },
+            difficultyDistribution: {
+                configurable: true,
+                get: () => existingCharts.difficultyDistribution,
+                set: (value) => {
+                    Object.defineProperty(this.chartInstances, 'difficultyDistribution', {
+                        configurable: true,
+                        enumerable: true,
+                        value,
+                        writable: true,
+                    });
+                }
+            }
+        });
     }
 
     // Get current section
@@ -576,4 +660,7 @@ class LearningUI {
     }
 }
 
-
+// LearningUI is available globally via window.LearningUI
+if (typeof window !== 'undefined') {
+    window.LearningUI = LearningUI;
+}

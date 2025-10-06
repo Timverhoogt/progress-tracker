@@ -62,3 +62,7 @@ class MoodApi {
     }
 }
 
+// MoodApi is available globally via window.MoodApi
+if (typeof window !== 'undefined') {
+    window.MoodApi = MoodApi;
+}

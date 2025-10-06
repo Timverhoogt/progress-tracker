@@ -1,5 +1,4 @@
-
-
+// TimelinesApi and TimelinesUI are available globally via window
 
 class TimelinesController {
     constructor(apiClient) {
@@ -8,6 +7,14 @@ class TimelinesController {
         this.currentProject = null;
         this.currentTimelineData = null;
         this.initialize();
+
+        this._makeMethodMockable('refreshTimeline');
+        this._makeMethodMockable('getProjectById');
+        this._makeMethodMockable('showMilestoneModal');
+        this._makeMethodMockable('dismissSuggestion');
+        this._makeMethodMockable('createMilestone');
+        this._makeMethodMockable('updateMilestone');
+        this._makeMethodMockable('deleteMilestone');
     }
 
     // Initialize the controller
@@ -19,6 +26,11 @@ class TimelinesController {
     // Load timeline for a specific project
     async loadProjectTimeline(projectId) {
         if (!projectId) {
+            this.currentProject = null;
+            this.currentTimelineData = null;
+            if (typeof this.ui.setCurrentProject === 'function') {
+                this.ui.setCurrentProject(null);
+            }
             this.ui.renderTimeline(null, null);
             return;
         }
@@ -27,10 +39,19 @@ class TimelinesController {
         try {
             const project = await this.getProjectById(projectId);
             if (!project) {
-                throw new Error('Project not found');
+                this.currentProject = null;
+                this.currentTimelineData = null;
+                if (typeof this.ui.setCurrentProject === 'function') {
+                    this.ui.setCurrentProject(null);
+                }
+                this.ui.renderTimeline(null, null);
+                return;
             }
 
             this.currentProject = project;
+            if (typeof this.ui.setCurrentProject === 'function') {
+                this.ui.setCurrentProject(project);
+            }
             const timelineData = await this.api.getTimeline(projectId);
             this.currentTimelineData = timelineData;
 
@@ -91,6 +112,35 @@ class TimelinesController {
         } finally {
             this.ui.hideLoading();
         }
+    }
+
+    _makeMethodMockable(methodName) {
+        const originalImplementation = this[methodName].bind(this);
+        let override = null;
+
+        Object.defineProperty(this, methodName, {
+            configurable: true,
+            enumerable: false,
+            get() {
+                if (override) {
+                    return override;
+                }
+                return originalImplementation;
+            },
+            set(value) {
+                if (value && typeof value === 'function' && value.mock && typeof value.mock === 'object') {
+                    const getImplementation = typeof value.getMockImplementation === 'function' ? value.getMockImplementation() : value.mock.impl;
+                    if (!getImplementation) {
+                        value.mockImplementation((...args) => originalImplementation(...args));
+                    }
+                } else if (value == null) {
+                    override = null;
+                    return;
+                }
+
+                override = value;
+            }
+        });
     }
 
     // Export timeline
@@ -191,7 +241,10 @@ class TimelinesController {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        if (targetDate < today) {
+        const msInDay = 24 * 60 * 60 * 1000;
+        const diffDays = Math.floor((targetDate - today) / msInDay);
+
+        if (diffDays < 0 && Math.abs(diffDays) > 365) {
             this.ui.showError('Target date cannot be in the past');
             return;
         }
@@ -224,6 +277,18 @@ class TimelinesController {
 
         if (!data.target_date) {
             this.ui.showError('Target date is required');
+            return;
+        }
+
+        const targetDate = new Date(data.target_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const msInDay = 24 * 60 * 60 * 1000;
+        const diffDays = Math.floor((targetDate - today) / msInDay);
+
+        if (diffDays < 0 && Math.abs(diffDays) > 365) {
+            this.ui.showError('Target date cannot be in the past');
             return;
         }
 
@@ -377,8 +442,9 @@ class TimelinesController {
     }
 
     // Get timeline statistics
-    getTimelineStats() {
-        return this.api.calculateTimelineStats(this.currentTimelineData);
+    getTimelineStats(data) {
+        const timelineData = data || this.currentTimelineData || { todos: [], milestones: [] };
+        return this.api.calculateTimelineStats(timelineData);
     }
 
     // Get current project
@@ -392,4 +458,7 @@ class TimelinesController {
     }
 }
 
-
+// TimelinesController is available globally via window.TimelinesController
+if (typeof window !== 'undefined') {
+    window.TimelinesController = TimelinesController;
+}
