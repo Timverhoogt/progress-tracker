@@ -7,7 +7,7 @@ services:
     container_name: progress-tracker-backend
     environment:
       NODE_ENV: production
-      SQLITE_DB_PATH: /app/data/progress_tracker.db
+      SQLITE_DB_PATH: /app/data/progress_tracker_clean.db
       PORT: 3060
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}

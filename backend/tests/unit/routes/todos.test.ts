@@ -2,7 +2,7 @@
  * Unit tests for Todos API routes
  */
 
-import { describe, test, expect, beforeEach, jest } from "@jest/globals";
+import { describe, test, expect, beforeEach, afterAll, jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
@@ -10,12 +10,10 @@ import express from "express";
 const mockGenerateTodos = jest.fn<(...args: any[]) => Promise<any>>();
 mockGenerateTodos.mockResolvedValue({
   success: true,
-  data: JSON.stringify({
-    todos: [
-      { title: "Generated Todo 1", priority: "high" },
-      { title: "Generated Todo 2", priority: "medium" },
-    ],
-  }),
+  data: JSON.stringify([
+    { title: "Generated Todo 1", priority: "high" },
+    { title: "Generated Todo 2", priority: "medium" },
+  ]),
 });
 
 jest.mock("../../../src/services/llm", () => ({
@@ -47,6 +45,15 @@ describe("Todos API Routes", () => {
   beforeEach(async () => {
     await clearDatabase();
     testProject = await createTestProject({ name: "Test Project" });
+  });
+
+  afterAll(() => {
+    try {
+      const db = getDatabase();
+      db.close();
+    } catch (error) {
+      // Database might already be closed
+    }
   });
 
   describe("GET /api/todos", () => {
@@ -265,8 +272,10 @@ describe("Todos API Routes", () => {
         .send({ project_id: testProject.id })
         .expect(200);
 
-      expect(response.body).toHaveProperty("success");
-      expect(response.body).toHaveProperty("todos");
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveLength(2);
+      expect(response.body[0]).toHaveProperty("title");
+      expect(response.body[0].llm_generated).toBe(1);
     });
 
     test("should return 400 without project_id", async () => {

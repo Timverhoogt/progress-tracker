@@ -53,7 +53,7 @@ class TodosUI {
 
         this.elements.todosHeader?.classList.toggle('has-items', todos.length > 0);
         this.elements.todosItems.innerHTML = todos.map(todo => `
-            <div class="todo-card ${todo.status === 'completed' ? 'todo-completed' : ''}" data-id="${todo.id}">
+            <div class="card todo-card ${todo.status === 'completed' ? 'todo-completed' : ''}" data-id="${todo.id}">
                 <input type="checkbox" class="todo-select" data-id="${todo.id}">
                 <input type="checkbox" class="todo-checkbox" ${todo.status === 'completed' ? 'checked' : ''} data-id="${todo.id}">
                 <div class="todo-content">
@@ -66,7 +66,7 @@ class TodosUI {
                         ${todo.llm_generated ? '<span class="ai-generated"><i class="fas fa-robot"></i> AI Generated</span>' : ''}
                     </div>
                 </div>
-                <div class="todo-actions">
+                <div class="flex gap-2">
                     <button class="btn btn-secondary btn-small edit-todo-btn" data-id="${todo.id}">
                         <i class="fas fa-edit"></i>
                     </button>

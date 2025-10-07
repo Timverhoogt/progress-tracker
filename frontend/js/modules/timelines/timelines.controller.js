@@ -349,7 +349,7 @@ class TimelinesController {
 
         const html = `
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="flex justify-between items-center">
                     <h3>${modalTitle}</h3>
                     <button class="modal-close" onclick="this.closest('.modal').remove()">
                         <i class="fas fa-times"></i>
@@ -379,7 +379,7 @@ class TimelinesController {
                             <option value="cancelled" ${milestone && milestone.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                         </select>
                     </div>
-                    <div class="form-actions">
+                    <div class="flex gap-2 justify-end">
                         <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update Milestone' : 'Create Milestone'}

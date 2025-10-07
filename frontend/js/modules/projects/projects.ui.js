@@ -38,11 +38,11 @@ class ProjectsUI {
         }
 
         const html = projects.map(project => `
-            <div class="project-card" data-id="${project.id}">
+            <div class="card project-card" data-id="${project.id}">
                 <h3>${TextUtils.escapeHtml(project.name)}</h3>
                 <p>${TextUtils.escapeHtml(project.description || 'No description')}</p>
                 <div class="project-status status-${project.status}">${project.status.replace('_', ' ')}</div>
-                <div class="project-actions">
+                <div class="flex gap-2 mt-4">
                     <button class="btn btn-primary select-project-btn" data-id="${project.id}">
                         <i class="fas fa-eye"></i> View
                     </button>

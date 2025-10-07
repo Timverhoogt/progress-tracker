@@ -84,11 +84,8 @@ class BackupService {
 
     try {
       const db = getDatabase();
-      const currentDbPath = path.join(
-        process.cwd(),
-        "data",
-        "progress_tracker.db"
-      );
+      // Get the current database path from the database instance
+      const currentDbPath = db.getDbPath();
 
       // Close current database connection
       db.close();
@@ -96,7 +93,7 @@ class BackupService {
       // Replace current database with backup
       fs.copyFileSync(backupPath, currentDbPath);
 
-      // Reinitialize the database connection
+      // Reinitialize the database connection with the same path
       reinitializeDatabase(currentDbPath);
 
       console.log(`✅ Database restored successfully from: ${backupPath}`);

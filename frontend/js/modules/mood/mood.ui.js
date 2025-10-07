@@ -62,29 +62,29 @@ class MoodUI {
 
         const html = `
             <div class="today-mood-content has-entry">
-                <div class="mood-entry-header">
+                <div class="flex justify-between items-center">
                     <h4>Today's Mood</h4>
                     <div class="mood-score">
                         <span style="font-size: 2rem;">${moodEmoji}</span>
                         <span class="mood-score-value" style="background: ${moodColor};">${moodEntry.mood_score}/10</span>
                     </div>
                 </div>
-                <div class="mood-metrics">
-                    <div class="mood-metric">
-                        <div class="mood-metric-label">Energy</div>
-                        <div class="mood-metric-value">${moodEntry.energy_level || 'N/A'}</div>
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-label">Energy</div>
+                        <div class="metric-value">${moodEntry.energy_level || 'N/A'}</div>
                     </div>
-                    <div class="mood-metric">
-                        <div class="mood-metric-label">Stress</div>
-                        <div class="mood-metric-value">${moodEntry.stress_level || 'N/A'}</div>
+                    <div class="metric">
+                        <div class="metric-label">Stress</div>
+                        <div class="metric-value">${moodEntry.stress_level || 'N/A'}</div>
                     </div>
-                    <div class="mood-metric">
-                        <div class="mood-metric-label">Motivation</div>
-                        <div class="mood-metric-value">${moodEntry.motivation_level || 'N/A'}</div>
+                    <div class="metric">
+                        <div class="metric-label">Motivation</div>
+                        <div class="metric-value">${moodEntry.motivation_level || 'N/A'}</div>
                     </div>
                 </div>
                 ${moodEntry.notes ? `<div class="mood-notes">${TextUtils.escapeHtml(moodEntry.notes)}</div>` : ''}
-                <div class="mood-actions">
+                <div class="flex gap-2">
                     <button class="btn btn-primary" onclick="window.moodController?.editMoodEntry('${moodEntry.mood_date}')">
                         <i class="fas fa-edit"></i> Edit
                     </button>
@@ -110,26 +110,26 @@ class MoodUI {
             const date = new Date(entry.mood_date).toLocaleDateString();
 
             return `
-                <div class="mood-entry">
-                    <div class="mood-entry-header">
+                <div class="card mood-entry">
+                    <div class="flex justify-between items-center">
                         <div class="mood-date">${date}</div>
                         <div class="mood-score">
                             <span style="font-size: 1.5rem;">${moodEmoji}</span>
                             <span class="mood-score-value" style="background: ${moodColor};">${entry.mood_score}/10</span>
                         </div>
                     </div>
-                    <div class="mood-metrics">
-                        <div class="mood-metric">
-                            <div class="mood-metric-label">Energy</div>
-                            <div class="mood-metric-value">${entry.energy_level || 'N/A'}</div>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-label">Energy</div>
+                            <div class="metric-value">${entry.energy_level || 'N/A'}</div>
                         </div>
-                        <div class="mood-metric">
-                            <div class="mood-metric-label">Stress</div>
-                            <div class="mood-metric-value">${entry.stress_level || 'N/A'}</div>
+                        <div class="metric">
+                            <div class="metric-label">Stress</div>
+                            <div class="metric-value">${entry.stress_level || 'N/A'}</div>
                         </div>
-                        <div class="mood-metric">
-                            <div class="mood-metric-label">Motivation</div>
-                            <div class="mood-metric-value">${moodEntry.motivation_level || 'N/A'}</div>
+                        <div class="metric">
+                            <div class="metric-label">Motivation</div>
+                            <div class="metric-value">${moodEntry.motivation_level || 'N/A'}</div>
                         </div>
                     </div>
                     ${entry.mood_tags ? `
@@ -140,7 +140,7 @@ class MoodUI {
                     ${entry.notes ? `<div class="mood-notes">${TextUtils.escapeHtml(entry.notes)}</div>` : ''}
                     ${entry.triggers ? `<div class="mood-triggers"><strong>Triggers:</strong> ${TextUtils.escapeHtml(entry.triggers)}</div>` : ''}
                     ${entry.coping_strategies_used ? `<div class="mood-coping"><strong>Coping:</strong> ${TextUtils.escapeHtml(entry.coping_strategies_used)}</div>` : ''}
-                    <div class="mood-entry-actions">
+                    <div class="flex gap-2">
                         <button class="btn btn-secondary btn-sm edit-mood-btn" data-date="${entry.mood_date}">
                             <i class="fas fa-edit"></i> Edit
                         </button>

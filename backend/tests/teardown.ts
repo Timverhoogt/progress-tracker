@@ -9,38 +9,44 @@ import path from "path";
 
 module.exports = async () => {
   try {
-    // Close database connection if it exists
+    let dbClosed = false;
     try {
       const db = getDatabase();
       db.close();
+      dbClosed = true;
     } catch (error: any) {
-      // Database might not be initialized or already closed
-      if (error.message && error.message.includes("Database not initialized")) {
-        console.log("ℹ️  Database was not initialized, skipping close");
+      if (error?.message?.includes("Database not initialized")) {
+        console.log("INFO  Database was not initialized, skipping close");
       } else {
-        console.log("ℹ️  Database connection already closed or unavailable");
+        console.log("INFO  Database connection already closed or unavailable");
       }
     }
 
-    // Clean up test database file
+    const removeIfExists = (filePath: string) => {
+      if (!fs.existsSync(filePath)) {
+        return;
+      }
+
+      try {
+        fs.unlinkSync(filePath);
+      } catch (error: any) {
+        if (error?.code === "EBUSY" || error?.code === "EPERM") {
+          const reason = dbClosed
+            ? "file is still locked"
+            : "database connection may still be open";
+          console.warn(`INFO  Skipping removal of ${filePath} because ${reason}.`);
+        } else {
+          throw error;
+        }
+      }
+    };
+
     const testDbPath = path.join(__dirname, "../data/test_progress_tracker.db");
-    if (fs.existsSync(testDbPath)) {
-      fs.unlinkSync(testDbPath);
-    }
+    removeIfExists(testDbPath);
+    removeIfExists(`${testDbPath}-wal`);
+    removeIfExists(`${testDbPath}-shm`);
 
-    // Clean up WAL and SHM files
-    const walPath = `${testDbPath}-wal`;
-    const shmPath = `${testDbPath}-shm`;
-
-    if (fs.existsSync(walPath)) {
-      fs.unlinkSync(walPath);
-    }
-
-    if (fs.existsSync(shmPath)) {
-      fs.unlinkSync(shmPath);
-    }
-
-    console.log("✅ Test cleanup complete");
+    console.log("Test cleanup complete");
   } catch (error) {
     console.error("Error during test cleanup:", error);
   }

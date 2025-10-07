@@ -110,7 +110,7 @@ class TimelinesUI {
                             ${TextUtils.escapeHtml(statusLabel)}
                         </span>
                         ${item.type === 'milestone' ? `
-                            <div class="timeline-actions">
+                            <div class="flex gap-2">
                                 <button class="btn-icon" data-action="edit" data-id="${item.id}" title="Edit milestone">
                                     <i class="fas fa-edit"></i>
                                 </button>

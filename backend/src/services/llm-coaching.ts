@@ -99,7 +99,7 @@ class LLMCoachingService {
       const response = await axios.post(
         `${this.baseUrl}/chat/completions`,
         {
-          model: 'anthropic/claude-3.5-sonnet',
+          model: 'anthropic/claude-3.7-sonnet',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -475,7 +475,7 @@ Focus on the top 3 priority skills based on gap size and practical impact.`;
       const response = await axios.post(
         `${this.baseUrl}/chat/completions`,
         {
-          model: 'anthropic/claude-3.5-sonnet',
+          model: 'anthropic/claude-3.7-sonnet',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -579,7 +579,7 @@ Provide insights and recommendations for maintaining good wellbeing while managi
       const response = await axios.post(
         `${this.baseUrl}/chat/completions`,
         {
-          model: 'anthropic/claude-3.5-sonnet',
+          model: 'anthropic/claude-3.7-sonnet',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }

@@ -164,8 +164,8 @@ class ReportsUI {
         }
 
         this.reportsList.innerHTML = reports.map(report => `
-            <div class="report-card" data-report-id="${report.id}">
-                <div class="report-header">
+            <div class="card report-card" data-report-id="${report.id}">
+                <div class="flex justify-between items-center">
                     <div class="report-title">${escapeHtml(report.title)}</div>
                     <div class="report-meta">
                         <span class="report-type">${escapeHtml(report.report_type)}</span>
@@ -175,7 +175,7 @@ class ReportsUI {
                 <div class="report-content">
                     <div class="report-preview">${this.truncateContent(report.content)}</div>
                 </div>
-                <div class="report-actions">
+                <div class="flex gap-2">
                     <button class="btn btn-sm btn-primary" onclick="viewReport('${report.id}')">
                         <i class="fas fa-eye"></i> View
                     </button>

@@ -7,42 +7,43 @@ class LearningApi {
 
     // Get learning path statistics
     async getLearningStats() {
-        return await this.api.learning.getLearningStats();
+        return await this.api.learning.getStats();
     }
 
     // Get learning recommendations
     async getLearningRecommendations() {
-        return await this.api.learning.getLearningRecommendations();
+        return await this.api.learning.getRecommendations();
     }
 
     // Get learning paths with optional status filter
     async getLearningPaths(status = null) {
-        return await this.api.learning.getLearningPaths(status);
+        return await this.api.learning.getPaths(status);
     }
 
     // Get specific learning path by ID
     async getLearningPath(id) {
-        return await this.api.learning.getLearningPath(id);
+        const paths = await this.api.learning.getPaths();
+        return paths.find(path => path.id === id);
     }
 
     // Create a new learning path
     async createLearningPath(data) {
-        return await this.api.learning.createLearningPath(data);
+        return await this.api.learning.createPath(data);
     }
 
     // Update an existing learning path
     async updateLearningPath(id, data) {
-        return await this.api.learning.updateLearningPath(id, data);
+        return await this.api.learning.updatePath(id, data);
     }
 
     // Delete a learning path
     async deleteLearningPath(id) {
-        return await this.api.learning.deleteLearningPath(id);
+        return await this.api.learning.deletePath(id);
     }
 
     // Update learning path progress
     async updateLearningProgress(id, progress) {
-        return await this.api.learning.updateLearningProgress(id, progress);
+        return await this.api.learning.updateProgress(id, progress);
     }
 
     // Get best practices
@@ -52,7 +53,9 @@ class LearningApi {
 
     // Get best practice categories
     async getBestPracticeCategories() {
-        return await this.api.learning.getBestPracticeCategories();
+        const practices = await this.api.learning.getBestPractices();
+        const categories = new Set(practices.map(p => p.category));
+        return Array.from(categories);
     }
 
     // Create a new best practice

@@ -1,7 +1,7 @@
-import { initializeDatabase, getDatabase } from './sqlite';
-import { v4 as uuidv4 } from 'uuid';
-import { createAITables } from './migrate-ai-features';
-import dotenv from 'dotenv';
+import { initializeDatabase, getDatabase } from "./sqlite";
+import { v4 as uuidv4 } from "uuid";
+import { createAITables } from "./migrate-ai-features";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -89,54 +89,92 @@ const createTables = async () => {
     `);
 
     // Create indexes for better performance
-    await db.query('CREATE INDEX IF NOT EXISTS idx_notes_project_id ON notes(project_id);');
-    await db.query('CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at DESC);');
-    await db.query('CREATE INDEX IF NOT EXISTS idx_todos_project_id ON todos(project_id);');
-    await db.query('CREATE INDEX IF NOT EXISTS idx_todos_status ON todos(status);');
-    await db.query('CREATE INDEX IF NOT EXISTS idx_reports_project_id ON reports(project_id);');
-    await db.query('CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);');
-    await db.query('CREATE INDEX IF NOT EXISTS idx_milestones_project_id ON milestones(project_id);');
-    await db.query('CREATE INDEX IF NOT EXISTS idx_milestones_target_date ON milestones(target_date);');
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_notes_project_id ON notes(project_id);"
+    );
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at DESC);"
+    );
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_todos_project_id ON todos(project_id);"
+    );
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_todos_status ON todos(status);"
+    );
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_reports_project_id ON reports(project_id);"
+    );
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);"
+    );
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_milestones_project_id ON milestones(project_id);"
+    );
+    await db.query(
+      "CREATE INDEX IF NOT EXISTS idx_milestones_target_date ON milestones(target_date);"
+    );
 
-    // Check if any projects exist before inserting sample data
-    const existingProjects = await db.query('SELECT COUNT(*) as count FROM projects');
-
-    // Only insert sample data if no projects exist (fresh installation) and not in test mode
-    if (existingProjects.rows[0].count === 0 && process.env.NODE_ENV !== 'test') {
-      const projectId = uuidv4();
-      await db.query(`
-        INSERT INTO projects (id, name, description, status) VALUES
-        (?, 'ML Terminal Time Prediction - Terneuzen', 'Testing a machine learning model to predict ship terminal processing times at our Terneuzen facility. This project involves working with the customer service team and building monitoring dashboards.', 'active')
-      `, [projectId]);
-      console.log('✅ Sample project inserted');
-    } else if (process.env.NODE_ENV === 'test') {
-      console.log('ℹ️ Test environment detected, skipping sample data insertion');
-    } else {
-      console.log('ℹ️ Projects already exist, skipping sample data insertion');
-    }
+    // Sample data insertion has been disabled to prevent accidental overwrites
+    // To restore from backup, use: npm run restore-db
+    console.log(
+      "ℹ️ Sample data insertion disabled - use restore script if needed"
+    );
 
     // Insert default settings
     const defaultSettings = [
-      ['weekly_report_email', process.env.DEFAULT_REPORT_EMAIL || '', 'string', 'Email address for weekly reports'],
-      ['weekly_reports_enabled', 'true', 'boolean', 'Enable/disable automatic weekly reports'],
-      ['weekly_report_schedule', '0 9 * * 1', 'string', 'Cron schedule for weekly reports (default: Monday 9 AM)'],
-      ['sendgrid_from_email', process.env.SENDGRID_FROM_EMAIL || 'progress@evosgpt.eu', 'string', 'From email address for SendGrid'],
-      ['timezone', process.env.TIMEZONE || 'Europe/Amsterdam', 'string', 'Timezone for scheduling'],
-      ['llm_system_prompt_mode', 'generated', 'string', 'System prompt mode: generated or custom']
+      [
+        "weekly_report_email",
+        process.env.DEFAULT_REPORT_EMAIL || "",
+        "string",
+        "Email address for weekly reports",
+      ],
+      [
+        "weekly_reports_enabled",
+        "true",
+        "boolean",
+        "Enable/disable automatic weekly reports",
+      ],
+      [
+        "weekly_report_schedule",
+        "0 9 * * 1",
+        "string",
+        "Cron schedule for weekly reports (default: Monday 9 AM)",
+      ],
+      [
+        "sendgrid_from_email",
+        process.env.SENDGRID_FROM_EMAIL || "progress@evosgpt.eu",
+        "string",
+        "From email address for SendGrid",
+      ],
+      [
+        "timezone",
+        process.env.TIMEZONE || "Europe/Amsterdam",
+        "string",
+        "Timezone for scheduling",
+      ],
+      [
+        "llm_system_prompt_mode",
+        "generated",
+        "string",
+        "System prompt mode: generated or custom",
+      ],
     ];
 
     for (const [key, value, type, description] of defaultSettings) {
-      await db.query(`
+      await db.query(
+        `
         INSERT OR IGNORE INTO settings (key, value, type, description) VALUES (?, ?, ?, ?)
-      `, [key, value, type, description]);
+      `,
+        [key, value, type, description]
+      );
     }
 
-    console.log('✅ SQLite database tables created successfully!');
+    console.log("✅ SQLite database tables created successfully!");
 
     // Create AI-powered personal development tables
     await createAITables();
   } catch (error) {
-    console.error('❌ Error creating tables:', error);
+    console.error("❌ Error creating tables:", error);
     throw error;
   }
 };
@@ -144,7 +182,7 @@ const createTables = async () => {
 const main = async () => {
   await createTables();
   await createAITables();
-  console.log('🚀 Database migration completed!');
+  console.log("🚀 Database migration completed!");
 };
 
 if (require.main === module) {

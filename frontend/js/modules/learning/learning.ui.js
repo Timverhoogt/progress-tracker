@@ -80,13 +80,13 @@ class LearningUI {
         }
 
         const recommendationsHtml = recommendations.map(rec => `
-            <div class="recommendation-card priority-${rec.priority}">
-                <div class="recommendation-header">
+            <div class="card card-sm card-gray recommendation-card priority-${rec.priority}">
+                <div class="flex-between mb-4">
                     <h4><i class="fas fa-${this.getRecommendationIcon(rec.type)}"></i> ${TextUtils.escapeHtml(rec.title)}</h4>
                     <span class="priority-badge ${rec.priority}">${rec.priority}</span>
                 </div>
                 <p>${TextUtils.escapeHtml(rec.description)}</p>
-                <div class="recommendation-meta">
+                <div class="flex-between mt-4">
                     <span><i class="fas fa-clock"></i> ${TextUtils.escapeHtml(rec.estimated_time)}</span>
                     <button class="btn btn-sm btn-primary" onclick="window.learningController?.actOnRecommendation('${rec.type}', '${rec.title}')">
                         <i class="fas fa-play"></i> ${TextUtils.escapeHtml(rec.action)}
@@ -146,8 +146,8 @@ class LearningUI {
         }
 
         const pathsHtml = paths.map(path => `
-            <div class="learning-path-card ${path.status}">
-                <div class="path-header">
+            <div class="card card-sm card-gray learning-path-card ${path.status}">
+                <div class="flex-between mb-4">
                     <h4>${TextUtils.escapeHtml(path.path_name)}</h4>
                     <span class="difficulty-badge ${path.difficulty_level}">${path.difficulty_level}</span>
                 </div>
@@ -463,7 +463,7 @@ class LearningUI {
                         <label for="completionCriteria">Completion Criteria</label>
                         <textarea id="completionCriteria" name="completion_criteria" rows="2" placeholder="e.g., Complete 5 projects, Pass certification">${path ? TextUtils.escapeHtml(path.completion_criteria || '') : ''}</textarea>
                     </div>
-                    <div class="form-actions">
+                    <div class="flex gap-2">
                         <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update Learning Path' : 'Create Learning Path'}
@@ -524,7 +524,7 @@ class LearningUI {
                         <label for="progressNotes">Notes (optional)</label>
                         <textarea id="progressNotes" name="notes" rows="3" placeholder="What did you accomplish?"></textarea>
                     </div>
-                    <div class="form-actions">
+                    <div class="flex gap-2">
                         <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
                         <button type="submit" class="btn btn-primary">Update Progress</button>
                     </div>

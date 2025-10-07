@@ -146,27 +146,27 @@ class WorkloadUI {
             const date = new Date(entry.work_date).toLocaleDateString();
 
             return `
-                <div class="workload-entry-card">
-                    <div class="workload-entry-header">
+                <div class="card card-sm workload-entry-card">
+                    <div class="flex-between mb-4">
                         <span class="workload-entry-date">${date}</span>
                         <span class="workload-entry-hours">${workHours.toFixed(1)}h</span>
                     </div>
-                    <div class="workload-entry-metrics">
-                        <div class="workload-metric">
-                            <div class="workload-metric-label">Intensity</div>
-                            <div class="workload-metric-value">${entry.intensity_level}/10</div>
+                    <div class="metrics-grid mb-4">
+                        <div class="metric">
+                            <div class="metric-label">Intensity</div>
+                            <div class="metric-value">${entry.intensity_level}/10</div>
                         </div>
-                        <div class="workload-metric">
-                            <div class="workload-metric-label">Focus</div>
-                            <div class="workload-metric-value">${entry.focus_level || 'N/A'}/10</div>
+                        <div class="metric">
+                            <div class="metric-label">Focus</div>
+                            <div class="metric-value">${entry.focus_level || 'N/A'}/10</div>
                         </div>
-                        <div class="workload-metric">
-                            <div class="workload-metric-label">Productivity</div>
-                            <div class="workload-metric-value">${entry.productivity_score || 'N/A'}/10</div>
+                        <div class="metric">
+                            <div class="metric-label">Productivity</div>
+                            <div class="metric-value">${entry.productivity_score || 'N/A'}/10</div>
                         </div>
-                        <div class="workload-metric">
-                            <div class="workload-metric-label">Tasks</div>
-                            <div class="workload-metric-value">${entry.tasks_completed || 0}</div>
+                        <div class="metric">
+                            <div class="metric-label">Tasks</div>
+                            <div class="metric-value">${entry.tasks_completed || 0}</div>
                         </div>
                     </div>
                     <div class="workload-entry-details">

@@ -91,10 +91,16 @@ The application is password protected for security when exposing to the internet
 - *Note: Credentials can be configured via environment variables*
 
 **Database Details:**
-- SQLite local file database
+- SQLite local file database (`backend/data/progress_tracker.db`)
 - No external database administration needed
 - Built-in backup and restore utilities
 - Automatic database migration system
+- **📚 See [`DATABASE.md`](DATABASE.md) for complete database documentation**
+
+**📖 Documentation:**
+- **[`docs/`](docs/)** - Organized documentation by topic (database, testing, reference)
+- **[`DATABASE.md`](DATABASE.md)** - Primary database operations guide
+- **[`docs/README.md`](docs/README.md)** - Documentation index and navigation
 
 ### Production Deployment (Docker)
 
@@ -200,6 +206,7 @@ The application provides comprehensive configuration options through the Setting
 - No data persistence on external AI services beyond API calls
 - Designed for your private infrastructure with password protection
 - Easy database backup and migration with single file storage
+- **📖 See [DATABASE.md](DATABASE.md) for complete database management, backup, and restore guide**
 
 ## 🎯 Perfect For
 

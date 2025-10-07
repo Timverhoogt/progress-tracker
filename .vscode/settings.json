@@ -1,19 +1,4 @@
 {
-  // Jest Test Explorer Configuration
-  "jest.autoRun": "off",
-  "jest.jestCommandLine": "node node_modules/jest/bin/jest.js",
-  "jest.rootPath": "backend",
-  "jest.showCoverageOnLoad": false,
-  "jest.coverageFormatter": "DefaultFormatter",
-  "jest.nodeEnv": {
-    "NODE_ENV": "test"
-  },
-  "jest.enable": true,
-  "jest.runMode": "on-demand",
-
-  // Test Explorer UI
-  "testExplorer.useNativeTesting": true,
-
   // Testing UI settings
   "testing.automaticallyOpenPeekView": "failureInVisibleDocument",
   "testing.openTesting": "neverOpen",

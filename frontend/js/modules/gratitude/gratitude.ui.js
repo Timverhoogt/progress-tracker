@@ -75,8 +75,8 @@ class GratitudeUI {
             : 0;
 
         const html = `
-            <div class="gratitude-entry-card today">
-                <div class="gratitude-header">
+            <div class="card gratitude-entry-card today">
+                <div class="flex-between mb-4">
                     <h4>${entry.category ? entry.category.charAt(0).toUpperCase() + entry.category.slice(1) : 'General'} Gratitude</h4>
                     <span class="gratitude-date">${new Date(entry.gratitude_date).toLocaleDateString()}</span>
                 </div>
@@ -208,7 +208,7 @@ class GratitudeUI {
         }
 
         const promptsHtml = prompts.map(prompt => `
-            <div class="gratitude-prompt-card">
+            <div class="card card-sm card-gray gratitude-prompt-card">
                 <div class="prompt-content">
                     <div class="prompt-text">
                         ${TextUtils.escapeHtml(prompt.prompt)}
@@ -263,8 +263,8 @@ class GratitudeUI {
         }
 
         const promptsHtml = prompts.map(prompt => `
-            <div class="achievement-gratitude-card">
-                <div class="achievement-header">
+            <div class="card card-sm card-gray achievement-gratitude-card">
+                <div class="flex-between mb-4">
                     <h4><i class="fas fa-trophy"></i> Achievement-Based Gratitude</h4>
                     <div class="achievement-context">
                         <strong>Context:</strong> ${prompt.context || 'Recent achievement'}

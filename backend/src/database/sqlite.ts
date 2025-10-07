@@ -22,7 +22,9 @@ class SQLiteService {
     require("fs").mkdirSync(dbDir, { recursive: true });
 
     this.db = new Database(this.dbPath);
-    this.db.pragma("journal_mode = WAL");
+    // Use DELETE mode instead of WAL for Docker compatibility
+    // WAL mode can cause SQLITE_IOERR_SHMOPEN errors on some filesystems
+    this.db.pragma("journal_mode = DELETE");
     this.db.pragma("foreign_keys = ON");
 
     console.log(`📁 SQLite database initialized at: ${this.dbPath}`);
@@ -134,6 +136,11 @@ class SQLiteService {
   // Get database instance for direct access if needed
   getDatabase(): Database.Database {
     return this.db;
+  }
+
+  // Get database file path
+  getDbPath(): string {
+    return this.dbPath;
   }
 
   // Backup database

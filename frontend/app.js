@@ -481,39 +481,8 @@ const api = {
 };
 
 // Navigation
-function initNavigation() {
-    // Wait for navigation elements to be available
-    const waitForNavigationElements = () => {
-        const navTabs = document.querySelectorAll('.nav-tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-        if (navTabs.length === 0) {
-            setTimeout(waitForNavigationElements, 100);
-            return;
-        }
-
-        navTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetTab = tab.dataset.tab;
-
-                // Update active states
-                navTabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
-
-                tab.classList.add('active');
-                const targetContent = document.getElementById(targetTab);
-                if (targetContent) {
-                    targetContent.classList.add('active');
-                }
-
-                // Load content for active tab
-                loadTabContent(targetTab);
-            });
-        });
-    };
-
-    waitForNavigationElements();
-}
+// Navigation is now handled by the ProgressTracker class in js/app.js
+// This function has been removed to prevent duplicate event listeners
 
 async function loadTabContent(tab) {
     console.log('🏷️ TAB DEBUG: loadTabContent() called for tab:', tab);
@@ -613,11 +582,11 @@ function renderProjects() {
     }
 
     elements.projectsGrid.innerHTML = projects.map(project => `
-        <div class="project-card" data-id="${project.id}">
+        <div class="card project-card" data-id="${project.id}">
             <h3>${escapeHtml(project.name)}</h3>
             <p>${escapeHtml(project.description || 'No description')}</p>
             <div class="project-status status-${project.status}">${project.status.replace('_', ' ')}</div>
-            <div class="project-actions">
+            <div class="flex gap-2 mt-4">
                 <button class="btn btn-primary select-project-btn" data-id="${project.id}">
                     <i class="fas fa-eye"></i> View
                 </button>
@@ -1134,7 +1103,7 @@ function renderTimeline(data) {
                             <span class="timeline-status-badge ${it.statusClass}">${it.isOverdue ? 'Overdue' : (it.status || 'pending').replace('_', ' ')}</span>
                             ${it.isOverdue ? '<i class="fas fa-exclamation-triangle" style="color: #dc2626; margin-left: 8px;" title="Overdue"></i>' : ''}
                         </div>
-                        ${it.type === 'milestone' ? `<div class="timeline-actions">
+                        ${it.type === 'milestone' ? `<div class="flex gap-2">
                             <button class="btn btn-small" data-action="edit" data-id="${it.id}"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-small btn-danger" data-action="delete" data-id="${it.id}"><i class="fas fa-trash"></i></button>
                         </div>` : ''}
@@ -1223,7 +1192,7 @@ function renderTimelineSuggestion(suggestion) {
             </ol>
             ${suggestion.timeline_summary ? `<p>${escapeHtml(suggestion.timeline_summary)}</p>` : ''}
             ${suggestion.risks?.length ? `<div class="timeline-risks"><strong>Risks:</strong> ${suggestion.risks.map(escapeHtml).join(', ')}</div>` : ''}
-            <div class="form-actions" style="margin-top:8px;">
+            <div class="flex gap-2" style="margin-top:8px;">
                 <button class="btn btn-primary" id="applySuggestionBtn"><i class="fas fa-check"></i> Apply as milestones</button>
             </div>
         </div>`;
@@ -1303,7 +1272,7 @@ function renderNotes(notes) {
         }
 
         return `
-            <div class="note-card">
+            <div class="card note-card">
                 <div class="note-header">
                     <span class="note-date">${formatDate(note.created_at)}</span>
                     <button class="btn btn-danger btn-small delete-note-btn" data-id="${note.id}">
@@ -1564,7 +1533,7 @@ function renderTodos(todos) {
     }
 
     elements.todosList.innerHTML = todos.map(todo => `
-        <div class="todo-card ${todo.status === 'completed' ? 'todo-completed' : ''}">
+        <div class="card todo-card ${todo.status === 'completed' ? 'todo-completed' : ''}">
             <input type="checkbox" class="todo-checkbox" 
                    ${todo.status === 'completed' ? 'checked' : ''}
                    data-id="${todo.id}">
@@ -2954,8 +2923,8 @@ function renderSkills() {
     }
     
     phase2Elements.skillsGrid.innerHTML = skills.map(skill => `
-        <div class="skill-card" data-skill-id="${skill.id}">
-            <div class="skill-header">
+        <div class="card skill-card" data-skill-id="${skill.id}">
+            <div class="flex justify-between items-center">
                 <div>
                     <div class="skill-name">${skill.skill_name}</div>
                     <span class="skill-category">${skill.skill_category}</span>
@@ -2991,7 +2960,7 @@ function renderSkills() {
                 </div>
             ` : ''}
             
-            <div class="skill-actions">
+            <div class="flex gap-2">
                 <button class="skill-action-btn" onclick="editSkill('${skill.id}')">
                     <i class="fas fa-edit"></i> Update
                 </button>
@@ -3073,8 +3042,8 @@ function renderAchievements() {
             : 0;
         
         return `
-            <div class="achievement-card ${achievement.status}" data-achievement-id="${achievement.id}">
-                <div class="achievement-header">
+            <div class="card achievement-card ${achievement.status}" data-achievement-id="${achievement.id}">
+                <div class="flex justify-between items-center">
                     <div class="achievement-name">${achievement.achievement_name}</div>
                     <span class="achievement-type ${achievement.achievement_type}">${achievement.achievement_type}</span>
                 </div>
@@ -3097,7 +3066,7 @@ function renderAchievements() {
                 
                 <span class="achievement-priority ${achievement.priority_level}">${achievement.priority_level} priority</span>
                 
-                <div class="achievement-actions">
+                <div class="flex gap-2">
                     ${achievement.status !== 'completed' ? `
                         <button class="achievement-action-btn" onclick="editAchievement('${achievement.id}')">
                             <i class="fas fa-edit"></i> Edit
@@ -3173,8 +3142,8 @@ function renderReflections() {
     }
     
     phase2Elements.reflectionsList.innerHTML = reflections.map(reflection => `
-        <div class="reflection-card" data-reflection-id="${reflection.id}">
-            <div class="reflection-header">
+        <div class="card card-gray reflection-card" data-reflection-id="${reflection.id}">
+            <div class="flex justify-between items-center">
                 <div>
                     <div class="reflection-template-name">${reflection.template_name}</div>
                     <div class="reflection-date">${formatDate(reflection.reflection_date)}</div>
@@ -3196,7 +3165,7 @@ function renderTemplates() {
     if (!phase2Elements.templatesGrid) return;
     
     phase2Elements.templatesGrid.innerHTML = reflectionTemplates.map(template => `
-        <div class="template-card" onclick="useTemplate('${template.id}')">
+        <div class="card card-gray template-card" onclick="useTemplate('${template.id}')">
             <div class="template-name">${template.template_name}</div>
             <span class="template-type">${template.template_type}</span>
             <div class="template-questions-count">
@@ -3214,19 +3183,19 @@ function renderSkillsStats(stats) {
         <div class="skills-stats-container">
             <h3><i class="fas fa-chart-bar"></i> Skills Progress Overview</h3>
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="card card-sm stat-card">
                     <div class="stat-value">${stats.total_skills || 0}</div>
                     <div class="stat-label">Total Skills</div>
                 </div>
-                <div class="stat-card">
+                <div class="card card-sm stat-card">
                     <div class="stat-value">${stats.average_level || 0}</div>
                     <div class="stat-label">Average Level</div>
                 </div>
-                <div class="stat-card">
+                <div class="card card-sm stat-card">
                     <div class="stat-value">${stats.completed_skills || 0}</div>
                     <div class="stat-label">Completed</div>
                 </div>
-                <div class="stat-card">
+                <div class="card card-sm stat-card">
                     <div class="stat-value">${stats.in_progress_skills || 0}</div>
                     <div class="stat-label">In Progress</div>
                 </div>
@@ -3349,7 +3318,7 @@ function renderReflectionInsights(insightsData) {
             </div>
             <div class="insights-content">
                 ${insightCards.map(insight => `
-                    <div class="insight-card insight-${insight.type}">
+                    <div class="card card-gray insight-card insight-${insight.type}">
                         <div class="insight-title">${insight.title}</div>
                         <div class="insight-description">${insight.description}</div>
                     </div>
@@ -3990,25 +3959,25 @@ function renderMoodStats(stats) {
     const trends = stats.weekly_trends;
     
     elements.moodInsightsContent.innerHTML = `
-        <div class="mood-stats-grid">
-            <div class="mood-stat-card">
+        <div class="metrics-grid">
+            <div class="card card-sm metric">
                 <div class="mood-stat-value">${summary.avg_mood_score?.toFixed(1) || 'N/A'}</div>
                 <div class="mood-stat-label">Average Mood</div>
             </div>
-            <div class="mood-stat-card">
+            <div class="card card-sm metric">
                 <div class="mood-stat-value">${summary.good_mood_days || 0}</div>
                 <div class="mood-stat-label">Good Days (7+)</div>
             </div>
-            <div class="mood-stat-card">
+            <div class="card card-sm metric">
                 <div class="mood-stat-value">${summary.low_mood_days || 0}</div>
                 <div class="mood-stat-label">Low Days (4-)</div>
             </div>
-            <div class="mood-stat-card">
+            <div class="card card-sm metric">
                 <div class="mood-stat-value">${summary.high_stress_days || 0}</div>
                 <div class="mood-stat-label">High Stress Days</div>
             </div>
         </div>
-        <div class="insight-card">
+        <div class="card card-gray insight-card">
             <div class="insight-title">
                 <i class="fas fa-chart-line"></i>
                 Weekly Trends
@@ -4035,7 +4004,7 @@ function renderMoodPatterns(patterns) {
     const coping = patterns.effective_coping_strategies;
     
     elements.moodInsightsContent.innerHTML = `
-        <div class="insight-card">
+        <div class="card card-gray insight-card">
             <div class="insight-title">
                 <i class="fas fa-calendar-week"></i>
                 Day of Week Patterns
@@ -4051,7 +4020,7 @@ function renderMoodPatterns(patterns) {
         </div>
         
         ${triggers.length > 0 ? `
-            <div class="insight-card">
+            <div class="card card-gray insight-card">
                 <div class="insight-title">
                     <i class="fas fa-exclamation-triangle"></i>
                     Common Triggers
@@ -4065,7 +4034,7 @@ function renderMoodPatterns(patterns) {
         ` : ''}
         
         ${coping.length > 0 ? `
-            <div class="insight-card">
+            <div class="card card-gray insight-card">
                 <div class="insight-title">
                     <i class="fas fa-heart"></i>
                     Effective Coping Strategies
@@ -4094,7 +4063,7 @@ function renderMoodAIAnalysis(analysis) {
         </div>
         
         ${trends && trends.length > 0 ? `
-            <div class="insight-card">
+            <div class="card card-gray insight-card">
                 <div class="insight-title">
                     <i class="fas fa-chart-line"></i>
                     Mood Trends
@@ -4113,7 +4082,7 @@ function renderMoodAIAnalysis(analysis) {
         ` : ''}
         
         ${triggers && triggers.length > 0 ? `
-            <div class="insight-card">
+            <div class="card card-gray insight-card">
                 <div class="insight-title">
                     <i class="fas fa-exclamation-triangle"></i>
                     Identified Triggers
@@ -4133,7 +4102,7 @@ function renderMoodAIAnalysis(analysis) {
         ` : ''}
         
         ${recommendations && recommendations.length > 0 ? `
-            <div class="insight-card">
+            <div class="card card-gray insight-card">
                 <div class="insight-title">
                     <i class="fas fa-lightbulb"></i>
                     AI Recommendations
@@ -4160,7 +4129,7 @@ function renderMoodAIAnalysis(analysis) {
         ` : ''}
         
         ${insights && insights.length > 0 ? `
-            <div class="insight-card">
+            <div class="card card-gray insight-card">
                 <div class="insight-title">
                     <i class="fas fa-eye"></i>
                     Key Insights
@@ -5272,7 +5241,7 @@ function renderWorkloadEntries(entries) {
         const workHours = calculateWorkHours(entry.start_time, entry.end_time, entry.break_duration || 0);
         
         return `
-            <div class="workload-entry-card">
+            <div class="card card-sm workload-entry-card">
                 <div class="workload-entry-header">
                     <span class="workload-entry-date">${formatDate(entry.work_date)}</span>
                     <span class="workload-entry-hours">${workHours.toFixed(1)}h</span>
@@ -5474,28 +5443,28 @@ function renderWorkloadStats(stats) {
     const patterns = stats.weekly_patterns;
     
     document.getElementById('workloadInsightsContent').innerHTML = `
-        <div class="workload-stats-grid">
-            <div class="workload-stat-card">
+        <div class="metrics-grid">
+            <div class="card card-sm metric">
                 <div class="workload-stat-value">${summary.avg_work_hours?.toFixed(1) || 'N/A'}</div>
                 <div class="workload-stat-label">Avg Hours/Day</div>
             </div>
-            <div class="workload-stat-card">
+            <div class="card card-sm metric">
                 <div class="workload-stat-value">${summary.total_work_hours?.toFixed(1) || 'N/A'}</div>
                 <div class="workload-stat-label">Total Hours</div>
             </div>
-            <div class="workload-stat-card">
+            <div class="card card-sm metric">
                 <div class="workload-stat-value">${summary.avg_intensity?.toFixed(1) || 'N/A'}</div>
                 <div class="workload-stat-label">Avg Intensity</div>
             </div>
-            <div class="workload-stat-card">
+            <div class="card card-sm metric">
                 <div class="workload-stat-value">${summary.avg_productivity?.toFixed(1) || 'N/A'}</div>
                 <div class="workload-stat-label">Avg Productivity</div>
             </div>
-            <div class="workload-stat-card">
+            <div class="card card-sm metric">
                 <div class="workload-stat-value">${summary.high_intensity_days || 0}</div>
                 <div class="workload-stat-label">High Intensity Days</div>
             </div>
-            <div class="workload-stat-card">
+            <div class="card card-sm metric">
                 <div class="workload-stat-value">${summary.long_work_days || 0}</div>
                 <div class="workload-stat-label">Long Work Days (10h+)</div>
             </div>
@@ -5510,7 +5479,7 @@ function renderWorkloadPatterns(patterns) {
     const workTypePatterns = patterns.work_type_patterns;
     
     document.getElementById('workloadInsightsContent').innerHTML = `
-        <div class="insight-card">
+        <div class="card card-gray insight-card">
             <div class="insight-title">
                 <i class="fas fa-calendar-week"></i>
                 Day of Week Patterns
@@ -5526,7 +5495,7 @@ function renderWorkloadPatterns(patterns) {
         </div>
         
         ${workTypePatterns.length > 0 ? `
-            <div class="insight-card">
+            <div class="card card-gray insight-card">
                 <div class="insight-title">
                     <i class="fas fa-briefcase"></i>
                     Work Type Patterns
@@ -5555,7 +5524,7 @@ function renderWorkloadBalance(balance) {
             <div class="balance-score-label">Work-Life Balance Score</div>
         </div>
         
-        <div class="insight-card">
+        <div class="card card-gray insight-card">
             <div class="insight-title">
                 <i class="fas fa-chart-pie"></i>
                 Analysis
@@ -5661,8 +5630,8 @@ function renderStrategyCard(strategy) {
     const triggers = strategy.triggers ? strategy.triggers.split(',').map(trigger => trigger.trim()) : [];
     
     return `
-        <div class="strategy-card">
-            <div class="strategy-header">
+        <div class="card strategy-card">
+            <div class="flex justify-between items-center">
                 <h5 class="strategy-title">${strategy.strategy_name}</h5>
                 <span class="strategy-category">${strategy.strategy_category}</span>
             </div>
@@ -5705,7 +5674,7 @@ function renderStrategyCard(strategy) {
                 </div>
             ` : ''}
             
-            <div class="strategy-actions">
+            <div class="flex gap-2">
                 <button class="strategy-use-btn" onclick="useCopingStrategy('${strategy.id}', '${strategy.strategy_name}')">
                     <i class="fas fa-play"></i> Use Strategy
                 </button>
@@ -5727,8 +5696,8 @@ function renderStrategyAnalytics(analytics) {
             <h5>Strategy Performance</h5>
             <div class="strategies-grid">
                 ${strategy_effectiveness.map(strategy => `
-                    <div class="strategy-card">
-                        <div class="strategy-header">
+                    <div class="card strategy-card">
+                        <div class="flex justify-between items-center">
                             <h6 class="strategy-title">${strategy.strategy_name}</h6>
                             <span class="strategy-category">${strategy.strategy_category}</span>
                         </div>
@@ -5976,7 +5945,7 @@ function renderLearningRecommendations(recommendations) {
     container.innerHTML = `
         <div class="recommendations-grid">
             ${skill_based_recommendations.map(rec => `
-                <div class="recommendation-card ${rec.priority}">
+                <div class="card card-sm card-gray recommendation-card ${rec.priority}">
                     <div class="recommendation-header">
                         <h4>${rec.title}</h4>
                         <span class="priority-badge ${rec.priority}">${rec.priority}</span>
@@ -6084,7 +6053,7 @@ function renderLearningPaths(paths) {
     }
 
     container.innerHTML = paths.map(path => `
-        <div class="learning-path-card ${path.status}">
+        <div class="card card-sm card-gray learning-path-card ${path.status}">
             <div class="path-header">
                 <h4>${path.path_name}</h4>
                 <span class="path-status ${path.status}">${path.status.replace('_', ' ')}</span>
@@ -6145,8 +6114,8 @@ function renderBestPractices(practices) {
     }
 
     container.innerHTML = practices.map(practice => `
-        <div class="practice-card">
-            <div class="practice-header">
+        <div class="card card-sm card-gray practice-card">
+            <div class="flex justify-between items-center">
                 <h4>${practice.practice_title}</h4>
                 <span class="practice-category">${practice.practice_category}</span>
             </div>
@@ -6156,7 +6125,7 @@ function renderBestPractices(practices) {
                 <span class="usage-count">Used ${practice.usage_count} times</span>
                 ${practice.last_used ? `<span class="last-used">Last: ${new Date(practice.last_used).toLocaleDateString()}</span>` : ''}
             </div>
-            <div class="practice-actions">
+            <div class="flex gap-2">
                 <button class="btn btn-secondary" onclick="useBestPractice('${practice.id}')">
                     <i class="fas fa-check"></i> Use This Practice
                 </button>
@@ -6597,7 +6566,7 @@ function renderBalanceDashboard(data) {
                 <h4>Recommendations</h4>
                 <div class="recommendations-list">
                     ${recommendations.map(rec => `
-                        <div class="recommendation-card ${rec.type}">
+                        <div class="card card-sm card-gray recommendation-card ${rec.type}">
                             <div class="recommendation-header">
                                 <h5>${rec.title}</h5>
                                 <span class="type-badge ${rec.type}">${rec.type}</span>
@@ -6620,7 +6589,7 @@ function renderBalanceDashboard(data) {
                 <h4>Insights</h4>
                 <div class="insights-list">
                     ${insights.map(insight => `
-                        <div class="insight-card ${insight.impact}">
+                        <div class="card card-gray insight-card ${insight.impact}">
                             <div class="insight-header">
                                 <h5>${insight.title}</h5>
                                 <span class="impact-badge ${insight.impact}">${insight.impact}</span>
@@ -6677,7 +6646,7 @@ function renderTodayGratitude(entry) {
     }
     
     elements.todayGratitudeContent.innerHTML = `
-        <div class="gratitude-entry-card">
+        <div class="card gratitude-entry-card">
             <div class="gratitude-header">
                 <h4>${entry.category ? entry.category.charAt(0).toUpperCase() + entry.category.slice(1) : 'General'} Gratitude</h4>
                 <span class="gratitude-date">${new Date(entry.gratitude_date).toLocaleDateString()}</span>
@@ -6819,7 +6788,7 @@ function renderAchievementBasedPrompts(data) {
     const prompts = data.prompts || [];
     elements.achievementGratitudeContent.innerHTML = prompts.map(prompt => `
         <div class="achievement-gratitude-card">
-            <div class="achievement-header">
+            <div class="flex justify-between items-center">
                 <h5>${prompt.achievement_title}</h5>
                 <span class="achievement-date">${new Date(prompt.achievement_context.completion_date).toLocaleDateString()}</span>
             </div>
@@ -6837,7 +6806,7 @@ function renderAchievementBasedPrompts(data) {
                     </div>
                 ` : ''}
             </div>
-            <div class="achievement-actions">
+            <div class="flex gap-2">
                 <button class="btn btn-primary btn-sm" onclick="useGratitudePrompt('${prompt.prompt}')">
                     <i class="fas fa-plus"></i> Use This Prompt
                 </button>
@@ -6970,19 +6939,19 @@ function renderGratitudeStats(data) {
             </div>
             <div class="gratitude-stats">
                 <div class="stats-overview">
-                    <div class="stat-card">
+                    <div class="card card-sm stat-card">
                         <h4>${stats.total_entries}</h4>
                         <p>Total Entries</p>
                     </div>
-                    <div class="stat-card">
+                    <div class="card card-sm stat-card">
                         <h4>${stats.days_with_gratitude}</h4>
                         <p>Days with Gratitude</p>
                     </div>
-                    <div class="stat-card">
+                    <div class="card card-sm stat-card">
                         <h4>${stats.avg_mood_improvement ? stats.avg_mood_improvement.toFixed(1) : 'N/A'}</h4>
                         <p>Avg Mood Improvement</p>
                     </div>
-                    <div class="stat-card">
+                    <div class="card card-sm stat-card">
                         <h4>${stats.achievement_based_entries}</h4>
                         <p>Achievement-Based</p>
                     </div>
@@ -7074,8 +7043,8 @@ async function init() {
 
     await waitForDOM();
 
-    console.log('📱 APP DEBUG: DOM ready, initializing navigation...');
-    initNavigation();
+    // Navigation is now handled by ProgressTracker class in js/app.js
+    console.log('📱 APP DEBUG: DOM ready, navigation handled by ProgressTracker class...');
 
     console.log('📱 APP DEBUG: Initializing modals...');
     initModals();
