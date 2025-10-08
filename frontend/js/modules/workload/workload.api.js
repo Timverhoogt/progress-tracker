@@ -7,27 +7,27 @@ class WorkloadApi {
 
     // Get today's workload entry
     async getTodayWorkload() {
-        return await this.api.workload.getTodayWorkload();
+        return await this.api.workload.getToday();
     }
 
     // Get workload entries with optional filtering
     async getWorkloadEntries(startDate, endDate, limit = 10) {
-        return await this.api.workload.getWorkloadEntries(startDate, endDate, limit);
+        return await this.api.workload.getEntries(startDate, endDate, limit);
     }
 
     // Get workload statistics
     async getWorkloadStats(days = 30) {
-        return await this.api.workload.getWorkloadStats(days);
+        return await this.api.workload.getStats(days);
     }
 
     // Get workload patterns analysis
     async getWorkloadPatterns(days = 90) {
-        return await this.api.workload.getWorkloadPatterns(days);
+        return await this.api.workload.getPatterns(days);
     }
 
     // Get workload balance analysis
     async getWorkloadBalanceAnalysis(days = 30) {
-        return await this.api.workload.getWorkloadBalanceAnalysis(days);
+        return await this.api.workload.getBalanceAnalysis(days);
     }
 
     // Get break recommendations
@@ -42,12 +42,12 @@ class WorkloadApi {
 
     // Create a new workload entry
     async createWorkloadEntry(data) {
-        return await this.api.workload.createWorkloadEntry(data);
+        return await this.api.workload.create(data);
     }
 
     // Update an existing workload entry
     async updateWorkloadEntry(date, data) {
-        return await this.api.workload.updateWorkloadEntry(date, data);
+        return await this.api.workload.update(date, data);
     }
 
     // Delete a workload entry

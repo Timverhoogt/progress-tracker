@@ -478,7 +478,7 @@ class TimelinesController {
             <div class="modal-content">
                 <div class="flex justify-between items-center">
                     <h3>${modalTitle}</h3>
-                    <button class="modal-close" onclick="this.closest('.modal').remove()">
+                    <button class="modal-close" data-close-modal>
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -507,7 +507,7 @@ class TimelinesController {
                         </select>
                     </div>
                     <div class="flex gap-2 justify-end">
-                        <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             ${isEdit ? 'Update Milestone' : 'Create Milestone'}
                         </button>
@@ -516,32 +516,50 @@ class TimelinesController {
             </div>
         `;
 
-        // Create modal container
-        const modalContainer = document.createElement('div');
-        modalContainer.className = 'modal';
-        modalContainer.innerHTML = html;
-        document.body.appendChild(modalContainer);
+        // Create modal using ModalUtils if available
+        let modalContainer;
+        if (window.ModalUtils && typeof window.ModalUtils.show === 'function') {
+            modalContainer = window.ModalUtils.show(html);
+        } else {
+            // Fallback to manual creation
+            modalContainer = document.createElement('div');
+            modalContainer.className = 'modal';
+            modalContainer.innerHTML = html;
+            document.body.appendChild(modalContainer);
+        }
+
+        // Bind close triggers using ModalUtils if available
+        if (window.ModalUtils && typeof window.ModalUtils.bindCloseTriggers === 'function') {
+            window.ModalUtils.bindCloseTriggers(modalContainer);
+        }
 
         // Bind form submission
         const form = modalContainer.querySelector('#milestoneForm');
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const data = {
-                title: formData.get('title'),
-                description: formData.get('description'),
-                target_date: formData.get('target_date'),
-                status: formData.get('status')
+        if (form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const data = {
+                    title: formData.get('title'),
+                    description: formData.get('description'),
+                    target_date: formData.get('target_date'),
+                    status: formData.get('status')
+                };
+
+                if (isEdit) {
+                    await this.updateMilestone(milestone.id, data);
+                } else {
+                    await this.createMilestone(data);
+                }
+
+                // Hide modal using ModalUtils if available
+                if (window.ModalUtils && typeof window.ModalUtils.hide === 'function') {
+                    window.ModalUtils.hide(modalContainer);
+                } else {
+                    modalContainer.remove();
+                }
             };
-
-            if (isEdit) {
-                await this.updateMilestone(milestone.id, data);
-            } else {
-                await this.createMilestone(data);
-            }
-
-            modalContainer.remove();
-        };
+        }
     }
 
     // Apply AI suggestion

@@ -17,6 +17,7 @@ class TimelinesUI {
             timelineZoom: DOMUtils.getElement('#timelineZoom'),
             estimateTimelineBtn: DOMUtils.getElement('#estimateTimelineBtn'),
             exportTimelineBtn: DOMUtils.getElement('#exportTimelineBtn'),
+            newMilestoneBtn: DOMUtils.getElement('#newMilestoneBtn'),
 
             // Content containers
             timelineContainer: DOMUtils.getElement('#timelineContainer'),
@@ -834,6 +835,16 @@ class TimelinesUI {
             this.elements.exportTimelineBtn.onclick = async () => {
                 if (window.timelinesController && this.currentProject) {
                     await window.timelinesController.exportTimeline();
+                }
+            };
+        }
+
+        if (this.elements.newMilestoneBtn) {
+            this.elements.newMilestoneBtn.onclick = () => {
+                if (window.timelinesController) {
+                    window.timelinesController.showMilestoneModal();
+                } else {
+                    console.error('TimelinesController not available');
                 }
             };
         }

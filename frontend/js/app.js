@@ -149,6 +149,11 @@ class ProgressTracker {
         await this.modules.learning.initialize();
         console.log('✅ Learning module initialized');
 
+        // Timelines module (High Priority)
+        this.modules.timelines = new TimelinesController(window.api, window.state, { autoInitialize: false });
+        window.timelinesController = this.modules.timelines;
+        await this.modules.timelines.initialize();
+        console.log('✅ Timelines module initialized');
 
         // Set up module loader for lazy loading
         this.setupModuleLazyLoading();
