@@ -28,9 +28,9 @@ class MoodUI {
             moodDate: DOMUtils.getElement('#moodDate'),
             moodScore: DOMUtils.getElement('#moodScore'),
             moodScoreValue: DOMUtils.getElement('#moodScoreValue'),
-            moodEnergyLevel: DOMUtils.getElement('#moodEnergyLevel'),
-            moodStressLevel: DOMUtils.getElement('#moodStressLevel'),
-            moodMotivationLevel: DOMUtils.getElement('#moodMotivationLevel'),
+            moodEnergyLevel: DOMUtils.getElement('#moodEnergyLevel') || DOMUtils.getElement('#energyLevel'),
+            moodStressLevel: DOMUtils.getElement('#moodStressLevel') || DOMUtils.getElement('#stressLevel'),
+            moodMotivationLevel: DOMUtils.getElement('#moodMotivationLevel') || DOMUtils.getElement('#motivationLevel'),
             moodTags: DOMUtils.getElement('#moodTags'),
             moodNotes: DOMUtils.getElement('#moodNotes'),
             moodTriggers: DOMUtils.getElement('#moodTriggers'),
@@ -80,7 +80,7 @@ class MoodUI {
                     </div>
                     <div class="metric">
                         <div class="metric-label">Motivation</div>
-                        <div class="metric-value">${moodEntry.motivation_level || 'N/A'}</div>
+                        <div class="metric-value">${entry.motivation_level || 'N/A'}</div>
                     </div>
                 </div>
                 ${moodEntry.notes ? `<div class="mood-notes">${TextUtils.escapeHtml(moodEntry.notes)}</div>` : ''}
@@ -129,7 +129,7 @@ class MoodUI {
                         </div>
                         <div class="metric">
                             <div class="metric-label">Motivation</div>
-                            <div class="metric-value">${moodEntry.motivation_level || 'N/A'}</div>
+                            <div class="metric-value">${entry.motivation_level || 'N/A'}</div>
                         </div>
                     </div>
                     ${entry.mood_tags ? `
@@ -307,14 +307,27 @@ class MoodUI {
 
     // Get form data
     getFormData() {
+        const parseSliderValue = (element, fallback = null) => {
+            if (!element) {
+                return fallback;
+            }
+            const parsed = parseInt(element.value, 10);
+            return Number.isNaN(parsed) ? fallback : parsed;
+        };
+
+        const moodDate = this.elements.moodDate && this.elements.moodDate.value
+            ? this.elements.moodDate.value
+            : new Date().toISOString().split('T')[0];
+
         return {
-            mood_score: parseInt(this.elements.moodScore.value),
-            energy_level: parseInt(this.elements.moodEnergyLevel.value),
-            stress_level: parseInt(this.elements.moodStressLevel.value),
-            motivation_level: parseInt(this.elements.moodMotivationLevel.value),
-            mood_tags: this.elements.moodTags.value.trim(),
-            notes: this.elements.moodNotes.value.trim(),
-            triggers: this.elements.moodTriggers.value.trim()
+            mood_date: moodDate,
+            mood_score: parseSliderValue(this.elements.moodScore, 7),
+            energy_level: parseSliderValue(this.elements.moodEnergyLevel),
+            stress_level: parseSliderValue(this.elements.moodStressLevel),
+            motivation_level: parseSliderValue(this.elements.moodMotivationLevel),
+            mood_tags: this.elements.moodTags ? this.elements.moodTags.value.trim() : '',
+            notes: this.elements.moodNotes ? this.elements.moodNotes.value.trim() : '',
+            triggers: this.elements.moodTriggers ? this.elements.moodTriggers.value.trim() : ''
         };
     }
 

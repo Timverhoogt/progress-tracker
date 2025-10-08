@@ -12,7 +12,8 @@ async function initializeTimelinesModule(apiClient) {
     }
 
     console.log('Initializing TimelinesController...');
-    timelinesControllerInstance = new TimelinesController(apiClient);
+    timelinesControllerInstance = new TimelinesController(apiClient, window.state, { autoInitialize: false });
+    await timelinesControllerInstance.initialize();
 
     // Expose globally for backward compatibility
     window.timelinesController = timelinesControllerInstance;

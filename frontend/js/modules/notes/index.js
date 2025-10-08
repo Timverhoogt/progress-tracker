@@ -8,7 +8,8 @@ async function initializeNotesModule(apiClient) {
 
     try {
         console.log('🚀 Initializing notes module...');
-        notesControllerInstance = new NotesController(apiClient, window.state);
+        notesControllerInstance = new NotesController(apiClient, window.state, { autoInitialize: false });
+        await notesControllerInstance.initialize();
         window.notesController = notesControllerInstance;
         console.log('✅ Notes module initialized successfully');
         return notesControllerInstance;

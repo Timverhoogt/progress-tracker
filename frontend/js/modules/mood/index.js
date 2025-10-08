@@ -13,7 +13,7 @@ async function initializeMoodModule(apiClient) {
         console.log('🚀 Initializing mood module...');
 
         // Create new controller instance
-        moodControllerInstance = new MoodController(apiClient);
+        moodControllerInstance = new MoodController(apiClient, { autoInitialize: false });
         await moodControllerInstance.initialize();
 
         // Make globally available

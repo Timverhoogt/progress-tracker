@@ -1,18 +1,63 @@
-// GratitudeApi and GratitudeUI are available globally via window
-
 class GratitudeController {
-    constructor(apiClient) {
+    constructor(apiClient, options = {}) {
         this.api = new GratitudeApi(apiClient);
         this.ui = new GratitudeUI();
         this.currentEntryId = null;
-        this.initialize();
+
+        this._isInitializing = false;
+        this._initializationPromise = null;
+        this._navigationBound = false;
+
+        if (this._shouldAutoInitialize(options.autoInitialize)) {
+            this.initialize().catch(error => {
+                console.error('GratitudeController auto-initialization failed:', error);
+            });
+        }
     }
 
     // Initialize the controller
     async initialize() {
-        console.log('GratitudeController initialized');
-        await this.loadGratitudeData();
-        this.ui.bindNavigationEvents();
+        if (this._isInitializing) {
+            return this._initializationPromise;
+        }
+
+        this._isInitializing = true;
+        const initialization = (async () => {
+            console.log('GratitudeController initialized');
+            await this.loadGratitudeData();
+
+            if (!this._navigationBound && typeof this.ui.bindNavigationEvents === 'function') {
+                this.ui.bindNavigationEvents();
+                this._navigationBound = true;
+            }
+
+            if (typeof this.ui.bindModalControls === 'function') {
+                this.ui.bindModalControls();
+            }
+        })();
+
+        this._initializationPromise = initialization;
+
+        try {
+            await initialization;
+        } finally {
+            this._isInitializing = false;
+            this._initializationPromise = null;
+        }
+
+        return initialization;
+    }
+
+    _shouldAutoInitialize(autoInitializePreference) {
+        if (typeof autoInitializePreference === 'boolean') {
+            return autoInitializePreference;
+        }
+
+        const env = typeof process !== 'undefined' && process.env
+            ? process.env.NODE_ENV
+            : undefined;
+
+        return env !== 'test';
     }
 
     // Load initial gratitude data

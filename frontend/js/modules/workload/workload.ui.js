@@ -36,6 +36,8 @@ class WorkloadUI {
             workloadTasksCompleted: DOMUtils.getElement('#workloadTasksCompleted'),
             workloadLocation: DOMUtils.getElement('#workloadLocation'),
             workloadNotes: DOMUtils.getElement('#workloadNotes'),
+            closeWorkloadModal: DOMUtils.getElement('#closeWorkloadModal'),
+            cancelWorkloadModal: DOMUtils.getElement('#cancelWorkloadModal'),
 
             // Loading overlay
             loadingOverlay: DOMUtils.getElement('#loadingOverlay')
@@ -344,6 +346,13 @@ class WorkloadUI {
     hideWorkloadModal() {
         ModalUtils.hide(this.elements.workloadModal);
         this.clearForm();
+    }
+
+    bindModalControls() {
+        ModalUtils.bindCloseTriggers(
+            this.elements.workloadModal,
+            [this.elements.closeWorkloadModal, this.elements.cancelWorkloadModal]
+        );
     }
 
     // Clear form data

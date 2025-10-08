@@ -1,12 +1,28 @@
 // TimelinesApi and TimelinesUI are available globally via window
 
 class TimelinesController {
-    constructor(apiClient) {
+    constructor(apiClient, appState = window.state, options = {}) {
         this.api = new TimelinesApi(apiClient);
         this.ui = new TimelinesUI();
+        this.state = appState || {
+            getState: () => null,
+            subscribe: () => {},
+            setState: () => {}
+        };
+        this.hasGlobalState = Boolean(appState && typeof appState.subscribe === 'function');
         this.currentProject = null;
         this.currentTimelineData = null;
-        this.initialize();
+
+        this._eventsBound = false;
+        this._subscriptionsBound = false;
+        this._isInitializing = false;
+        this._initializationPromise = null;
+
+        if (this._shouldAutoInitialize(options.autoInitialize)) {
+            this.initialize().catch(error => {
+                console.error('TimelinesController auto-initialization failed:', error);
+            });
+        }
 
         this._makeMethodMockable('refreshTimeline');
         this._makeMethodMockable('getProjectById');
@@ -19,8 +35,119 @@ class TimelinesController {
 
     // Initialize the controller
     async initialize() {
-        console.log('TimelinesController initialized');
+        if (this._isInitializing) {
+            return this._initializationPromise;
+        }
+
+        this._isInitializing = true;
+        const initialization = (async () => {
+            console.log('TimelinesController initialized');
+
+            if (!this._eventsBound) {
+                this.bindUIEvents();
+                this._eventsBound = true;
+            }
+
+            if (!this._subscriptionsBound) {
+                this.subscribeToState();
+                this._subscriptionsBound = true;
+            }
+
+            const currentProjectId = this.state.getState('currentProject');
+            if (currentProjectId) {
+                await this.loadProjectTimeline(currentProjectId);
+            } else {
+                this.ui.renderTimeline(null, null);
+            }
+        })();
+
+        this._initializationPromise = initialization;
+
+        try {
+            await initialization;
+        } finally {
+            this._isInitializing = false;
+            this._initializationPromise = null;
+        }
+
+        return initialization;
+    }
+
+    // Bind UI events
+    bindUIEvents() {
+        if (this._eventsBound) {
+            return;
+        }
+
         this.ui.bindNavigationEvents();
+        this.bindProjectSelector();
+    }
+
+    // Bind project selector
+    bindProjectSelector() {
+        const selector = document.getElementById('timelinesProjectSelector');
+        if (!selector || selector.dataset.timelinesSelectorBound) {
+            return;
+        }
+
+        selector.addEventListener('change', async (event) => {
+            const projectId = event.target.value || null;
+
+            // Ensure legacy global stays in sync for modules that still depend on it
+            window.currentProject = projectId;
+
+            if (this.hasGlobalState) {
+                this.state.setState('currentProject', projectId);
+                return;
+            }
+
+            await this.loadProjectTimeline(projectId);
+        });
+
+        selector.dataset.timelinesSelectorBound = 'true';
+    }
+
+    // Subscribe to state changes
+    subscribeToState() {
+        if (!this.hasGlobalState || this._subscriptionsBound) {
+            return;
+        }
+
+        this._subscriptionsBound = true;
+
+        this.state.subscribe('currentProject', async (projectId) => {
+            await this.loadProjectTimeline(projectId);
+        });
+
+        this.state.subscribe('projects', (projects) => {
+            this.updateProjectSelector(projects || []);
+        });
+    }
+
+    // Update project selector dropdown
+    updateProjectSelector(projects) {
+        const selector = document.getElementById('timelinesProjectSelector');
+        if (!selector) return;
+
+        const currentValue = selector.value;
+        selector.innerHTML = '<option value="">Select a project...</option>' +
+            projects.map(project =>
+                `<option value="${project.id}" ${project.id === this.currentProject?.id ? 'selected' : ''}>
+                    ${this.escapeHtml(project.name)}
+                </option>`
+            ).join('');
+
+        // Restore previous selection if it still exists
+        if (currentValue && projects.find(p => p.id === currentValue)) {
+            selector.value = currentValue;
+        }
+    }
+
+    // Simple HTML escaping utility
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     // Load timeline for a specific project
@@ -431,6 +558,18 @@ class TimelinesController {
         if (suggestion) {
             suggestion.remove();
         }
+    }
+
+    _shouldAutoInitialize(autoInitializePreference) {
+        if (typeof autoInitializePreference === 'boolean') {
+            return autoInitializePreference;
+        }
+
+        const env = typeof process !== 'undefined' && process.env
+            ? process.env.NODE_ENV
+            : undefined;
+
+        return env !== 'test';
     }
 
     // Clear timeline filter

@@ -7,27 +7,27 @@ class TimelinesApi {
 
     // Get timeline data for a specific project
     async getTimeline(projectId) {
-        return await this.api.getTimeline(projectId);
+        return await this.api.timelines.getAll(projectId);
     }
 
     // Create a new milestone
     async createMilestone(data) {
-        return await this.api.createMilestone(data);
+        return await this.api.timelines.createMilestone(data);
     }
 
     // Update an existing milestone
     async updateMilestone(id, data) {
-        return await this.api.updateMilestone(id, data);
+        return await this.api.timelines.updateMilestone(id, data);
     }
 
     // Delete a milestone
     async deleteMilestone(id) {
-        return await this.api.deleteMilestone(id);
+        return await this.api.timelines.deleteMilestone(id);
     }
 
     // Get AI timeline estimation for a project
     async estimateTimeline(projectId) {
-        return await this.api.estimateTimeline(projectId);
+        return await this.api.timelines.estimate(projectId);
     }
 
     // Get timeline items with filtering

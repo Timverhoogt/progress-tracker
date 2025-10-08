@@ -11,7 +11,7 @@ class ReportsApi {
      * @returns {Promise<Array>} Array of reports
      */
     async getReports(projectId) {
-        return await this.apiClient.request(`/reports?project_id=${projectId}`);
+        return await this.apiClient.reports.getAll(projectId);
     }
 
     /**
@@ -20,10 +20,7 @@ class ReportsApi {
      * @returns {Promise<Object>} Generated report
      */
     async generateReport(reportData) {
-        return await this.apiClient.request('/reports/generate', {
-            method: 'POST',
-            body: JSON.stringify(reportData)
-        });
+        return await this.apiClient.reports.generate(reportData);
     }
 
     /**
@@ -32,10 +29,7 @@ class ReportsApi {
      * @returns {Promise<Object>} Weekly report
      */
     async generateWeeklyReport(reportData) {
-        return await this.apiClient.request('/reports/weekly', {
-            method: 'POST',
-            body: JSON.stringify(reportData)
-        });
+        return await this.apiClient.reports.generateWeekly(reportData);
     }
 
     /**
@@ -44,10 +38,7 @@ class ReportsApi {
      * @returns {Promise<Object>} Test email result
      */
     async testEmail(emailData) {
-        return await this.apiClient.request('/reports/test-email', {
-            method: 'POST',
-            body: JSON.stringify(emailData)
-        });
+        return await this.apiClient.reports.testEmail(emailData);
     }
 
     /**
@@ -55,7 +46,7 @@ class ReportsApi {
      * @returns {Promise<Object>} Scheduler status
      */
     async getSchedulerStatus() {
-        return await this.apiClient.request('/reports/scheduler/status');
+        return await this.apiClient.reports.getSchedulerStatus();
     }
 
     /**
@@ -63,9 +54,7 @@ class ReportsApi {
      * @returns {Promise<Object>} Trigger result
      */
     async triggerWeeklyReport() {
-        return await this.apiClient.request('/reports/scheduler/trigger', {
-            method: 'POST'
-        });
+        return await this.apiClient.reports.triggerWeeklyReport();
     }
 
     /**
@@ -74,9 +63,7 @@ class ReportsApi {
      * @returns {Promise<void>} Deletion result
      */
     async deleteReport(reportId) {
-        return await this.apiClient.request(`/reports/${reportId}`, {
-            method: 'DELETE'
-        });
+        return await this.apiClient.reports.delete(reportId);
     }
 
     /**

@@ -12,7 +12,7 @@ This document tracks the implementation of Phase 4 of the CSS refactoring projec
 
 ### 1. Card Class Updates
 
-#### **frontend/app.js** (Main Application File)
+#### **frontend/legacy/app.legacy.js** (Legacy Application File)
 Successfully updated the following card types to use base `.card` class:
 
 - ✅ `.project-card` → `class="card project-card"`
@@ -33,7 +33,7 @@ Successfully updated the following card types to use base `.card` class:
 - ✅ `.workload-stat-card` → `class="card card-sm workload-stat-card"`
 - ✅ `.gratitude-entry-card` → `class="card gratitude-entry-card"`
 
-**Impact:** ~50+ card instances updated across app.js
+**Impact:** ~50+ card instances updated across `app.legacy.js`
 
 ---
 
@@ -124,7 +124,7 @@ Successfully replaced dedicated action classes with flex utilities:
 
 | File | Changes | Status |
 |------|---------|--------|
-| `frontend/app.js` | 17 card types + 2 actions | ✅ Complete |
+| `frontend/legacy/app.legacy.js` | 17 card types + 2 actions | ✅ Complete |
 | `frontend/js/modules/projects/projects.ui.js` | 1 card + 1 action | ✅ Complete |
 | `frontend/js/modules/todos/todos.ui.js` | 1 card + 1 action | ✅ Complete |
 | `frontend/js/modules/learning/learning.ui.js` | 2 cards + 3 headers | ✅ Complete |
@@ -155,7 +155,7 @@ Successfully replaced dedicated action classes with flex utilities:
    - Update `.achievement-gratitude-card`
    - Update headers with flex utilities
 
-3. **Mood/Wellbeing Sections** (in app.js)
+3. **Mood/Wellbeing Sections** (in `frontend/legacy/app.legacy.js`)
    - Review mood-related cards
    - Update mood metrics displays
 
@@ -217,7 +217,7 @@ Successfully replaced dedicated action classes with flex utilities:
 1. **Immediate (Next Session)**
    - Complete workload module updates
    - Complete gratitude module updates
-   - Update remaining cards in app.js
+   - Update remaining cards in `frontend/legacy/app.legacy.js`
 
 2. **Short Term (This Week)**
    - Systematic grid layout replacement
@@ -235,7 +235,7 @@ Successfully replaced dedicated action classes with flex utilities:
 
 ### Search & Replace Patterns Used
 
-The following `search_and_replace` operations were successfully executed on `frontend/app.js`:
+The following `search_and_replace` operations were successfully executed on `frontend/legacy/app.legacy.js`:
 
 ```bash
 class="project-card" → class="card project-card"

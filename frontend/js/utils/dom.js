@@ -97,15 +97,36 @@ class DOMUtils {
 // Modal utilities
 class ModalUtils {
     static show(modal) {
+        if (!modal) return;
         modal.classList.add('active');
+        if (!modal.style.display || modal.style.display === 'none') {
+            modal.style.display = 'flex';
+        }
     }
 
     static hide(modal) {
+        if (!modal) return;
         modal.classList.remove('active');
+        modal.style.display = 'none';
     }
 
     static isVisible(modal) {
-        return modal.classList.contains('active');
+        return modal ? modal.classList.contains('active') : false;
+    }
+
+    static bindCloseTriggers(modal, triggers = []) {
+        if (!modal || !Array.isArray(triggers)) {
+            return;
+        }
+
+        triggers
+            .filter(Boolean)
+            .forEach(trigger => {
+                DOMUtils.on(trigger, 'click', (event) => {
+                    event.preventDefault();
+                    ModalUtils.hide(modal);
+                });
+            });
     }
 }
 
@@ -178,4 +199,14 @@ if (typeof window !== 'undefined') {
     window.ModalUtils = ModalUtils;
     window.LoadingUtils = LoadingUtils;
     window.MessageUtils = MessageUtils;
+    window.showModal = (modal) => ModalUtils.show(modal);
+    window.hideModal = (modal) => ModalUtils.hide(modal);
+    window.toggleModal = (modal) => {
+        if (!modal) return;
+        if (ModalUtils.isVisible(modal)) {
+            ModalUtils.hide(modal);
+        } else {
+            ModalUtils.show(modal);
+        }
+    };
 }

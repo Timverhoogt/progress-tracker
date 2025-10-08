@@ -42,11 +42,99 @@ class TimelinesUI {
         const zoomFilter = this.elements.timelineZoom?.value || 'all';
         const filteredItems = this.filterTimelineItems(timelineData, zoomFilter);
 
-        const html = this.generateTimelineHTML(filteredItems, zoomFilter);
+        // Generate statistics dashboard
+        const statsHTML = this.generateTimelineStats(timelineData);
+
+        // Generate timeline with period grouping
+        const timelineHTML = this.generateTimelineHTML(filteredItems, zoomFilter);
+
+        // Combine stats and timeline
+        const html = statsHTML + timelineHTML;
+
         DOMUtils.setHTML(this.elements.timelineContainer, html);
 
         this.bindTimelineItemEvents();
         this.bindDragAndDrop();
+    }
+
+    // Generate timeline statistics dashboard
+    generateTimelineStats(timelineData) {
+        if (!timelineData || (!timelineData.todos?.length && !timelineData.milestones?.length)) {
+            return '';
+        }
+
+        const stats = this.calculateStats(timelineData);
+
+        return `
+            <div class="timeline-stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-flag stat-icon"></i>
+                    <div class="stat-content">
+                        <div class="stat-value">${stats.milestones.total}</div>
+                        <div class="stat-label">Milestones</div>
+                    </div>
+                </div>
+                <div class="stat-card success">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <div class="stat-content">
+                        <div class="stat-value">${stats.milestones.completed}</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="stat-card ${stats.milestones.overdue > 0 || stats.todos.overdue > 0 ? 'danger' : 'warning'}">
+                    <i class="fas fa-exclamation-triangle stat-icon"></i>
+                    <div class="stat-content">
+                        <div class="stat-value">${stats.milestones.overdue + stats.todos.overdue}</div>
+                        <div class="stat-label">Overdue Items</div>
+                    </div>
+                </div>
+                <div class="stat-card info">
+                    <i class="fas fa-chart-line stat-icon"></i>
+                    <div class="stat-content">
+                        <div class="stat-value">${stats.milestones.completionRate}%</div>
+                        <div class="stat-label">On Track</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Calculate timeline statistics
+    calculateStats(timelineData) {
+        const { todos = [], milestones = [] } = timelineData;
+        const now = new Date();
+
+        const totalMilestones = milestones.length;
+        const completedMilestones = milestones.filter(m => m.status === 'completed').length;
+        const overdueMilestones = milestones.filter(m => {
+            const targetDate = new Date(m.target_date);
+            return targetDate < now && m.status !== 'completed';
+        }).length;
+
+        const totalTodos = todos.length;
+        const completedTodos = todos.filter(t => t.status === 'completed').length;
+        const overdueTodos = todos.filter(t => {
+            const dueDate = new Date(t.due_date);
+            return dueDate < now && t.status !== 'completed';
+        }).length;
+
+        const completionRate = totalMilestones > 0
+            ? Math.round((completedMilestones / totalMilestones) * 100)
+            : 0;
+
+        return {
+            milestones: {
+                total: totalMilestones,
+                completed: completedMilestones,
+                overdue: overdueMilestones,
+                completionRate
+            },
+            todos: {
+                total: totalTodos,
+                completed: completedTodos,
+                overdue: overdueTodos
+            }
+        };
     }
 
     // Generate timeline HTML
@@ -55,20 +143,11 @@ class TimelinesUI {
         const allItems = this.combineAndSortItems(todos, milestones);
 
         if (allItems.length === 0) {
-            const filterLabel = this.getFilterLabel(filter);
-            return `
-                <div class="timeline-empty">
-                    <div class="timeline-empty-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <h3>No timeline items found</h3>
-                    <p>No todos or milestones with dates found for ${filterLabel}.</p>
-                    <button class="btn btn-primary" onclick="window.timelinesController?.showMilestoneModal()">
-                        <i class="fas fa-plus"></i> Add Milestone
-                    </button>
-                </div>
-            `;
+            return this.generateEnhancedEmptyState(filter);
         }
+
+        // Group items by time period
+        const groupedItems = this.groupItemsByPeriod(allItems);
 
         const filterInfo = filter !== 'all' ? `
             <div class="timeline-filter-info">
@@ -83,9 +162,154 @@ class TimelinesUI {
         return `
             ${filterInfo}
             <div class="timeline">
-                ${allItems.map(item => this.generateTimelineItemHTML(item)).join('')}
+                ${this.generateTimelinePeriodsHTML(groupedItems)}
             </div>
         `;
+    }
+
+    // Generate enhanced empty state
+    generateEnhancedEmptyState(filter) {
+        const filterLabel = this.getFilterLabel(filter);
+        const hasFilter = filter !== 'all';
+
+        return `
+            <div class="timeline-empty-enhanced">
+                <div class="empty-state-icon">
+                    <i class="fas fa-calendar-plus fa-4x"></i>
+                </div>
+                <h3>${hasFilter ? `No items found for ${filterLabel}` : "Let's build your project timeline"}</h3>
+                <p>${hasFilter ? 'Try adjusting your filter or add new items.' : 'Add milestones to track important dates and deliverables'}</p>
+
+                <div class="empty-state-actions">
+                    <button class="btn btn-primary" onclick="window.timelinesController?.showMilestoneModal()">
+                        <i class="fas fa-flag"></i> Add Milestone
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.timelinesController?.estimateTimeline()">
+                        <i class="fas fa-robot"></i> AI Suggestions
+                    </button>
+                    ${hasFilter ? `
+                        <button class="btn btn-secondary" onclick="window.timelinesController?.clearFilter()">
+                            <i class="fas fa-times"></i> Clear Filter
+                        </button>
+                    ` : ''}
+                </div>
+
+                ${!hasFilter ? `
+                    <div class="empty-state-tips">
+                        <h4>Quick Tips:</h4>
+                        <ul>
+                            <li>Set dates for your todos to see them in the timeline</li>
+                            <li>Use milestones for major project deliverables</li>
+                            <li>Try the AI estimate feature for smart suggestions</li>
+                            <li>Filter by time period to focus on specific deadlines</li>
+                        </ul>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    // Group items by time period
+    groupItemsByPeriod(items) {
+        const groups = {
+            overdue: [],
+            thisWeek: [],
+            nextWeek: [],
+            thisMonth: [],
+            later: []
+        };
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const nextWeekEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        items.forEach(item => {
+            const itemDate = new Date(item.date);
+            itemDate.setHours(0, 0, 0, 0);
+
+            if (itemDate < now && item.status !== 'completed' && item.status !== 'cancelled') {
+                groups.overdue.push(item);
+            } else if (itemDate <= weekEnd) {
+                groups.thisWeek.push(item);
+            } else if (itemDate <= nextWeekEnd) {
+                groups.nextWeek.push(item);
+            } else if (itemDate <= monthEnd) {
+                groups.thisMonth.push(item);
+            } else {
+                groups.later.push(item);
+            }
+        });
+
+        return groups;
+    }
+
+    // Generate HTML for timeline periods
+    generateTimelinePeriodsHTML(groupedItems) {
+        let html = '';
+
+        const periods = [
+            { key: 'overdue', label: 'Overdue', class: 'overdue' },
+            { key: 'thisWeek', label: 'This Week', class: '' },
+            { key: 'nextWeek', label: 'Next Week', class: '' },
+            { key: 'thisMonth', label: 'Later This Month', class: '' },
+            { key: 'later', label: 'Future', class: '' }
+        ];
+
+        periods.forEach(period => {
+            const items = groupedItems[period.key];
+            if (items && items.length > 0) {
+                html += this.generatePeriodSection(period.label, items, period.class);
+            }
+        });
+
+        return html || '<p>No timeline items to display.</p>';
+    }
+
+    // Generate a single period section
+    generatePeriodSection(label, items, className) {
+        const count = items.length;
+        const dateRange = this.getPeriodDateRange(label);
+
+        return `
+            <div class="timeline-period ${className}">
+                <div class="timeline-period-header ${className}">
+                    <div>
+                        <span class="period-label">${label}</span>
+                        <span class="period-count">${count} item${count !== 1 ? 's' : ''}</span>
+                    </div>
+                    ${dateRange ? `<span class="period-date">${dateRange}</span>` : ''}
+                </div>
+                <div class="timeline-period-items">
+                    ${items.map(item => this.generateTimelineItemHTML(item)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Get date range for period label
+    getPeriodDateRange(label) {
+        const now = new Date();
+        const formatDate = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        switch (label) {
+            case 'This Week': {
+                const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                return `${formatDate(now)} - ${formatDate(weekEnd)}`;
+            }
+            case 'Next Week': {
+                const nextWeekStart = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const nextWeekEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+                return `${formatDate(nextWeekStart)} - ${formatDate(nextWeekEnd)}`;
+            }
+            case 'Later This Month': {
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                return `Through ${formatDate(monthEnd)}`;
+            }
+            default:
+                return '';
+        }
     }
 
     // Generate HTML for a single timeline item
@@ -305,47 +529,168 @@ class TimelinesUI {
     // Bind drag and drop functionality
     bindDragAndDrop() {
         const items = this.elements.timelineContainer.querySelectorAll('.timeline-item');
+        let draggedItemData = null;
 
         items.forEach(item => {
+            // Only allow dragging milestones (not todos)
+            const itemType = item.getAttribute('data-type');
+            if (itemType !== 'milestone') {
+                item.removeAttribute('draggable');
+                return;
+            }
+
             item.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', item.getAttribute('data-id'));
+                const itemId = item.getAttribute('data-id');
+                const itemType = item.getAttribute('data-type');
+                const itemDate = item.getAttribute('data-date');
+
+                draggedItemData = { id: itemId, type: itemType, originalDate: itemDate };
+
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', itemId);
+
                 item.classList.add('dragging');
+                item.style.opacity = '0.5';
+
+                // Add visual feedback
+                setTimeout(() => {
+                    item.style.display = 'none';
+                }, 0);
             });
 
-            item.addEventListener('dragend', () => {
+            item.addEventListener('dragend', async (e) => {
                 item.classList.remove('dragging');
+                item.style.opacity = '';
+                item.style.display = '';
+
+                // Reset all drop zones
+                document.querySelectorAll('.timeline-item').forEach(el => {
+                    el.classList.remove('drag-over');
+                });
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                if (!item.classList.contains('dragging')) {
+                    item.classList.add('drag-over');
+                }
+            });
+
+            item.addEventListener('dragleave', (e) => {
+                item.classList.remove('drag-over');
+            });
+
+            item.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                item.classList.remove('drag-over');
+
+                if (!draggedItemData) return;
+
+                const targetDate = item.getAttribute('data-date');
+                const targetId = item.getAttribute('data-id');
+
+                // Don't drop on itself
+                if (draggedItemData.id === targetId) return;
+
+                // Calculate new date (use target item's date)
+                const newDate = targetDate;
+
+                if (newDate && newDate !== draggedItemData.originalDate) {
+                    await this.handleDateChange(draggedItemData.id, draggedItemData.type, newDate);
+                }
+
+                draggedItemData = null;
             });
         });
 
-        this.elements.timelineContainer.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const afterElement = this.getDragAfterElement(this.elements.timelineContainer, e.clientY);
-            const draggable = document.querySelector('.dragging');
+        // Allow dropping in empty spaces within periods
+        const periods = this.elements.timelineContainer.querySelectorAll('.timeline-period-items');
+        periods.forEach(period => {
+            period.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            });
 
-            if (draggable) {
-                if (afterElement == null) {
-                    this.elements.timelineContainer.appendChild(draggable);
-                } else {
-                    this.elements.timelineContainer.insertBefore(draggable, afterElement);
+            period.addEventListener('drop', async (e) => {
+                e.preventDefault();
+
+                if (!draggedItemData) return;
+
+                // Get the period's date range from header
+                const periodHeader = period.previousElementSibling;
+                if (periodHeader && periodHeader.classList.contains('timeline-period-header')) {
+                    const periodLabel = periodHeader.querySelector('.period-label')?.textContent;
+                    const suggestedDate = this.getDefaultDateForPeriod(periodLabel);
+
+                    if (suggestedDate) {
+                        await this.handleDateChange(draggedItemData.id, draggedItemData.type, suggestedDate);
+                    }
                 }
-            }
+
+                draggedItemData = null;
+            });
         });
     }
 
-    // Get element to insert dragged item after
-    getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.timeline-item:not(.dragging)')];
+    // Handle date change from drag and drop
+    async handleDateChange(itemId, itemType, newDate) {
+        try {
+            if (itemType === 'milestone' && window.timelinesController) {
+                this.showLoading();
 
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
+                // Update the milestone date
+                await window.timelinesController.api.updateMilestone(itemId, {
+                    target_date: newDate
+                });
 
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
+                this.showSuccess(`Milestone date updated to ${newDate}`);
+
+                // Refresh the timeline
+                if (window.timelinesController.refreshTimeline) {
+                    await window.timelinesController.refreshTimeline();
+                }
             }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        } catch (error) {
+            console.error('Error updating milestone date:', error);
+            this.showError('Failed to update milestone date');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    // Get default date for a period
+    getDefaultDateForPeriod(periodLabel) {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        switch (periodLabel) {
+            case 'This Week': {
+                // Middle of this week
+                const mid = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+                return mid.toISOString().split('T')[0];
+            }
+            case 'Next Week': {
+                // Middle of next week
+                const mid = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+                return mid.toISOString().split('T')[0];
+            }
+            case 'Later This Month': {
+                // End of month
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                return monthEnd.toISOString().split('T')[0];
+            }
+            case 'Future': {
+                // Next month
+                const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 15);
+                return nextMonth.toISOString().split('T')[0];
+            }
+            default:
+                return now.toISOString().split('T')[0];
+        }
     }
 
     // Render timeline suggestion from AI

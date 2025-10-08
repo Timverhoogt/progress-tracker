@@ -12,7 +12,8 @@ async function initializeGratitudeModule(apiClient) {
     }
 
     console.log('Initializing GratitudeController...');
-    gratitudeControllerInstance = new GratitudeController(apiClient);
+    gratitudeControllerInstance = new GratitudeController(apiClient, { autoInitialize: false });
+    await gratitudeControllerInstance.initialize();
 
     // Expose globally for backward compatibility
     window.gratitudeController = gratitudeControllerInstance;

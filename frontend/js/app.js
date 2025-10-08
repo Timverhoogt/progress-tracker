@@ -102,9 +102,53 @@ class ProgressTracker {
         console.log('🚀 Loading high priority modules...');
 
         // Projects module (High Priority)
-        this.modules.projects = new ProjectsController(api);
+        this.modules.projects = new ProjectsController(window.api, { autoInitialize: false });
+        window.projectsController = this.modules.projects;
         await this.modules.projects.initialize();
         console.log('✅ Projects module initialized');
+
+        // Skills module (High Priority)
+        this.modules.skills = new SkillsController(window.api, { autoInitialize: false });
+        window.skillsController = this.modules.skills;
+        await this.modules.skills.initialize();
+        console.log('✅ Skills module initialized');
+
+        // Achievements module (High Priority)
+        this.modules.achievements = new AchievementsController(window.api, { autoInitialize: false });
+        window.achievementsController = this.modules.achievements;
+        await this.modules.achievements.initialize();
+        console.log('✅ Achievements module initialized');
+
+        // Reflections module (High Priority)
+        this.modules.reflections = new ReflectionsController(window.api, { autoInitialize: false });
+        window.reflectionsController = this.modules.reflections;
+        await this.modules.reflections.initialize();
+        console.log('✅ Reflections module initialized');
+
+        // Mood module (Wellbeing - High Priority)
+        this.modules.mood = new MoodController(window.api, { autoInitialize: false });
+        window.moodController = this.modules.mood;
+        await this.modules.mood.initialize();
+        console.log('✅ Mood module initialized');
+
+        // Workload module (Wellbeing - High Priority)
+        this.modules.workload = new WorkloadController(window.api, { autoInitialize: false });
+        window.workloadController = this.modules.workload;
+        await this.modules.workload.initialize();
+        console.log('✅ Workload module initialized');
+
+        // Gratitude module (Wellbeing - High Priority)
+        this.modules.gratitude = new GratitudeController(window.api, { autoInitialize: false });
+        window.gratitudeController = this.modules.gratitude;
+        await this.modules.gratitude.initialize();
+        console.log('✅ Gratitude module initialized');
+
+        // Learning module (Wellbeing - High Priority)
+        this.modules.learning = new LearningController(window.api, { autoInitialize: false });
+        window.learningController = this.modules.learning;
+        await this.modules.learning.initialize();
+        console.log('✅ Learning module initialized');
+
 
         // Set up module loader for lazy loading
         this.setupModuleLazyLoading();
@@ -143,10 +187,15 @@ class ProgressTracker {
             ['todos', 'navigation:todos'],
             ['reports', 'navigation:reports'],
             ['timelines', 'navigation:timelines'],
+            ['skills', 'navigation:skills'],
+            ['achievements', 'navigation:achievements'],
+            ['reflections', 'navigation:reflections'],
+            ['learning', 'navigation:learning'],
             ['mood', 'navigation:mood'],
             ['workload', 'navigation:workload'],
-            ['learning', 'navigation:learning'],
-            ['gratitude', 'navigation:gratitude']
+            ['gratitude', 'navigation:gratitude'],
+            ['coaching', 'navigation:coaching'],
+            ['settings', 'navigation:settings']
         ];
 
         routes.forEach(([route, eventName]) => {
@@ -349,7 +398,13 @@ class ProgressTracker {
 
         try {
             // Load projects as initial data
-            await this.modules.projects.loadProjects();
+            const projectsController = this.modules.projects;
+            const hasProjectsLoaded = Array.isArray(projectsController?.projects) && projectsController.projects.length > 0;
+
+            if (!hasProjectsLoaded) {
+                await projectsController.loadProjects();
+            }
+
             console.log('✅ Initial data loaded');
         } catch (error) {
             console.error('Failed to load initial data:', error);
@@ -401,15 +456,174 @@ window.app = new ProgressTracker();
 // Initialize application when DOM is loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        app.initialize().catch(error => {
+        window.app.initialize().catch(error => {
             console.error('Failed to initialize application:', error);
         });
     });
 } else {
-    app.initialize().catch(error => {
+    window.app.initialize().catch(error => {
         console.error('Failed to initialize application:', error);
     });
 }
 
 // Export logout function for global use
-window.logout = () => app.logout();
+window.logout = () => window.app.logout();
+
+// Export global helper functions for inline HTML onclick handlers
+window.showSkills = () => {
+    if (window.router) {
+        window.router.navigate('skills');
+    }
+};
+
+window.showAchievements = () => {
+    if (window.router) {
+        window.router.navigate('achievements');
+    }
+};
+
+window.showReflections = () => {
+    if (window.router) {
+        window.router.navigate('reflections');
+    }
+};
+
+// Skills module helpers
+window.editSkill = (id) => {
+    if (window.app && window.app.modules.skills) {
+        window.app.modules.skills.editSkill(id);
+    }
+};
+
+window.assessSkill = (id) => {
+    if (window.app && window.app.modules.skills) {
+        window.app.modules.skills.assessSkill(id);
+    }
+};
+
+// Achievements module helpers
+window.editAchievement = (id) => {
+    if (window.app && window.app.modules.achievements) {
+        window.app.modules.achievements.editAchievement(id);
+    }
+};
+
+window.completeAchievement = async (id) => {
+    if (window.app && window.app.modules.achievements) {
+        await window.app.modules.achievements.completeAchievement(id);
+    }
+};
+
+// Reflections module helpers
+window.useTemplate = (id) => {
+    if (window.app && window.app.modules.reflections) {
+        window.app.modules.reflections.useTemplate(id);
+    }
+};
+
+// Wellbeing Modules - Navigation helpers
+window.showMood = () => {
+    if (window.router) {
+        window.router.navigate('mood');
+    }
+};
+
+window.showGratitude = () => {
+    if (window.router) {
+        window.router.navigate('gratitude');
+    }
+};
+
+window.showLearning = () => {
+    if (window.router) {
+        window.router.navigate('learning');
+    }
+};
+
+// Mood module helpers
+window.editMoodEntry = (id) => {
+    if (window.app && window.app.modules.mood) {
+        window.app.modules.mood.editEntry(id);
+    }
+};
+
+window.deleteMoodEntry = async (id) => {
+    if (window.app && window.app.modules.mood) {
+        await window.app.modules.mood.deleteEntry(id);
+    }
+};
+
+// Gratitude module helpers
+window.editGratitudeEntry = (id) => {
+    if (window.app && window.app.modules.gratitude) {
+        window.app.modules.gratitude.editEntry(id);
+    }
+};
+
+window.deleteGratitudeEntry = async (id) => {
+    if (window.app && window.app.modules.gratitude) {
+        await window.app.modules.gratitude.deleteEntry(id);
+    }
+};
+
+// Learning module helpers
+window.editLearningPath = (id) => {
+    if (window.app && window.app.modules.learning) {
+        window.app.modules.learning.editPath(id);
+    }
+};
+
+window.deleteLearningPath = async (id) => {
+    if (window.app && window.app.modules.learning) {
+        await window.app.modules.learning.deletePath(id);
+    }
+};
+
+// Coaching module helpers
+window.startConversation = (topic) => {
+    // Hide welcome, show chat
+    const welcome = document.getElementById('coachingWelcome');
+    const chat = document.getElementById('coachingChat');
+    if (welcome) welcome.style.display = 'none';
+    if (chat) chat.style.display = 'block';
+    
+    // Add initial topic message
+    const input = document.getElementById('coachingInput');
+    if (input) {
+        const topicMessages = {
+            'motivation': "I need some motivation today",
+            'challenge': "I'm facing some challenges I'd like to discuss",
+            'growth': "I want to talk about my career growth",
+            'confidence': "I'd like help building my confidence"
+        };
+        input.value = topicMessages[topic] || '';
+        input.focus();
+    }
+};
+
+window.clearConversation = () => {
+    // Clear chat messages
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+        chatMessages.innerHTML = '';
+    }
+    
+    // Clear input
+    const input = document.getElementById('coachingInput');
+    if (input) {
+        input.value = '';
+    }
+    
+    // Clear state
+    if (window.state) {
+        window.state.setState('coaching.conversation', []);
+    }
+};
+
+window.showWelcome = () => {
+    // Show welcome, hide chat
+    const welcome = document.getElementById('coachingWelcome');
+    const chat = document.getElementById('coachingChat');
+    if (welcome) welcome.style.display = 'block';
+    if (chat) chat.style.display = 'none';
+};

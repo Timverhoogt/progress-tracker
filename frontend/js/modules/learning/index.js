@@ -12,7 +12,8 @@ async function initializeLearningModule(apiClient) {
     }
 
     console.log('Initializing LearningController...');
-    learningControllerInstance = new LearningController(apiClient);
+    learningControllerInstance = new LearningController(apiClient, { autoInitialize: false });
+    await learningControllerInstance.initialize();
 
     // Expose globally for backward compatibility
     window.learningController = learningControllerInstance;

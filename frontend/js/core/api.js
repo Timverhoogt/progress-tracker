@@ -160,15 +160,44 @@ class ApiClient {
             if (limit) url += `limit=${limit}&`;
             return this.request(url.slice(0, -1));
         },
+        getMoodEntries: (startDate, endDate, limit) => {
+            let url = '/mood?';
+            if (startDate) url += `start_date=${startDate}&`;
+            if (endDate) url += `end_date=${endDate}&`;
+            if (limit) url += `limit=${limit}&`;
+            return this.request(url.slice(0, -1));
+        },
         getToday: () => this.request('/mood/today'),
+        getTodayMood: () => this.request('/mood/today'),
         getStats: (days) => this.request(`/mood/stats?days=${days || DEFAULT_DAYS.STATS}`),
+        getMoodStats: (days) => this.request(`/mood/stats?days=${days || DEFAULT_DAYS.STATS}`),
         getPatterns: (days) => this.request(`/mood/patterns?days=${days || DEFAULT_DAYS.PATTERNS}`),
+        getMoodPatterns: (days) => this.request(`/mood/patterns?days=${days || DEFAULT_DAYS.PATTERNS}`),
         getAIAnalysis: (days) => this.request(`/mood/ai-analysis?days=${days || DEFAULT_DAYS.ANALYSIS}`),
+        getMoodAIAnalysis: (days) => this.request(`/mood/ai-analysis?days=${days || DEFAULT_DAYS.ANALYSIS}`),
         getInterventionTriggers: (days) => this.request(`/mood/intervention-triggers?days=${days || DEFAULT_DAYS.INTERVENTION_TRIGGERS}`),
         logIntervention: (data) => this.request('/mood/intervention-log', {
             method: 'POST',
             body: JSON.stringify(data)
-        })
+        }),
+        create: (data) => this.request('/mood', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+        createMoodEntry: (data) => this.request('/mood', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+        update: (date, data) => this.request(`/mood/${date}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        }),
+        updateMoodEntry: (date, data) => this.request(`/mood/${date}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        }),
+        delete: (date) => this.request(`/mood/${date}`, { method: 'DELETE' }),
+        deleteMoodEntry: (date) => this.request(`/mood/${date}`, { method: 'DELETE' })
     };
 
     // Workload API
@@ -260,7 +289,16 @@ class ApiClient {
             if (category) url += `category=${category}&`;
             return this.request(url.slice(0, -1));
         },
+        getGratitudeEntries: (startDate, endDate, limit, category) => {
+            let url = '/gratitude?';
+            if (startDate) url += `start_date=${startDate}&`;
+            if (endDate) url += `end_date=${endDate}&`;
+            if (limit) url += `limit=${limit}&`;
+            if (category) url += `category=${category}&`;
+            return this.request(url.slice(0, -1));
+        },
         getToday: () => this.request('/gratitude/today'),
+        getTodayGratitude: () => this.request('/gratitude/today'),
         getPrompts: (params) => {
             let url = '/gratitude/prompts?';
             if (params) {
@@ -270,11 +308,41 @@ class ApiClient {
             }
             return this.request(url.slice(0, -1));
         },
+        getGratitudePrompts: (params) => {
+            let url = '/gratitude/prompts?';
+            if (params) {
+                Object.keys(params).forEach(key => {
+                    url += `${key}=${params[key]}&`;
+                });
+            }
+            return this.request(url.slice(0, -1));
+        },
+        getAchievementBasedPrompts: (days) => this.request(`/gratitude/prompts/achievements?days=${days || 30}`),
+        getPositiveReframing: (challenge) => this.request('/gratitude/prompts/reframe', {
+            method: 'POST',
+            body: JSON.stringify({ challenge })
+        }),
+        getEncouragement: () => this.request('/gratitude/prompts/encouragement'),
         create: (data) => this.request('/gratitude', {
             method: 'POST',
             body: JSON.stringify(data)
         }),
+        createGratitudeEntry: (data) => this.request('/gratitude', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        }),
+        update: (id, data) => this.request(`/gratitude/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        }),
+        updateGratitudeEntry: (id, data) => this.request(`/gratitude/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        }),
+        delete: (id) => this.request(`/gratitude/${id}`, { method: 'DELETE' }),
+        deleteGratitudeEntry: (id) => this.request(`/gratitude/${id}`, { method: 'DELETE' }),
         getStats: (days) => this.request(`/gratitude/stats?days=${days || DEFAULT_DAYS.GRATITUDE_STATS}`),
+        getGratitudeStats: (days) => this.request(`/gratitude/stats?days=${days || DEFAULT_DAYS.GRATITUDE_STATS}`),
         getPatterns: (days) => this.request(`/gratitude/patterns?days=${days || DEFAULT_DAYS.PATTERNS}`)
     };
 }

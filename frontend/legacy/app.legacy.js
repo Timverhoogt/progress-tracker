@@ -1,3 +1,6 @@
+// LEGACY NOTICE: This file remains for reference during the modular migration.
+// Please keep changes read-only and port functionality into the new architecture instead.
+
 // API Configuration - Prefer same-origin to support HTTPS/mobiles; fall back for localhost dev
 const getApiBaseUrl = () => {
     const currentHost = window.location.hostname;

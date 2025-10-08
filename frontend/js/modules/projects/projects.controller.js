@@ -3,19 +3,60 @@
 
 
 class ProjectsController {
-    constructor(apiClient) {
+    constructor(apiClient, options = {}) {
         this.api = new ProjectsApi(apiClient);
         this.ui = new ProjectsUI();
         this.projects = []; // Store projects data for other modules
-        this.initialize();
+        this._eventsBound = false;
+        this._isInitializing = false;
+        this._initializationPromise = null;
+
+        if (this._shouldAutoInitialize(options.autoInitialize)) {
+            this.initialize().catch(error => {
+                console.error('ProjectsController auto-initialization failed:', error);
+            });
+        }
     }
 
     // Initialize the controller
     async initialize() {
-        await this.loadProjects();
-        this.bindEvents();
-        this.ui.bindNewProjectButton();
-        this.ui.bindDetailsModalEvents();
+        if (this._isInitializing) {
+            return this._initializationPromise;
+        }
+
+        this._isInitializing = true;
+        const initialization = (async () => {
+            await this.loadProjects();
+
+            if (!this._eventsBound) {
+                this.bindEvents();
+                this.ui.bindNewProjectButton();
+                this.ui.bindModalControls();
+                this.ui.bindDetailsModalEvents();
+                this._eventsBound = true;
+            }
+        })();
+
+        this._initializationPromise = initialization;
+
+        try {
+            await initialization;
+        } finally {
+            this._isInitializing = false;
+            this._initializationPromise = null;
+        }
+    }
+
+    _shouldAutoInitialize(autoInitializePreference) {
+        if (typeof autoInitializePreference === 'boolean') {
+            return autoInitializePreference;
+        }
+
+        const env = typeof process !== 'undefined' && process.env
+            ? process.env.NODE_ENV
+            : undefined;
+
+        return env !== 'test';
     }
 
     // Load all projects

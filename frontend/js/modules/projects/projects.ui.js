@@ -16,6 +16,8 @@ class ProjectsUI {
             projectForm: DOMUtils.getElement('#projectForm'),
             projectName: DOMUtils.getElement('#projectName'),
             projectDescription: DOMUtils.getElement('#projectDescription'),
+            closeProjectModal: DOMUtils.getElement('#closeProjectModal'),
+            cancelProjectModal: DOMUtils.getElement('#cancelProjectModal'),
             loadingOverlay: DOMUtils.getElement('#loadingOverlay'),
             // Details modal elements
             projectDetailsModal: DOMUtils.getElement('#projectDetailsModal'),
@@ -91,6 +93,21 @@ class ProjectsUI {
     hideModal() {
         ModalUtils.hide(this.elements.projectModal);
         this.clearForm();
+    }
+
+    // Bind modal close controls
+    bindModalControls() {
+        const closeHandlers = [
+            this.elements.closeProjectModal,
+            this.elements.cancelProjectModal
+        ].filter(Boolean);
+
+        closeHandlers.forEach(button => {
+            DOMUtils.on(button, 'click', (event) => {
+                event.preventDefault();
+                this.hideModal();
+            });
+        });
     }
 
     // Clear form data

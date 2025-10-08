@@ -181,7 +181,7 @@ const createTables = async () => {
 
 const main = async () => {
   await createTables();
-  await createAITables();
+  // Note: createAITables() is already called inside createTables() at line 175
   console.log("🚀 Database migration completed!");
 };
 

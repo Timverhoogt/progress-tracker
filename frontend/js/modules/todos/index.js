@@ -10,7 +10,8 @@ async function initializeTodosModule(apiClient) {
         console.log('🚀 Initializing todos module...');
         const ui = new TodosUI();
         const api = new TodosApi(apiClient);
-        todosControllerInstance = new TodosController(apiClient, window.state, ui, api);
+        todosControllerInstance = new TodosController(apiClient, window.state, ui, api, { autoInitialize: false });
+        await todosControllerInstance.initialize();
         window.todosController = todosControllerInstance;
         console.log('✅ Todos module initialized successfully');
         return todosControllerInstance;

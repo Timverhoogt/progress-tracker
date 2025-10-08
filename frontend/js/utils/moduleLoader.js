@@ -12,11 +12,14 @@ class ModuleLoader {
             high: ['projects'],
 
             // Medium Priority - Load on user interaction
-            medium: ['mood', 'workload', 'timelines'],
+            medium: ['timelines'],
 
             // Low Priority - Load on navigation/route change
-            low: ['learning', 'gratitude', 'reports', 'todos', 'notes']
+            low: ['reports', 'todos', 'notes']
         };
+        
+        // Note: mood, workload, learning, gratitude are initialized directly in app.js
+        // skills, achievements, reflections are also initialized directly in app.js
 
         this.init();
     }
@@ -111,32 +114,9 @@ class ModuleLoader {
      * Get module configuration
      */
     getModuleConfig(moduleName) {
+        // Only lazy-loaded modules are configured here
+        // Modules initialized directly in app.js: projects, skills, achievements, reflections, mood, workload, learning, gratitude
         const configs = {
-            projects: {
-                files: [
-                    'js/modules/projects/projects.api.js',
-                    'js/modules/projects/projects.ui.js',
-                    'js/modules/projects/projects.controller.js',
-                    'js/modules/projects/index.js'
-                ],
-                initFunction: () => this._initProjectsModule()
-            },
-            mood: {
-                files: [
-                    'js/modules/mood/mood.api.js',
-                    'js/modules/mood/mood.ui.js',
-                    'js/modules/mood/mood.controller.js'
-                ],
-                initFunction: () => this._initMoodModule()
-            },
-            workload: {
-                files: [
-                    'js/modules/workload/workload.api.js',
-                    'js/modules/workload/workload.ui.js',
-                    'js/modules/workload/workload.controller.js'
-                ],
-                initFunction: () => this._initWorkloadModule()
-            },
             timelines: {
                 files: [
                     'js/modules/timelines/timelines.api.js',
@@ -144,22 +124,6 @@ class ModuleLoader {
                     'js/modules/timelines/timelines.controller.js'
                 ],
                 initFunction: () => this._initTimelinesModule()
-            },
-            learning: {
-                files: [
-                    'js/modules/learning/learning.api.js',
-                    'js/modules/learning/learning.ui.js',
-                    'js/modules/learning/learning.controller.js'
-                ],
-                initFunction: () => this._initLearningModule()
-            },
-            gratitude: {
-                files: [
-                    'js/modules/gratitude/gratitude.api.js',
-                    'js/modules/gratitude/gratitude.ui.js',
-                    'js/modules/gratitude/gratitude.controller.js'
-                ],
-                initFunction: () => this._initGratitudeModule()
             },
             reports: {
                 files: [
@@ -191,33 +155,6 @@ class ModuleLoader {
     }
 
     /**
-     * Initialize Projects module
-     */
-    async _initProjectsModule() {
-        // Projects module uses constructor pattern
-        window.projectsController = new ProjectsController(api);
-        await window.projectsController.initialize();
-    }
-
-    /**
-     * Initialize Mood module
-     */
-    async _initMoodModule() {
-        // Import the initialization function and call it
-        const { initializeMoodModule } = await import('../modules/mood/index.js');
-        window.moodController = await initializeMoodModule(window.api);
-    }
-
-    /**
-     * Initialize Workload module
-     */
-    async _initWorkloadModule() {
-        // Import the initialization function and call it
-        const { initializeWorkloadModule } = await import('../modules/workload/index.js');
-        window.workloadController = await initializeWorkloadModule(window.api);
-    }
-
-    /**
      * Initialize Timelines module
      */
     async _initTimelinesModule() {
@@ -227,28 +164,10 @@ class ModuleLoader {
     }
 
     /**
-     * Initialize Learning module
-     */
-    async _initLearningModule() {
-        // Import the initialization function and call it
-        const { initializeLearningModule } = await import('../modules/learning/index.js');
-        window.learningController = await initializeLearningModule(window.api);
-    }
-
-    /**
-     * Initialize Gratitude module
-     */
-    async _initGratitudeModule() {
-        // Import the initialization function and call it
-        const { initializeGratitudeModule } = await import('../modules/gratitude/index.js');
-        window.gratitudeController = await initializeGratitudeModule(window.api);
-    }
-
-    /**
      * Initialize Reports module
      */
     async _initReportsModule() {
-        window.reportsController = new ReportsController(api, state, null);
+        window.reportsController = new ReportsController(window.api, window.state, null);
         await window.reportsController.initialize();
     }
 
@@ -324,18 +243,6 @@ class ModuleLoader {
         const triggers = [];
 
         switch (moduleName) {
-            case 'mood':
-                triggers.push(
-                    document.getElementById('moodTab'),
-                    document.querySelector('[data-module="mood"]')
-                );
-                break;
-            case 'workload':
-                triggers.push(
-                    document.getElementById('workloadTab'),
-                    document.querySelector('[data-module="workload"]')
-                );
-                break;
             case 'timelines':
                 triggers.push(
                     document.getElementById('timelinesTab'),
@@ -363,13 +270,11 @@ class ModuleLoader {
      * Get module name from route
      */
     getModuleFromRoute(route) {
-        // Map routes to modules
+        // Map routes to modules (only for lazy-loaded modules)
         const routeMap = {
-            'learning': 'learning',
-            'gratitude': 'gratitude',
-            'reports': 'reports',
-            'todos': 'todos',
-            'notes': 'notes'
+            reports: 'reports',
+            todos: 'todos',
+            notes: 'notes'
         };
 
         return routeMap[route] || null;

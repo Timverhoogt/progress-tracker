@@ -13,7 +13,11 @@
       "Bash(docker-compose:*)",
       "Bash(node:*)",
       "Bash(docker logs:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(docker restart:*)"
     ],
     "deny": [],
     "ask": []

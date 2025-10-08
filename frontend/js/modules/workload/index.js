@@ -13,7 +13,7 @@ async function initializeWorkloadModule(apiClient) {
         console.log('🚀 Initializing workload module...');
 
         // Create new controller instance
-        workloadControllerInstance = new WorkloadController(apiClient);
+        workloadControllerInstance = new WorkloadController(apiClient, { autoInitialize: false });
         await workloadControllerInstance.initialize();
 
         // Make globally available

@@ -5,7 +5,7 @@
    - ✅ Port any remaining logic from the legacy orchestrator into the appropriate module layers (API/UI/controller).
 
 2. **Retire Legacy Script**
-   - Remove `frontend/app.js` once all features are modularised.
+   - Preserve legacy orchestrator at `frontend/legacy/app.legacy.js` until all features are modularised, then remove entirely.
    - Update `index.html` to drop direct `<script>` tags for module internals; keep only shared core utilities, `moduleLoader`, and the modular `js/app.js` entrypoint.
 
 3. **Module Loader Housekeeping**

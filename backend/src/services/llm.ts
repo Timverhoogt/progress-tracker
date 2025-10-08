@@ -43,6 +43,42 @@ class LLMService {
     this.model = process.env.LLM_MODEL || "anthropic/claude-3.7-sonnet";
   }
 
+  private normalizeMessageContent(content: any): string {
+    if (Array.isArray(content)) {
+      return content
+        .map((part) => {
+          if (typeof part === "string") {
+            return part;
+          }
+          if (part && typeof part === "object") {
+            if (typeof part.text === "string") {
+              return part.text;
+            }
+            if (typeof part.content === "string") {
+              return part.content;
+            }
+          }
+          return "";
+        })
+        .filter(
+          (segment) =>
+            typeof segment === "string" && segment.trim().length > 0
+        )
+        .join("\n")
+        .trim();
+    }
+
+    if (typeof content === "string") {
+      return content;
+    }
+
+    if (content === null || typeof content === "undefined") {
+      return "";
+    }
+
+    return String(content);
+  }
+
   private async callLLM(messages: any[]): Promise<LLMResponse> {
     try {
       const response = await axios.post(
@@ -65,7 +101,9 @@ class LLMService {
 
       return {
         success: true,
-        data: response.data.choices[0].message.content,
+        data: this.normalizeMessageContent(
+          response.data?.choices?.[0]?.message?.content
+        ),
       };
     } catch (error: any) {
       const errorMessage =

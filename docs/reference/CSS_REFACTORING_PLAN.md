@@ -176,7 +176,7 @@ The core refactoring is complete. If further reduction is needed to reach the 50
   - `mood-stats-grid`, `workload-stats-grid`, `learning-stats-grid`
 - ✅ Replaced stat card classes with `metric`
   - `mood-stat-card`, `workload-stat-card`
-- ✅ Updated files: [`app.js`](../../frontend/app.js), [`index.html`](../../frontend/index.html), [`learning.ui.js`](../../frontend/js/modules/learning/learning.ui.js)
+- ✅ Updated files: [`app.legacy.js`](../../frontend/legacy/app.legacy.js), [`index.html`](../../frontend/index.html), [`learning.ui.js`](../../frontend/js/modules/learning/learning.ui.js)
 
 **Results:** 100% completion achieved
 

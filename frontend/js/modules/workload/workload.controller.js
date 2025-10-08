@@ -1,19 +1,65 @@
-// WorkloadApi and WorkloadUI are available globally via window
-
 class WorkloadController {
-    constructor(apiClient) {
+    constructor(apiClient, options = {}) {
         this.api = new WorkloadApi(apiClient);
         this.ui = new WorkloadUI();
         this.currentTab = 'overview';
-        this.initialize();
+
+        this._isInitializing = false;
+        this._initializationPromise = null;
+        this._eventsBound = false;
+        this._navigationBound = false;
+
+        if (this._shouldAutoInitialize(options.autoInitialize)) {
+            this.initialize().catch(error => {
+                console.error('WorkloadController auto-initialization failed:', error);
+            });
+        }
     }
 
     // Initialize the controller
     async initialize() {
-        console.log('WorkloadController initialized');
-        await this.loadWorkloadData();
-        this.bindEvents();
-        this.ui.bindNavigationEvents();
+        if (this._isInitializing) {
+            return this._initializationPromise;
+        }
+
+        this._isInitializing = true;
+        const initialization = (async () => {
+            console.log('WorkloadController initialized');
+            await this.loadWorkloadData();
+
+            if (!this._eventsBound) {
+                this.bindEvents();
+                this._eventsBound = true;
+            }
+
+            if (!this._navigationBound && typeof this.ui.bindNavigationEvents === 'function') {
+                this.ui.bindNavigationEvents();
+                this._navigationBound = true;
+            }
+        })();
+
+        this._initializationPromise = initialization;
+
+        try {
+            await initialization;
+        } finally {
+            this._isInitializing = false;
+            this._initializationPromise = null;
+        }
+
+        return initialization;
+    }
+
+    _shouldAutoInitialize(autoInitializePreference) {
+        if (typeof autoInitializePreference === 'boolean') {
+            return autoInitializePreference;
+        }
+
+        const env = typeof process !== 'undefined' && process.env
+            ? process.env.NODE_ENV
+            : undefined;
+
+        return env !== 'test';
     }
 
     // Load initial workload data
@@ -227,6 +273,10 @@ class WorkloadController {
 
     // Bind UI events to controller actions
     bindEvents() {
+        if (this._eventsBound) {
+            return;
+        }
+
         // Handle form submission
         this.ui.bindFormSubmission(async (data, editDate) => {
             await this.handleFormSubmission(data, editDate);
@@ -261,6 +311,10 @@ class WorkloadController {
         this.ui.on('workload:delete', async (date) => {
             await this.handleDeleteRequest(date);
         });
+
+        if (typeof this.ui.bindModalControls === 'function') {
+            this.ui.bindModalControls();
+        }
     }
 
     // Event system for cross-module communication

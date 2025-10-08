@@ -18,33 +18,43 @@ class NotesUI {
         this.hideLoading();
         // Enhanced notes rendering with AI content
         this.elements.notesList.innerHTML = notes.map(note => `
-            <div class="note-item" data-id="${note.id}">
+            <article class="note-item" data-id="${note.id}">
                 <div class="note-content">
-                    <div class="note-original">
-                        <strong>Original:</strong>
-                        <div>${this.escapeHtml(note.content)}</div>
-                    </div>
+                    <section class="note-section note-section--original">
+                        <header class="note-section-header">
+                            <span class="note-section-icon" aria-hidden="true">
+                                <i class="fas fa-pen-nib"></i>
+                            </span>
+                            <span class="note-section-title">Original Note</span>
+                        </header>
+                        <div class="note-section-body">${this.escapeHtml(note.content)}</div>
+                    </section>
                     ${note.enhanced_content ? `
-                        <div class="note-enhanced">
-                            <strong>Enhanced:</strong>
-                            <div class="enhanced-content">${this.escapeHtml(note.enhanced_content)}</div>
+                        <section class="note-section note-section--enhanced">
+                            <header class="note-section-header">
+                                <span class="note-section-icon" aria-hidden="true">
+                                    <i class="fas fa-wand-magic-sparkles"></i>
+                                </span>
+                                <span class="note-section-title">AI Enhanced</span>
+                            </header>
+                            <div class="note-section-body enhanced-content">${this.escapeHtml(note.enhanced_content)}</div>
                             ${note.structured_data ? `
-                                <div class="structured-data">
-                                    <details>
-                                        <summary>View Details</summary>
+                                <div class="note-section-meta">
+                                    <details class="structured-data">
+                                        <summary>View Structured Insights</summary>
                                         <pre>${JSON.stringify(note.structured_data, null, 2)}</pre>
                                     </details>
                                 </div>
                             ` : ''}
-                        </div>
+                        </section>
                     ` : ''}
                 </div>
-                <div class="note-actions">
+                <footer class="note-actions">
                     <button class="btn btn-danger delete-note-btn" data-id="${note.id}">
                         <i class="fas fa-trash"></i> Delete
                     </button>
-                </div>
-            </div>
+                </footer>
+            </article>
         `).join('');
     }
 

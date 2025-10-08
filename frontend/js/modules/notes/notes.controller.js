@@ -1,12 +1,13 @@
 class NotesController {
-    constructor(apiClient) {
+    constructor(apiClient, appState = window.state, options = {}) {
         this.api = new NotesApi(apiClient);
         this.ui = new NotesUI();
-        this.state = window.state || {
+        this.state = appState || {
             getState: () => null,
-            subscribe: () => {}
+            subscribe: () => {},
+            setState: () => {}
         };
-        this.hasGlobalState = Boolean(window.state);
+        this.hasGlobalState = Boolean(appState && typeof appState.subscribe === 'function');
 
         this.currentProjectId = null;
         this.isRecording = false;
@@ -15,19 +16,58 @@ class NotesController {
         this.recognition = null;
         this.isDeviceSttActive = false;
 
-        this.initialize();
+        this._eventsBound = false;
+        this._subscriptionsBound = false;
+        this._isInitializing = false;
+        this._initializationPromise = null;
+
+        if (this._shouldAutoInitialize(options.autoInitialize)) {
+            this.initialize().catch(error => {
+                console.error('NotesController auto-initialization failed:', error);
+            });
+        }
     }
 
     async initialize() {
-        this.bindUIEvents();
-        this.subscribeToState();
-
-        this.currentProjectId = this.state.getState('currentProject');
-        if (this.currentProjectId) {
-            await this.loadNotes(this.currentProjectId);
-        } else {
-            this.ui.showEmptyState();
+        if (this._isInitializing) {
+            return this._initializationPromise;
         }
+
+        this._isInitializing = true;
+        const initialization = (async () => {
+            if (!this._eventsBound) {
+                this.bindUIEvents();
+                this._eventsBound = true;
+            }
+
+            if (!this._subscriptionsBound) {
+                this.subscribeToState();
+                this._subscriptionsBound = true;
+            }
+
+            const getState = this.state && typeof this.state.getState === 'function'
+                ? this.state.getState.bind(this.state)
+                : () => null;
+
+            this.currentProjectId = getState('currentProject');
+
+            if (this.currentProjectId) {
+                await this.loadNotes(this.currentProjectId);
+            } else {
+                this.ui.showEmptyState();
+            }
+        })();
+
+        this._initializationPromise = initialization;
+
+        try {
+            await initialization;
+        } finally {
+            this._isInitializing = false;
+            this._initializationPromise = null;
+        }
+
+        return initialization;
     }
 
     bindUIEvents() {
@@ -70,9 +110,11 @@ class NotesController {
     }
 
     subscribeToState() {
-        if (!this.hasGlobalState) {
+        if (!this.hasGlobalState || this._subscriptionsBound) {
             return;
         }
+
+        this._subscriptionsBound = true;
 
         this.state.subscribe('currentProject', async (projectId) => {
             this.currentProjectId = projectId;
@@ -308,6 +350,18 @@ class NotesController {
         } finally {
             this.ui.setRecordStatus('');
         }
+    }
+
+    _shouldAutoInitialize(autoInitializePreference) {
+        if (typeof autoInitializePreference === 'boolean') {
+            return autoInitializePreference;
+        }
+
+        const env = typeof process !== 'undefined' && process.env
+            ? process.env.NODE_ENV
+            : undefined;
+
+        return env !== 'test';
     }
 }
 

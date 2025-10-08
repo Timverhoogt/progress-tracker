@@ -53,9 +53,11 @@ class TodosUI {
 
         this.elements.todosHeader?.classList.toggle('has-items', todos.length > 0);
         this.elements.todosItems.innerHTML = todos.map(todo => `
-            <div class="card todo-card ${todo.status === 'completed' ? 'todo-completed' : ''}" data-id="${todo.id}">
-                <input type="checkbox" class="todo-select" data-id="${todo.id}">
-                <input type="checkbox" class="todo-checkbox" ${todo.status === 'completed' ? 'checked' : ''} data-id="${todo.id}">
+            <article class="card todo-card ${todo.status === 'completed' ? 'todo-completed' : ''}" data-id="${todo.id}">
+                <label class="todo-status-toggle" aria-label="Toggle completion for ${TextUtils.escapeHtml(todo.title)}">
+                    <input type="checkbox" class="todo-checkbox" ${todo.status === 'completed' ? 'checked' : ''} data-id="${todo.id}">
+                    <span class="todo-status-indicator"></span>
+                </label>
                 <div class="todo-content">
                     <div class="todo-title">${TextUtils.escapeHtml(todo.title)}</div>
                     ${todo.description ? `<div class="todo-description">${TextUtils.escapeHtml(todo.description)}</div>` : ''}
@@ -66,7 +68,7 @@ class TodosUI {
                         ${todo.llm_generated ? '<span class="ai-generated"><i class="fas fa-robot"></i> AI Generated</span>' : ''}
                     </div>
                 </div>
-                <div class="flex gap-2">
+                <div class="todo-actions">
                     <button class="btn btn-secondary btn-small edit-todo-btn" data-id="${todo.id}">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -74,7 +76,11 @@ class TodosUI {
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
-            </div>
+                <label class="todo-selection" aria-label="Select ${TextUtils.escapeHtml(todo.title)} for bulk actions">
+                    <input type="checkbox" class="todo-select" data-id="${todo.id}">
+                    <span class="todo-selection-indicator"></span>
+                </label>
+            </article>
         `).join('');
     }
 
@@ -150,19 +156,22 @@ class TodosUI {
     }
 
     bindTodoActions(onToggle, onEdit, onDelete) {
+        this.elements.todosItems?.addEventListener('change', (event) => {
+            const target = event.target;
+            if (target instanceof HTMLInputElement) {
+                if (target.classList.contains('todo-select')) {
+                    target.closest('.todo-card')?.classList.toggle('todo-selected', target.checked);
+                    return;
+                }
+
+                if (target.classList.contains('todo-checkbox')) {
+                    onToggle(target.dataset.id, target.checked);
+                    return;
+                }
+            }
+        });
+
         this.elements.todosItems?.addEventListener('click', (event) => {
-            const selectCheckbox = event.target.closest('.todo-select');
-            if (selectCheckbox) {
-                selectCheckbox.closest('.todo-card')?.classList.toggle('todo-selected', selectCheckbox.checked);
-                return;
-            }
-
-            const checkbox = event.target.closest('.todo-checkbox');
-            if (checkbox) {
-                onToggle(checkbox.dataset.id, checkbox.checked);
-                return;
-            }
-
             const editBtn = event.target.closest('.edit-todo-btn');
             if (editBtn) {
                 onEdit(editBtn.dataset.id);

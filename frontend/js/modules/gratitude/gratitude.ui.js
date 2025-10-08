@@ -28,6 +28,8 @@ class GratitudeUI {
             // Modal elements
             gratitudeModal: DOMUtils.getElement('#gratitudeModal'),
             gratitudeForm: DOMUtils.getElement('#gratitudeForm'),
+            closeGratitudeModal: DOMUtils.getElement('#closeGratitudeModal'),
+            cancelGratitudeModal: DOMUtils.getElement('#cancelGratitudeModal'),
             gratitudeDate: DOMUtils.getElement('#gratitudeDate'),
             gratitudeCategory: DOMUtils.getElement('#gratitudeCategory'),
             gratitudePrompt: DOMUtils.getElement('#gratitudePrompt'),
@@ -505,6 +507,10 @@ class GratitudeUI {
 
     // Show gratitude modal for creating/editing
     showGratitudeModal(entryId = null) {
+        if (!entryId && this.elements.gratitudeForm) {
+            this.elements.gratitudeForm.reset();
+        }
+
         // Set today's date if creating new entry
         if (!entryId && this.elements.gratitudeDate) {
             const today = new Date().toISOString().split('T')[0];
@@ -512,16 +518,19 @@ class GratitudeUI {
         }
 
         // Show the modal
-        if (this.elements.gratitudeModal) {
-            this.elements.gratitudeModal.style.display = 'block';
-        }
+        ModalUtils.show(this.elements.gratitudeModal);
     }
 
     // Hide gratitude modal
     hideGratitudeModal() {
-        if (this.elements.gratitudeModal) {
-            this.elements.gratitudeModal.style.display = 'none';
-        }
+        ModalUtils.hide(this.elements.gratitudeModal);
+    }
+
+    bindModalControls() {
+        ModalUtils.bindCloseTriggers(
+            this.elements.gratitudeModal,
+            [this.elements.closeGratitudeModal, this.elements.cancelGratitudeModal]
+        );
     }
 
     // Get form data from gratitude form
